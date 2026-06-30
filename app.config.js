@@ -42,6 +42,7 @@ export default {
       }
     },
     plugins: [
+      "expo-asset",
       [
         "expo-audio",
         {

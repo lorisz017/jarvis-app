@@ -1,5 +1,6 @@
 import React, {useState, useRef} from 'react';
-import {Alert, SafeAreaView, TouchableOpacity, Text, Animated, View} from 'react-native';
+import {Alert, TouchableOpacity, Text, Animated, View} from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import {useAudioRecorder, useAudioRecorderState, RecordingPresets} from 'expo-audio';
 import {Linking} from 'react-native';
 import * as Speech from 'expo-speech';

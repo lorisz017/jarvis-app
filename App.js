@@ -1,4 +1,4 @@
-import {SafeAreaView} from 'react-native';
+import {SafeAreaProvider, SafeAreaView} from 'react-native-safe-area-context';
 import Home from "./src/screens/Home";
 import {useEffect, useState} from "react";
 import * as Notifications from "expo-notifications";
@@ -42,8 +42,10 @@ export default function App() {
 
 
     return (
-        <SafeAreaView style={{flex: 1}}>
-            {unlocked ? <Home/> : <AccessDenied/>}
-        </SafeAreaView>
+        <SafeAreaProvider>
+            <SafeAreaView style={{flex: 1}}>
+                {unlocked ? <Home/> : <AccessDenied/>}
+            </SafeAreaView>
+        </SafeAreaProvider>
     );
 }
