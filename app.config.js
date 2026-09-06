@@ -1,7 +1,7 @@
 export default {
   expo: {
     name: "JARVIS",
-    slug: "jarvis-app",
+    slug: "project_jarvis",
     version: "1.1.0",
     orientation: "portrait",
     icon: "./assets/icon.png",
