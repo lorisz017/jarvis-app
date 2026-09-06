@@ -21,7 +21,6 @@ export default {
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#ffffff"
       },
-      edgeToEdgeEnabled: true,
       package: "com.az11k.jarvisapp",
 
       config: {
