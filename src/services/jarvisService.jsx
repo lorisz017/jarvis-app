@@ -1,13 +1,14 @@
 import {Alert} from 'react-native';
+import * as FileSystem from 'expo-file-system';
 import {scheduleReminder, parseSecondsFromPhrase, parseReminderDetails} from './notificationsService';
 import {getLatestCommits} from "../core/github/commits";
 import {createGitHubRepo} from "../core/github/createRepo";
 import {deleteGitHubRepo} from "../core/github/deleteRepo";
 
-const openaiApiKey = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
+const geminiApiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
 
-if (!openaiApiKey) {
-    Alert.alert('OpenAI API Key Missing', 'Please set your OpenAI API key in app.json');
+if (!geminiApiKey) {
+    Alert.alert('Gemini API Key Missing', 'Please set your Gemini API key in app.json');
 }
 
 function stripMarkdown(text) {
@@ -28,9 +29,11 @@ function chooseModelByText(text) {
 
     const lowerText = text.toLowerCase();
 
+    // Gemini usa lo stesso modello per entrambi i casi; per le ricerche
+    // si potrebbe attivare il grounding con Google Search (vedi note in fondo).
     return searchKeywords.some(keyword => lowerText.includes(keyword))
-        ? 'gpt-4o-mini-search-preview-2025-03-11'
-        : 'gpt-4o-mini';
+        ? 'gemini-2.5-flash'
+        : 'gemini-2.5-flash';
 }
 
 export const processAudioWithOpenAI = async ({
@@ -50,30 +53,47 @@ export const processAudioWithOpenAI = async ({
     setDisplayedText('Думаю...');
 
     try {
-        const formData = new FormData();
-        formData.append('file', {
-            uri: audioUri,
-            name: 'recording.m4a',
-            type: 'audio/m4a',
-        });
-        formData.append('model', 'whisper-1');
-
-        const whisperResponse = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${openaiApiKey}`,
-                'Content-Type': 'multipart/form-data',
-            },
-            body: formData,
+        // === 1. TRASCRIZIONE AUDIO CON GEMINI (al posto di Whisper) ===
+        // Gemini legge l'audio in base64, non come multipart/form-data.
+        const base64Audio = await FileSystem.readAsStringAsync(audioUri, {
+            encoding: FileSystem.EncodingType.Base64,
         });
 
-        const whisperData = await whisperResponse.json();
+        const transcriptionResponse = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [
+                            {text: 'Trascrivi esattamente questo audio. Rispondi SOLO con il testo trascritto, senza aggiungere nulla.'},
+                            {
+                                inline_data: {
+                                    mime_type: 'audio/mp4',
+                                    data: base64Audio,
+                                },
+                            },
+                        ],
+                    }],
+                }),
+            }
+        );
 
-        if (!whisperResponse.ok) {
-            throw new Error(whisperData.error?.message || 'Whisper API Error');
+        const transcriptionData = await transcriptionResponse.json();
+
+        if (!transcriptionResponse.ok) {
+            throw new Error(transcriptionData.error?.message || 'Gemini Transcription Error');
         }
 
-        const userMessage = whisperData.text;
+        const userMessage = (transcriptionData.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
+
+        if (!userMessage) {
+            throw new Error('Trascrizione vuota');
+        }
+
         const parsed = parseReminderDetails(userMessage);
 
         if (userMessage.toLowerCase().includes('напомни') && parsed) {
@@ -95,10 +115,13 @@ export const processAudioWithOpenAI = async ({
 
         const chosenModel = chooseModelByText(userMessage);
 
-        const completion = await fetch('https://api.openai.com/v1/chat/completions', {
+        // === 2. RISPOSTA DEL MODELLO ===
+        // Gemini espone un endpoint compatibile con il formato OpenAI:
+        // cambia solo l'URL, il resto del corpo della richiesta resta identico.
+        const completion = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
             method: 'POST',
             headers: {
-                Authorization: `Bearer ${openaiApiKey}`,
+                Authorization: `Bearer ${geminiApiKey}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -108,6 +131,10 @@ export const processAudioWithOpenAI = async ({
         });
 
         const responseData = await completion.json();
+
+        if (!completion.ok) {
+            throw new Error(responseData.error?.message || 'Gemini Chat Error');
+        }
 
         const jarvisReply = stripMarkdown(responseData.choices?.[0]?.message?.content) || '...';
 
