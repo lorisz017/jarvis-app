@@ -6,16 +6,13 @@ import {deleteGitHubRepo} from "../core/github/deleteRepo";
 
 const groqApiKey = process.env.EXPO_PUBLIC_GROQ_API_KEY;
 
-// Groq espone API compatibili con il formato OpenAI, quindi le chiamate
-// hanno la stessa struttura dell'originale del progetto.
 const GROQ_BASE_URL = 'https://api.groq.com/openai/v1';
-
-// Trascrizione: Whisper Large v3 Turbo (velocissimo, quota separata dalla chat)
 const TRANSCRIPTION_MODEL = 'whisper-large-v3-turbo';
-
-// Chat: GPT-OSS 120B, il modello di punta del piano gratuito Groq
-// (sostituisce llama-3.3-70b-versatile, dismesso il 16 agosto 2026)
 const CHAT_MODEL = 'openai/gpt-oss-120b';
+// Compound: stesso formato di chiamata, ma cerca davvero sul web prima di
+// rispondere (notizie, fatti attuali, prezzi) invece di affidarsi solo a
+// quello che il modello sa "a memoria".
+const SEARCH_MODEL = 'groq/compound';
 
 if (!groqApiKey) {
     Alert.alert('Groq API Key Missing', 'Please set your Groq API key in app.json');
@@ -31,6 +28,20 @@ function stripMarkdown(text) {
         .replace(/\n{2,}/g, '\n');
 }
 
+function chooseModelByText(text) {
+    const searchKeywords = [
+        'cerca', 'trova', 'chi è', 'chi ha', 'cos\'è', 'cosa significa',
+        'notizie', 'ultime notizie', 'oggi è successo', 'quanto costa',
+        'chi ha vinto', 'risultato', 'classifica', 'prezzo di',
+    ];
+
+    const lowerText = text.toLowerCase();
+
+    return searchKeywords.some(keyword => lowerText.includes(keyword))
+        ? SEARCH_MODEL
+        : CHAT_MODEL;
+}
+
 export const processAudioWithOpenAI = async ({
                                                  audioUri,
                                                  chatHistory,
@@ -41,6 +52,10 @@ export const processAudioWithOpenAI = async ({
                                                  openCamera,
                                                  openYoutube,
                                                  openTelegram,
+                                                 setNativeAlarm,
+                                                 setNativeTimer,
+                                                 getWeatherByCity,
+                                                 createCalendarEvent,
                                                  setIsLoading,
                                              }) => {
     setIsLoading(true);
@@ -98,6 +113,8 @@ export const processAudioWithOpenAI = async ({
         const updatedHistory = [...chatHistory, {role: 'user', content: userMessage}];
         setChatHistory(updatedHistory);
 
+        const chosenModel = chooseModelByText(userMessage);
+
         // === 2. RISPOSTA DEL MODELLO ===
         const completion = await fetch(`${GROQ_BASE_URL}/chat/completions`, {
             method: 'POST',
@@ -106,7 +123,7 @@ export const processAudioWithOpenAI = async ({
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                model: CHAT_MODEL,
+                model: chosenModel,
                 messages: updatedHistory,
             }),
         });
@@ -119,10 +136,6 @@ export const processAudioWithOpenAI = async ({
 
         const jarvisReply = stripMarkdown(responseData.choices?.[0]?.message?.content) || '...';
 
-        // Salva anche la risposta di JARVIS nella cronologia, non solo i messaggi
-        // dell'utente: senza questo il modello non ricorda cosa ha appena detto o
-        // fatto, e tende a ripetere azioni vecchie o a confondersi tra un comando
-        // e l'altro.
         setChatHistory([...updatedHistory, {role: 'assistant', content: jarvisReply}]);
 
 
@@ -143,7 +156,7 @@ export const processAudioWithOpenAI = async ({
 
         if (jarvisReply.toLowerCase().includes('open_youtube')) {
             const parts = jarvisReply.split('open_youtube');
-            const query = parts[1]?.trim(); // Prende tutto ciò che segue il comando
+            const query = parts[1]?.trim();
             const speakText = query
                 ? `Signore, apro YouTube per la ricerca: ${query}...`
                 : 'Signore, apro YouTube...';
@@ -151,6 +164,100 @@ export const processAudioWithOpenAI = async ({
             setJarvisResponseText(speakText);
             setDisplayedText(speakText);
             await openYoutube(query);
+            return;
+        }
+
+        // === Sveglia nativa ===
+        if (jarvisReply.toLowerCase().startsWith('set_alarm')) {
+            const match = jarvisReply.match(/set_alarm\s+(\d{1,2}):(\d{2})\s*(.*)/i);
+            if (!match) {
+                await speak('Signore, non ho capito a che ora impostare la sveglia.');
+                return;
+            }
+            const [, hour, minute, label] = match;
+            try {
+                await setNativeAlarm(parseInt(hour, 10), parseInt(minute, 10), label.trim() || 'JARVIS');
+                const msg = `Signore, sveglia impostata per le ${hour}:${minute}.`;
+                setDisplayedText(msg);
+                setJarvisResponseText(msg);
+                await speak(msg);
+            } catch (error) {
+                const errText = `Non sono riuscito a impostare la sveglia: ${error.message}`;
+                setDisplayedText(errText);
+                setJarvisResponseText(errText);
+                await speak(errText);
+            }
+            return;
+        }
+
+        // === Timer nativo ===
+        if (jarvisReply.toLowerCase().startsWith('set_timer')) {
+            const match = jarvisReply.match(/set_timer\s+(\d+)\s*(.*)/i);
+            if (!match) {
+                await speak('Signore, non ho capito la durata del timer.');
+                return;
+            }
+            const [, seconds, label] = match;
+            try {
+                await setNativeTimer(parseInt(seconds, 10), label.trim() || 'JARVIS');
+                const secs = parseInt(seconds, 10);
+                const humanTime = secs >= 60 ? `${Math.round(secs / 60)} minuti` : `${secs} secondi`;
+                const msg = `Signore, timer impostato per ${humanTime}.`;
+                setDisplayedText(msg);
+                setJarvisResponseText(msg);
+                await speak(msg);
+            } catch (error) {
+                const errText = `Non sono riuscito a impostare il timer: ${error.message}`;
+                setDisplayedText(errText);
+                setJarvisResponseText(errText);
+                await speak(errText);
+            }
+            return;
+        }
+
+        // === Meteo ===
+        if (jarvisReply.toLowerCase().startsWith('get_weather')) {
+            const city = jarvisReply.replace(/get_weather/i, '').trim();
+            if (!city) {
+                await speak('Signore, per quale città desidera il meteo?');
+                return;
+            }
+            try {
+                const weatherText = await getWeatherByCity(city);
+                setDisplayedText(weatherText);
+                setJarvisResponseText(weatherText);
+                await speak(weatherText);
+            } catch (error) {
+                const errText = `Non sono riuscito a recuperare il meteo: ${error.message}`;
+                setDisplayedText(errText);
+                setJarvisResponseText(errText);
+                await speak(errText);
+            }
+            return;
+        }
+
+        // === Evento calendario ===
+        // Formato atteso dal modello: create_calendar_event GIORNO HH:MM Titolo
+        // dove GIORNO è: oggi, domani, oppure un giorno della settimana.
+        if (jarvisReply.toLowerCase().startsWith('create_calendar_event')) {
+            const match = jarvisReply.match(/create_calendar_event\s+(\S+)\s+(\d{1,2}):(\d{2})\s+(.*)/i);
+            if (!match) {
+                await speak('Signore, non ho capito data, ora o titolo dell\'evento.');
+                return;
+            }
+            const [, dayWord, hour, minute, title] = match;
+            try {
+                const eventDate = await createCalendarEvent(dayWord, parseInt(hour, 10), parseInt(minute, 10), title.trim());
+                const msg = `Signore, ho aggiunto "${title.trim()}" al calendario per ${eventDate}.`;
+                setDisplayedText(msg);
+                setJarvisResponseText(msg);
+                await speak(msg);
+            } catch (error) {
+                const errText = `Non sono riuscito a creare l'evento: ${error.message}`;
+                setDisplayedText(errText);
+                setJarvisResponseText(errText);
+                await speak(errText);
+            }
             return;
         }
 
@@ -189,7 +296,6 @@ export const processAudioWithOpenAI = async ({
             return;
         }
 
-        // === GitHub: Delete Repository ===
         if (jarvisReply.toLowerCase().startsWith('delete_github_repo')) {
             const repoName = jarvisReply.replace('delete_github_repo', '').trim();
             if (!repoName) {
