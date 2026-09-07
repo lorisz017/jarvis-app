@@ -141,6 +141,10 @@ export default function Home() {
     };
 
     const record = async () => {
+        // Interrompe subito qualsiasi voce ancora in corso: senza questo,
+        // premendo di nuovo il microfono mentre JARVIS sta ancora parlando,
+        // le voci si accavallano invece di fermarsi.
+        Speech.stop();
         setDisplayedText('');
         setIsLoading(false);
         stopPulsing();
