@@ -13,8 +13,9 @@ const GROQ_BASE_URL = 'https://api.groq.com/openai/v1';
 // Trascrizione: Whisper Large v3 Turbo (velocissimo, quota separata dalla chat)
 const TRANSCRIPTION_MODEL = 'whisper-large-v3-turbo';
 
-// Chat: Llama 3.3 70B, il modello più capace del piano gratuito Groq
-const CHAT_MODEL = 'llama-3.3-70b-versatile';
+// Chat: GPT-OSS 120B, il modello di punta del piano gratuito Groq
+// (sostituisce llama-3.3-70b-versatile, dismesso il 16 agosto 2026)
+const CHAT_MODEL = 'openai/gpt-oss-120b';
 
 if (!groqApiKey) {
     Alert.alert('Groq API Key Missing', 'Please set your Groq API key in app.json');
