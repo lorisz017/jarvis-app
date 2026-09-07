@@ -12,8 +12,7 @@ export default function App() {
 
     useEffect(() => {
         (async () => {
-            const success = await requestDeviceAuth();
-            setUnlocked(success);
+            setUnlocked(true);
         })();
         Notifications.requestPermissionsAsync();
         Notifications.setNotificationHandler({
