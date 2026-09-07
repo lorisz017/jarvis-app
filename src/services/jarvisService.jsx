@@ -1,5 +1,5 @@
 import {Alert} from 'react-native';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import {scheduleReminder, parseSecondsFromPhrase, parseReminderDetails} from './notificationsService';
 import {getLatestCommits} from "../core/github/commits";
 import {createGitHubRepo} from "../core/github/createRepo";
@@ -170,7 +170,7 @@ export const processAudioWithOpenAI = async ({
         if (jarvisReply.toLowerCase().includes('напомни') && parseSecondsFromPhrase(jarvisReply)) {
             const seconds = parseSecondsFromPhrase(jarvisReply);
             const reminderText = jarvisReply.replace(/.*напомни.*(через.*)/i, '').trim() || 'о задаче';
-            const confirmation = `Сэр, установлено напоминание: "${reminderText}" через ${Math.floor(seconds > 60 ? (seconds / 60) : seconds)} ${seconds > 60 ? "минут" : "секунд"}.`;
+            const confirmation = `Сэр, установлено напоминание: "${reminderText}" через ${Math.floor(seconds > 60 ? (seconds / 60) : seconds)} ${seconds > 60 ? "минут." : "секунд."}`;
 
             setDisplayedText(confirmation);
             setJarvisResponseText(confirmation);
