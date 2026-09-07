@@ -12,14 +12,17 @@ export const speakJarvisResponse = async ({
                                           }) => {
     if (!text) return;
 
-    const isEnglish = /^[\x00-\x7F]+$/.test(text);
-    const language = isEnglish ? 'en-US' : 'ru-RU';
+    // L'assistente ora parla sempre in italiano: niente più euristica
+    // per distinguere inglese/russo, che con l'italiano non era affidabile
+    // (molte frasi italiane senza accenti venivano lette come inglese).
+    const language = 'it-IT';
 
     const voiceToUse =
         selectedVoiceId ||
-        availableVoices.find((v) => v.language === language)?.identifier;
+        availableVoices.find((v) => v.language === language)?.identifier ||
+        russianVoiceId;
 
-    setSelectedVoiceId(isEnglish ? englishVoiceId : russianVoiceId);
+    setSelectedVoiceId(russianVoiceId);
 
     Speech.speak(text, {
         language,
