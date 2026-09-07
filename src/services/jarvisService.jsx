@@ -138,6 +138,12 @@ export const processAudioWithOpenAI = async ({
 
         const jarvisReply = stripMarkdown(responseData.choices?.[0]?.message?.content) || '...';
 
+        // Salva anche la risposta di JARVIS nella cronologia, non solo i messaggi
+        // dell'utente: senza questo il modello non ricorda cosa ha appena detto o
+        // fatto, e tende a ripetere azioni vecchie o a confondersi tra un comando
+        // e l'altro.
+        setChatHistory([...updatedHistory, {role: 'assistant', content: jarvisReply}]);
+
 
         if (jarvisReply.toLowerCase().includes('open_camera')) {
             setJarvisResponseText('Signore, apro la fotocamera...');
