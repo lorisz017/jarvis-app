@@ -13,11 +13,11 @@ export async function initNotifications() {
     }
 
     if (finalStatus !== 'granted') {
-        console.log('❌ Уведомления запрещены');
+        console.log('❌ Notifiche non consentite');
         return;
     }
 
-    console.log('✅ Разрешения на уведомления получены');
+    console.log('✅ Permessi per le notifiche ottenuti');
 
     const token = (await Notifications.getExpoPushTokenAsync()).data;
     console.log('✅ Expo Push Token:', token);
@@ -26,8 +26,8 @@ export async function initNotifications() {
 export async function scheduleReminder(message, seconds) {
     await Notifications.scheduleNotificationAsync({
         content: {
-            title: "J.A.R.V.I.S. напоминание",
-            body: `Сэр, ${message}`,
+            title: "Promemoria J.A.R.V.I.S.",
+            body: `Signore, ${message}`,
             sound: 'default',
             priority: Notifications.AndroidNotificationPriority.HIGH,
         },
@@ -41,13 +41,13 @@ export async function scheduleReminder(message, seconds) {
 
 export async function cancelAllReminders() {
     await Notifications.cancelAllScheduledNotificationsAsync();
-    console.log('🛑 Все напоминания отменены');
+    console.log('🛑 Tutti i promemoria sono stati annullati');
 }
 
 export function parseSecondsFromPhrase(text) {
-    const secondMatch = text.match(/через (\d+)\s?секунд/);
-    const minMatch = text.match(/через (\d+)\s?минут/);
-    const hourMatch = text.match(/через (\d+)\s?час/);
+    const secondMatch = text.match(/tra (\d+)\s?second[oi]/i);
+    const minMatch = text.match(/tra (\d+)\s?minut[oi]/i);
+    const hourMatch = text.match(/tra (\d+)\s?or[ae]/i);
 
     if (secondMatch) return parseInt(secondMatch[1], 10);
     if (minMatch) return parseInt(minMatch[1], 10) * 60;
@@ -57,7 +57,7 @@ export function parseSecondsFromPhrase(text) {
 }
 
 export function parseReminderDetails(text) {
-    const timeRegex = /через (\d+)\s?(секунд|минут|час)/i;
+    const timeRegex = /tra (\d+)\s?(second[oi]|minut[oi]|or[ae])/i;
     const timeMatch = text.match(timeRegex);
 
     if (!timeMatch) return null;
@@ -66,26 +66,23 @@ export function parseReminderDetails(text) {
     const unit = timeMatch[2].toLowerCase();
     let seconds;
 
-    switch (unit) {
-        case 'секунд':
-            seconds = number;
-            break;
-        case 'минут':
-            seconds = number * 60;
-            break;
-        case 'час':
-            seconds = number * 3600;
-            break;
-        default:
-            return null;
+    if (unit.startsWith('second')) {
+        seconds = number;
+    } else if (unit.startsWith('minut')) {
+        seconds = number * 60;
+    } else if (unit.startsWith('or')) {
+        seconds = number * 3600;
+    } else {
+        return null;
     }
 
-    // Извлекаем текст напоминания
+    // Estrae il testo del promemoria
     const reminderText = text
-        .replace(/напомни( мне)?/i, '')
+        .replace(/ricorda( mi)?/i, '')
         .replace(timeRegex, '')
-        .replace(/через.*/i, '')
-        .trim() || 'о задаче';
+        .replace(/tra.*/i, '')
+        .replace(/^di\s+/i, '')
+        .trim() || 'un impegno';
 
     return {reminderText, seconds};
 }
