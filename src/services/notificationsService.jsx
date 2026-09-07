@@ -78,9 +78,10 @@ export function parseReminderDetails(text) {
 
     // Estrae il testo del promemoria
     const reminderText = text
-        .replace(/ricorda( mi)?/i, '')
+        .replace(/ricorda(mi)?/i, '')
         .replace(timeRegex, '')
         .replace(/tra.*/i, '')
+        .trim()
         .replace(/^di\s+/i, '')
         .trim() || 'un impegno';
 
