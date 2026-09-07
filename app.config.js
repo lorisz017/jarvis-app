@@ -16,7 +16,7 @@ export default {
       supportsTablet: true
     },
     android: {
-      permissions: ["RECORD_AUDIO"],
+      permissions: ["RECORD_AUDIO", "READ_CALENDAR", "WRITE_CALENDAR"],
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
         backgroundColor: "#ffffff"
