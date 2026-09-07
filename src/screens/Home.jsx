@@ -12,6 +12,7 @@ import VoicePickerModal from '../components/VoicePickerModal';
 import {useVoiceSetup} from '../hooks/useVoiceSetup';
 import {speakJarvisResponse} from '../services/ttsService';
 import {processAudioWithOpenAI} from '../services/jarvisService';
+import {setNativeAlarm, setNativeTimer, getWeatherByCity, createCalendarEvent} from '../services/deviceActions';
 
 import {SYSTEM_MESSAGE} from '../utils/constants';
 import {styles} from '../styles/mainStyles';
@@ -162,6 +163,10 @@ export default function Home() {
                 openCamera,
                 openTelegram,
                 openYoutube,
+                setNativeAlarm,
+                setNativeTimer,
+                getWeatherByCity,
+                createCalendarEvent,
                 setIsLoading,
             });
         }
