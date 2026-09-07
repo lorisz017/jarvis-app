@@ -32,8 +32,8 @@ function chooseModelByText(text) {
     // Gemini usa lo stesso modello per entrambi i casi; per le ricerche
     // si potrebbe attivare il grounding con Google Search (vedi note in fondo).
     return searchKeywords.some(keyword => lowerText.includes(keyword))
-        ? 'gemini-2.5-flash'
-        : 'gemini-2.5-flash';
+        ? 'gemini-3.6-flash'
+        : 'gemini-3.6-flash';
 }
 
 export const processAudioWithOpenAI = async ({
@@ -60,7 +60,7 @@ export const processAudioWithOpenAI = async ({
         });
 
         const transcriptionResponse = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${geminiApiKey}`,
             {
                 method: 'POST',
                 headers: {
