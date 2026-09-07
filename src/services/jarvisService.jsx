@@ -1,14 +1,23 @@
 import {Alert} from 'react-native';
-import * as FileSystem from 'expo-file-system/legacy';
 import {scheduleReminder, parseSecondsFromPhrase, parseReminderDetails} from './notificationsService';
 import {getLatestCommits} from "../core/github/commits";
 import {createGitHubRepo} from "../core/github/createRepo";
 import {deleteGitHubRepo} from "../core/github/deleteRepo";
 
-const geminiApiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+const groqApiKey = process.env.EXPO_PUBLIC_GROQ_API_KEY;
 
-if (!geminiApiKey) {
-    Alert.alert('Gemini API Key Missing', 'Please set your Gemini API key in app.json');
+// Groq espone API compatibili con il formato OpenAI, quindi le chiamate
+// hanno la stessa struttura dell'originale del progetto.
+const GROQ_BASE_URL = 'https://api.groq.com/openai/v1';
+
+// Trascrizione: Whisper Large v3 Turbo (velocissimo, quota separata dalla chat)
+const TRANSCRIPTION_MODEL = 'whisper-large-v3-turbo';
+
+// Chat: Llama 3.3 70B, il modello più capace del piano gratuito Groq
+const CHAT_MODEL = 'llama-3.3-70b-versatile';
+
+if (!groqApiKey) {
+    Alert.alert('Groq API Key Missing', 'Please set your Groq API key in app.json');
 }
 
 function stripMarkdown(text) {
@@ -19,21 +28,6 @@ function stripMarkdown(text) {
         .replace(/^\s*\n/gm, '')
         .replace(/^\s+|\s+$/g, '')
         .replace(/\n{2,}/g, '\n');
-}
-
-function chooseModelByText(text) {
-    const searchKeywords = [
-        'cerca', 'trova', 'chi è', 'cos\'è', 'cosa significa', 'come si fa',
-        'who is', 'what is', 'search', 'look up', 'how to', 'latest', 'news', 'define'
-    ];
-
-    const lowerText = text.toLowerCase();
-
-    // Gemini usa lo stesso modello per entrambi i casi; per le ricerche
-    // si potrebbe attivare il grounding con Google Search (vedi note in fondo).
-    return searchKeywords.some(keyword => lowerText.includes(keyword))
-        ? 'gemini-3.6-flash'
-        : 'gemini-3.6-flash';
 }
 
 export const processAudioWithOpenAI = async ({
@@ -53,42 +47,32 @@ export const processAudioWithOpenAI = async ({
     setDisplayedText('Sto elaborando...');
 
     try {
-        // === 1. TRASCRIZIONE AUDIO CON GEMINI (al posto di Whisper) ===
-        // Gemini legge l'audio in base64, non come multipart/form-data.
-        const base64Audio = await FileSystem.readAsStringAsync(audioUri, {
-            encoding: FileSystem.EncodingType.Base64,
+        // === 1. TRASCRIZIONE AUDIO CON WHISPER SU GROQ ===
+        const formData = new FormData();
+        formData.append('file', {
+            uri: audioUri,
+            name: 'recording.m4a',
+            type: 'audio/m4a',
+        });
+        formData.append('model', TRANSCRIPTION_MODEL);
+        formData.append('language', 'it');
+
+        const whisperResponse = await fetch(`${GROQ_BASE_URL}/audio/transcriptions`, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${groqApiKey}`,
+                'Content-Type': 'multipart/form-data',
+            },
+            body: formData,
         });
 
-        const transcriptionResponse = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${geminiApiKey}`,
-            {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [
-                            {text: 'Trascrivi esattamente questo audio. Rispondi SOLO con il testo trascritto, senza aggiungere nulla.'},
-                            {
-                                inline_data: {
-                                    mime_type: 'audio/mp4',
-                                    data: base64Audio,
-                                },
-                            },
-                        ],
-                    }],
-                }),
-            }
-        );
+        const whisperData = await whisperResponse.json();
 
-        const transcriptionData = await transcriptionResponse.json();
-
-        if (!transcriptionResponse.ok) {
-            throw new Error(transcriptionData.error?.message || 'Gemini Transcription Error');
+        if (!whisperResponse.ok) {
+            throw new Error(whisperData.error?.message || 'Whisper API Error');
         }
 
-        const userMessage = (transcriptionData.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
+        const userMessage = (whisperData.text || '').trim();
 
         if (!userMessage) {
             throw new Error('Trascrizione vuota');
@@ -113,19 +97,15 @@ export const processAudioWithOpenAI = async ({
         const updatedHistory = [...chatHistory, {role: 'user', content: userMessage}];
         setChatHistory(updatedHistory);
 
-        const chosenModel = chooseModelByText(userMessage);
-
         // === 2. RISPOSTA DEL MODELLO ===
-        // Gemini espone un endpoint compatibile con il formato OpenAI:
-        // cambia solo l'URL, il resto del corpo della richiesta resta identico.
-        const completion = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
+        const completion = await fetch(`${GROQ_BASE_URL}/chat/completions`, {
             method: 'POST',
             headers: {
-                Authorization: `Bearer ${geminiApiKey}`,
+                Authorization: `Bearer ${groqApiKey}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                model: chosenModel,
+                model: CHAT_MODEL,
                 messages: updatedHistory,
             }),
         });
@@ -133,7 +113,7 @@ export const processAudioWithOpenAI = async ({
         const responseData = await completion.json();
 
         if (!completion.ok) {
-            throw new Error(responseData.error?.message || 'Gemini Chat Error');
+            throw new Error(responseData.error?.message || 'Groq Chat Error');
         }
 
         const jarvisReply = stripMarkdown(responseData.choices?.[0]?.message?.content) || '...';
