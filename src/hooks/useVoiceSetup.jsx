@@ -14,7 +14,7 @@ export const useVoiceSetup = ({
             try {
                 const permission = await AudioModule.requestRecordingPermissionsAsync();
                 if (!permission.granted) {
-                    Alert.alert('Microphone permission denied');
+                    Alert.alert('Permesso per il microfono negato');
                     return;
                 }
 
@@ -25,23 +25,25 @@ export const useVoiceSetup = ({
 
                 const voices = await Speech.getAvailableVoicesAsync();
                 const enVoices = voices.filter(v => v.language.startsWith('en-US'));
-                const ruVoices = voices.filter(v => v.language.startsWith('ru'));
+                const itVoices = voices.filter(v => v.language.startsWith('it'));
 
                 setEnglishVoiceId(enVoices[0]?.identifier);
-                setRussianVoiceId(ruVoices[0]?.identifier);
-                setAvailableVoices([...ruVoices, ...enVoices]);
+                setRussianVoiceId(itVoices[0]?.identifier);
+                setAvailableVoices([...itVoices, ...enVoices]);
 
-                const defaultVoice = ruVoices.find(v =>
+                const defaultVoice = itVoices.find(v =>
                     Platform.OS === 'ios' ? v.quality === 'enhanced' : true
-                ) || ruVoices[0];
+                ) || itVoices[0];
 
                 if (defaultVoice) {
-                    setSelectedVoiceId('ru-ru-x-ruf-network');
-                    console.log('Default Russian voice selected:', defaultVoice.name);
+                    setSelectedVoiceId(defaultVoice.identifier);
+                    console.log('Voce italiana predefinita selezionata:', defaultVoice.name);
+                } else {
+                    console.warn('Nessuna voce italiana trovata sul dispositivo.');
                 }
             } catch (err) {
                 console.error('Voice setup error:', err);
-                Alert.alert('Voice Setup Error', err.message);
+                Alert.alert('Errore configurazione voce', err.message);
             }
         };
 
