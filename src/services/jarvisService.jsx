@@ -23,7 +23,7 @@ function stripMarkdown(text) {
 
 function chooseModelByText(text) {
     const searchKeywords = [
-        'найди', 'поиск', 'ищи', 'кто такой', 'что такое', 'что значит',
+        'cerca', 'trova', 'chi è', 'cos\'è', 'cosa significa', 'come si fa',
         'who is', 'what is', 'search', 'look up', 'how to', 'latest', 'news', 'define'
     ];
 
@@ -49,8 +49,8 @@ export const processAudioWithOpenAI = async ({
                                                  setIsLoading,
                                              }) => {
     setIsLoading(true);
-    setJarvisResponseText('Думаю...');
-    setDisplayedText('Думаю...');
+    setJarvisResponseText('Sto elaborando...');
+    setDisplayedText('Sto elaborando...');
 
     try {
         // === 1. TRASCRIZIONE AUDIO CON GEMINI (al posto di Whisper) ===
@@ -96,19 +96,19 @@ export const processAudioWithOpenAI = async ({
 
         const parsed = parseReminderDetails(userMessage);
 
-        if (userMessage.toLowerCase().includes('напомни') && parsed) {
+        if (userMessage.toLowerCase().includes('ricorda') && parsed) {
             const {reminderText, seconds} = parsed;
 
-            setDisplayedText(`Сэр, установлено напоминание: "${reminderText}" через ${Math.floor(seconds / 60)} минут.`);
-            setJarvisResponseText(`Сэр, установлено напоминание: "${reminderText}" через ${Math.floor(seconds / 60)} минут.`);
-            await speak(`Сэр, установлено напоминание: ${reminderText} через ${Math.floor(seconds / 60)} минут.`);
+            setDisplayedText(`Signore, promemoria impostato: "${reminderText}" tra ${Math.floor(seconds / 60)} minuti.`);
+            setJarvisResponseText(`Signore, promemoria impostato: "${reminderText}" tra ${Math.floor(seconds / 60)} minuti.`);
+            await speak(`Signore, promemoria impostato: ${reminderText} tra ${Math.floor(seconds / 60)} minuti.`);
             await scheduleReminder(reminderText, seconds);
             setIsLoading(false);
             return;
         }
 
-        setDisplayedText(`Вы сказали: "${userMessage}"\nJARVIS думает...`);
-        setJarvisResponseText(`Вы сказали: "${userMessage}"\nJARVIS думает...`);
+        setDisplayedText(`Lei ha detto: "${userMessage}"\nJARVIS sta pensando...`);
+        setJarvisResponseText(`Lei ha detto: "${userMessage}"\nJARVIS sta pensando...`);
 
         const updatedHistory = [...chatHistory, {role: 'user', content: userMessage}];
         setChatHistory(updatedHistory);
@@ -140,26 +140,26 @@ export const processAudioWithOpenAI = async ({
 
 
         if (jarvisReply.toLowerCase().includes('open_camera')) {
-            setJarvisResponseText('Сэр, открываю камеру...');
-            setDisplayedText('Сэр, открываю камеру...');
-            await speak('Сэр, открываю камеру.');
+            setJarvisResponseText('Signore, apro la fotocamera...');
+            setDisplayedText('Signore, apro la fotocamera...');
+            await speak('Signore, apro la fotocamera.');
             await openCamera();
             return;
         }
 
         if (jarvisReply.toLowerCase().includes('open_telegram')) {
-            setJarvisResponseText('Сэр, открываю Telegram...');
-            setDisplayedText('Сэр, открываю Telegram...');
+            setJarvisResponseText('Signore, apro Telegram...');
+            setDisplayedText('Signore, apro Telegram...');
             await openTelegram();
             return;
         }
 
         if (jarvisReply.toLowerCase().includes('open_youtube')) {
             const parts = jarvisReply.split('open_youtube');
-            const query = parts[1]?.trim(); // Получаем всё, что после команды
+            const query = parts[1]?.trim(); // Prende tutto ciò che segue il comando
             const speakText = query
-                ? `Сэр, открываю YouTube по запросу: ${query}...`
-                : 'Сэр, открываю YouTube...';
+                ? `Signore, apro YouTube per la ricerca: ${query}...`
+                : 'Signore, apro YouTube...';
 
             setJarvisResponseText(speakText);
             setDisplayedText(speakText);
@@ -167,10 +167,10 @@ export const processAudioWithOpenAI = async ({
             return;
         }
 
-        if (jarvisReply.toLowerCase().includes('напомни') && parseSecondsFromPhrase(jarvisReply)) {
+        if (jarvisReply.toLowerCase().includes('ricorda') && parseSecondsFromPhrase(jarvisReply)) {
             const seconds = parseSecondsFromPhrase(jarvisReply);
-            const reminderText = jarvisReply.replace(/.*напомни.*(через.*)/i, '').trim() || 'о задаче';
-            const confirmation = `Сэр, установлено напоминание: "${reminderText}" через ${Math.floor(seconds > 60 ? (seconds / 60) : seconds)} ${seconds > 60 ? "минут." : "секунд."}`;
+            const reminderText = jarvisReply.replace(/.*ricorda.*(tra.*)/i, '').trim() || 'un promemoria';
+            const confirmation = `Signore, promemoria impostato: "${reminderText}" tra ${Math.floor(seconds > 60 ? (seconds / 60) : seconds)} ${seconds > 60 ? "minuti." : "secondi."}`;
 
             setDisplayedText(confirmation);
             setJarvisResponseText(confirmation);
@@ -182,19 +182,19 @@ export const processAudioWithOpenAI = async ({
         if (jarvisReply.toLowerCase().startsWith('create_github_repo')) {
             const repoName = jarvisReply.replace('create_github_repo', '').trim();
             if (!repoName) {
-                await speak('Сэр, я не расслышал название репозитория.');
+                await speak('Signore, non ho sentito bene il nome del repository.');
                 return;
             }
 
             try {
                 const repoUrl = await createGitHubRepo({name: repoName});
-                const responseText = `Сэр, репозиторий ${repoName} успешно создан. ${repoUrl}`;
+                const responseText = `Signore, il repository ${repoName} è stato creato con successo. ${repoUrl}`;
                 console.log(repoName);
                 setDisplayedText(responseText);
                 setJarvisResponseText(responseText);
                 await speak(responseText);
             } catch (error) {
-                const errText = `Не удалось создать репозиторий: ${error.message}`;
+                const errText = `Impossibile creare il repository: ${error.message}`;
                 setDisplayedText(errText);
                 setJarvisResponseText(errText);
                 await speak(errText);
@@ -206,36 +206,36 @@ export const processAudioWithOpenAI = async ({
         if (jarvisReply.toLowerCase().startsWith('delete_github_repo')) {
             const repoName = jarvisReply.replace('delete_github_repo', '').trim();
             if (!repoName) {
-                await speak('Сэр, я не расслышал, какой репозиторий нужно удалить.');
+                await speak('Signore, non ho capito quale repository eliminare.');
                 return;
             }
 
             try {
                 const confirmed = await new Promise((resolve) => {
                     Alert.alert(
-                        'Подтвердите удаление',
-                        `Вы уверены, что хотите удалить репозиторий: ${repoName}?`,
+                        'Conferma eliminazione',
+                        `È sicuro di voler eliminare il repository: ${repoName}?`,
                         [
-                            {text: 'Отмена', style: 'cancel', onPress: () => resolve(false)},
-                            {text: 'Удалить', style: 'destructive', onPress: () => resolve(true)},
+                            {text: 'Annulla', style: 'cancel', onPress: () => resolve(false)},
+                            {text: 'Elimina', style: 'destructive', onPress: () => resolve(true)},
                         ],
                     );
                 });
 
                 if (!confirmed) {
-                    await speak('Удаление отменено, сэр.');
+                    await speak('Eliminazione annullata, signore.');
                     return;
                 }
 
-                const deleted = await deleteGitHubRepo('az11k-dev', repoName);
+                const deleted = await deleteGitHubRepo('lorisz017', repoName);
                 if (deleted) {
-                    const msg = `Сэр, репозиторий ${repoName} был успешно удалён.`;
+                    const msg = `Signore, il repository ${repoName} è stato eliminato con successo.`;
                     setJarvisResponseText(msg);
                     setDisplayedText(msg);
                     await speak(msg);
                 }
             } catch (error) {
-                const errText = `Не удалось удалить репозиторий: ${error.message}`;
+                const errText = `Impossibile eliminare il repository: ${error.message}`;
                 setDisplayedText(errText);
                 setJarvisResponseText(errText);
                 await speak(errText);
@@ -249,7 +249,7 @@ export const processAudioWithOpenAI = async ({
             try {
                 const commits = await getLatestCommits(number);
                 if (!commits.length) {
-                    await speak("Сэр, не найдено ни одного коммита.");
+                    await speak("Signore, non è stato trovato nessun commit.");
                     return;
                 }
 
@@ -257,12 +257,12 @@ export const processAudioWithOpenAI = async ({
                     c => `— ${c.author}: ${c.message.split('\n')[0]}`
                 ).join('\n');
 
-                const responseText = `Сэр, вот последние коммиты:\n${commitMessages}`;
+                const responseText = `Signore, ecco gli ultimi commit:\n${commitMessages}`;
                 setDisplayedText(responseText);
                 setJarvisResponseText(responseText);
                 await speak(responseText);
             } catch (error) {
-                const errText = `Не удалось получить коммиты: ${error.message}`;
+                const errText = `Impossibile recuperare i commit: ${error.message}`;
                 setDisplayedText(errText);
                 setJarvisResponseText(errText);
                 await speak(errText);
@@ -274,9 +274,9 @@ export const processAudioWithOpenAI = async ({
         await speak(jarvisReply);
     } catch (err) {
         console.error('Jarvis error:', err);
-        setJarvisResponseText('Произошла ошибка при обработке аудио.');
-        setDisplayedText('Произошла ошибка при обработке аудио.');
-        Alert.alert('Ошибка', err.message);
+        setJarvisResponseText('Si è verificato un errore durante l\'elaborazione dell\'audio.');
+        setDisplayedText('Si è verificato un errore durante l\'elaborazione dell\'audio.');
+        Alert.alert('Errore', err.message);
     } finally {
         setIsLoading(false);
     }
