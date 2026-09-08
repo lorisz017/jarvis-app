@@ -28,6 +28,14 @@ Esempi:
 • "open_youtube" — per aprire l'app o il sito direttamente.
 • "open_youtube musica rilassante" — per cercare musica rilassante su YouTube.
 
+Se l'utente chiede di aprire un'altra app (diversa da fotocamera, Telegram o YouTube, che hanno i loro comandi dedicati) — ad esempio WhatsApp, Instagram, Spotify, Gmail, Google Maps, Chrome, Netflix, TikTok, Twitter/X, LinkedIn, Facebook, Messenger, Discord, Snapchat, Pinterest, Reddit, Twitch, PayPal, Google Drive, Google Foto, Play Store o le Impostazioni — restituisci SOLO:
+open_app nome_app
+Esempi:
+• "apri WhatsApp" → open_app whatsapp
+• "apri Spotify" → open_app spotify
+• "apri le impostazioni" → open_app impostazioni
+Usa questo comando anche se non sei sicuro che l'app sia tra quelle note: se non viene riconosciuta, sarà l'app stessa a dirlo all'utente.
+
 Se l'utente chiede di impostare una SVEGLIA (non un promemoria), restituisci SOLO il comando in questo formato esatto, senza aggiungere altro testo:
 set_alarm HH:MM etichetta
 Esempi:

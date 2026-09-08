@@ -71,6 +71,7 @@ async function handleUserMessage(userMessage, {
     openCamera,
     openYoutube,
     openTelegram,
+    openApp,
     setNativeAlarm,
     setNativeTimer,
     getWeatherByCity,
@@ -149,6 +150,28 @@ async function handleUserMessage(userMessage, {
             setJarvisResponseText(speakText);
             setDisplayedText(speakText);
             await openYoutube(query);
+            return;
+        }
+
+        // === Apertura di un'altra app, tramite il registro di app note ===
+        if (jarvisReply.toLowerCase().startsWith('open_app')) {
+            const appName = jarvisReply.replace(/open_app/i, '').trim();
+            if (!appName) {
+                await speak('Signore, quale applicazione desidera aprire?');
+                return;
+            }
+            try {
+                await openApp(appName);
+                const msg = `Signore, apro ${appName}.`;
+                setDisplayedText(msg);
+                setJarvisResponseText(msg);
+                await speak(msg);
+            } catch (error) {
+                const errText = `Non sono riuscito ad aprire ${appName}, signore: ${error.message}`;
+                setDisplayedText(errText);
+                setJarvisResponseText(errText);
+                await speak(errText);
+            }
             return;
         }
 
@@ -370,6 +393,7 @@ export const processAudioWithOpenAI = async ({
                                                  openCamera,
                                                  openYoutube,
                                                  openTelegram,
+                                                 openApp,
                                                  setNativeAlarm,
                                                  setNativeTimer,
                                                  getWeatherByCity,
@@ -423,6 +447,7 @@ export const processAudioWithOpenAI = async ({
             openCamera,
             openYoutube,
             openTelegram,
+            openApp,
             setNativeAlarm,
             setNativeTimer,
             getWeatherByCity,
@@ -450,6 +475,7 @@ export const processTextMessage = async ({
                                               openCamera,
                                               openYoutube,
                                               openTelegram,
+                                              openApp,
                                               setNativeAlarm,
                                               setNativeTimer,
                                               getWeatherByCity,
@@ -472,6 +498,7 @@ export const processTextMessage = async ({
         openCamera,
         openYoutube,
         openTelegram,
+        openApp,
         setNativeAlarm,
         setNativeTimer,
         getWeatherByCity,

@@ -24,6 +24,7 @@ import {useVoiceSetup} from '../hooks/useVoiceSetup';
 import {speakJarvisResponse, stopJarvisVoice} from '../services/ttsService';
 import {processAudioWithOpenAI, processTextMessage} from '../services/jarvisService';
 import {setNativeAlarm, setNativeTimer, getWeatherByCity, createCalendarEvent} from '../services/deviceActions';
+import {openApp} from '../services/appLauncher';
 
 import {SYSTEM_MESSAGE} from '../utils/constants';
 import {styles} from '../styles/mainStyles';
@@ -191,6 +192,7 @@ export default function Home() {
                 openCamera,
                 openTelegram,
                 openYoutube,
+                openApp,
                 setNativeAlarm,
                 setNativeTimer,
                 getWeatherByCity,
@@ -219,6 +221,7 @@ export default function Home() {
             openCamera,
             openTelegram,
             openYoutube,
+            openApp,
             setNativeAlarm,
             setNativeTimer,
             getWeatherByCity,
