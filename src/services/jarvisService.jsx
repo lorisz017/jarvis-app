@@ -42,58 +42,26 @@ function chooseModelByText(text) {
         : CHAT_MODEL;
 }
 
-export const processAudioWithOpenAI = async ({
-                                                 audioUri,
-                                                 chatHistory,
-                                                 setChatHistory,
-                                                 setDisplayedText,
-                                                 setJarvisResponseText,
-                                                 speak,
-                                                 openCamera,
-                                                 openYoutube,
-                                                 openTelegram,
-                                                 setNativeAlarm,
-                                                 setNativeTimer,
-                                                 getWeatherByCity,
-                                                 createCalendarEvent,
-                                                 setIsLoading,
-                                             }) => {
-    setIsLoading(true);
-    setJarvisResponseText('Sto elaborando...');
-    setDisplayedText('Sto elaborando...');
-
+// === Logica condivisa: elabora un messaggio dell'utente (testo puro), sia
+// che provenga dalla trascrizione audio sia che sia stato digitato in chat.
+// Tutta la gestione dei comandi (sveglia, meteo, calendario, GitHub, ecc.)
+// vive qui, in un unico posto. ===
+async function handleUserMessage(userMessage, {
+    chatHistory,
+    setChatHistory,
+    setDisplayedText,
+    setJarvisResponseText,
+    speak,
+    openCamera,
+    openYoutube,
+    openTelegram,
+    setNativeAlarm,
+    setNativeTimer,
+    getWeatherByCity,
+    createCalendarEvent,
+    setIsLoading,
+}) {
     try {
-        // === 1. TRASCRIZIONE AUDIO CON WHISPER SU GROQ ===
-        const formData = new FormData();
-        formData.append('file', {
-            uri: audioUri,
-            name: 'recording.m4a',
-            type: 'audio/m4a',
-        });
-        formData.append('model', TRANSCRIPTION_MODEL);
-        formData.append('language', 'it');
-
-        const whisperResponse = await fetch(`${GROQ_BASE_URL}/audio/transcriptions`, {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${groqApiKey}`,
-                'Content-Type': 'multipart/form-data',
-            },
-            body: formData,
-        });
-
-        const whisperData = await whisperResponse.json();
-
-        if (!whisperResponse.ok) {
-            throw new Error(whisperData.error?.message || 'Whisper API Error');
-        }
-
-        const userMessage = (whisperData.text || '').trim();
-
-        if (!userMessage) {
-            throw new Error('Trascrizione vuota');
-        }
-
         const parsed = parseReminderDetails(userMessage);
 
         if (userMessage.toLowerCase().includes('ricorda') && parsed) {
@@ -115,7 +83,7 @@ export const processAudioWithOpenAI = async ({
 
         const chosenModel = chooseModelByText(userMessage);
 
-        // === 2. RISPOSTA DEL MODELLO ===
+        // === Risposta del modello ===
         const completion = await fetch(`${GROQ_BASE_URL}/chat/completions`, {
             method: 'POST',
             headers: {
@@ -367,10 +335,130 @@ export const processAudioWithOpenAI = async ({
         await speak(jarvisReply);
     } catch (err) {
         console.error('Jarvis error:', err);
-        setJarvisResponseText('Si è verificato un errore durante l\'elaborazione dell\'audio.');
-        setDisplayedText('Si è verificato un errore durante l\'elaborazione dell\'audio.');
+        setJarvisResponseText('Si è verificato un errore durante l\'elaborazione del messaggio.');
+        setDisplayedText('Si è verificato un errore durante l\'elaborazione del messaggio.');
         Alert.alert('Errore', err.message);
     } finally {
         setIsLoading(false);
     }
+}
+
+export const processAudioWithOpenAI = async ({
+                                                 audioUri,
+                                                 chatHistory,
+                                                 setChatHistory,
+                                                 setDisplayedText,
+                                                 setJarvisResponseText,
+                                                 speak,
+                                                 openCamera,
+                                                 openYoutube,
+                                                 openTelegram,
+                                                 setNativeAlarm,
+                                                 setNativeTimer,
+                                                 getWeatherByCity,
+                                                 createCalendarEvent,
+                                                 setIsLoading,
+                                             }) => {
+    setIsLoading(true);
+    setJarvisResponseText('Sto elaborando...');
+    setDisplayedText('Sto elaborando...');
+
+    try {
+        // === TRASCRIZIONE AUDIO CON WHISPER SU GROQ ===
+        const formData = new FormData();
+        formData.append('file', {
+            uri: audioUri,
+            name: 'recording.m4a',
+            type: 'audio/m4a',
+        });
+        formData.append('model', TRANSCRIPTION_MODEL);
+        formData.append('language', 'it');
+
+        const whisperResponse = await fetch(`${GROQ_BASE_URL}/audio/transcriptions`, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${groqApiKey}`,
+                'Content-Type': 'multipart/form-data',
+            },
+            body: formData,
+        });
+
+        const whisperData = await whisperResponse.json();
+
+        if (!whisperResponse.ok) {
+            throw new Error(whisperData.error?.message || 'Whisper API Error');
+        }
+
+        const userMessage = (whisperData.text || '').trim();
+
+        if (!userMessage) {
+            throw new Error('Trascrizione vuota');
+        }
+
+        // Da qui in poi il flusso è identico a quello di un messaggio digitato:
+        // handleUserMessage gestisce anche isLoading/finally.
+        await handleUserMessage(userMessage, {
+            chatHistory,
+            setChatHistory,
+            setDisplayedText,
+            setJarvisResponseText,
+            speak,
+            openCamera,
+            openYoutube,
+            openTelegram,
+            setNativeAlarm,
+            setNativeTimer,
+            getWeatherByCity,
+            createCalendarEvent,
+            setIsLoading,
+        });
+    } catch (err) {
+        console.error('Jarvis error (audio):', err);
+        setJarvisResponseText('Si è verificato un errore durante l\'elaborazione dell\'audio.');
+        setDisplayedText('Si è verificato un errore durante l\'elaborazione dell\'audio.');
+        Alert.alert('Errore', err.message);
+        setIsLoading(false);
+    }
+};
+
+// === Nuovo: elabora un messaggio scritto dall'utente nella chat, riusando
+// la stessa logica di comandi/risposta usata per l'audio. ===
+export const processTextMessage = async ({
+                                              text,
+                                              chatHistory,
+                                              setChatHistory,
+                                              setDisplayedText,
+                                              setJarvisResponseText,
+                                              speak,
+                                              openCamera,
+                                              openYoutube,
+                                              openTelegram,
+                                              setNativeAlarm,
+                                              setNativeTimer,
+                                              getWeatherByCity,
+                                              createCalendarEvent,
+                                              setIsLoading,
+                                          }) => {
+    const userMessage = (text || '').trim();
+    if (!userMessage) return;
+
+    setIsLoading(true);
+    setJarvisResponseText('Sto elaborando...');
+    setDisplayedText('Sto elaborando...');
+
+    await handleUserMessage(userMessage, {
+        chatHistory,
+        setChatHistory,
+        setDisplayedText,
+        setJarvisResponseText,
+        speak,
+        openCamera,
+        openYoutube,
+        openTelegram,
+        setNativeAlarm,
+        setNativeTimer,
+        getWeatherByCity,
+        createCalendarEvent,
+        setIsLoading,
+    });
 };
