@@ -1,5 +1,5 @@
 import React, {useState, useRef} from 'react';
-import {Alert, TouchableOpacity, Text, Animated, View} from 'react-native';
+import {Alert, TouchableOpacity, Text, Animated, View, TextInput, KeyboardAvoidingView, Platform} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useAudioRecorder, useAudioRecorderState, RecordingPresets} from 'expo-audio';
 import {Linking} from 'react-native';
@@ -11,7 +11,7 @@ import VoicePickerModal from '../components/VoicePickerModal';
 
 import {useVoiceSetup} from '../hooks/useVoiceSetup';
 import {speakJarvisResponse} from '../services/ttsService';
-import {processAudioWithOpenAI} from '../services/jarvisService';
+import {processAudioWithOpenAI, processTextMessage} from '../services/jarvisService';
 import {setNativeAlarm, setNativeTimer, getWeatherByCity, createCalendarEvent} from '../services/deviceActions';
 
 import {SYSTEM_MESSAGE} from '../utils/constants';
@@ -29,6 +29,11 @@ export default function Home() {
     const [russianVoiceId, setRussianVoiceId] = useState();
     const [isVoicePickerVisible, setIsVoicePickerVisible] = useState(false);
     const [chatHistory, setChatHistory] = useState([SYSTEM_MESSAGE]);
+
+    // Testo digitato dall'utente nel campo di input
+    const [typedText, setTypedText] = useState('');
+    // Toggle voce: quando false, JARVIS risponde solo a schermo (niente TTS)
+    const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
 
     const scrollRef = useRef();
     const animatedScale = useRef(new Animated.Value(1)).current;
@@ -63,6 +68,14 @@ export default function Home() {
     };
 
     const speak = async (text) => {
+        // Voce disattivata: mostra comunque il testo, come farebbe la TTS,
+        // ma senza riprodurre audio.
+        if (!isVoiceEnabled) {
+            setDisplayedText(text);
+            scrollRef?.current?.scrollToEnd({animated: true});
+            return;
+        }
+
         await speakJarvisResponse({
             text,
             selectedVoiceId,
@@ -176,8 +189,50 @@ export default function Home() {
         }
     };
 
+    const sendTypedMessage = async () => {
+        const message = typedText.trim();
+        if (!message) return;
+
+        // Stessa logica di interruzione voce usata dal microfono: scrivere
+        // un nuovo messaggio mentre JARVIS sta ancora parlando lo interrompe.
+        Speech.stop();
+        setTypedText('');
+
+        await processTextMessage({
+            text: message,
+            chatHistory,
+            setChatHistory,
+            setDisplayedText,
+            setJarvisResponseText: setDisplayedText,
+            speak,
+            openCamera,
+            openTelegram,
+            openYoutube,
+            setNativeAlarm,
+            setNativeTimer,
+            getWeatherByCity,
+            createCalendarEvent,
+            setIsLoading,
+        });
+    };
+
     return (
         <SafeAreaView style={styles.container}>
+            {/* Toggle voce, fisso in alto a destra */}
+            <TouchableOpacity
+                style={styles.voiceToggleButton}
+                onPress={() => setIsVoiceEnabled((prev) => {
+                    const next = !prev;
+                    if (!next) {
+                        // Disattivando la voce, ferma subito quella in corso
+                        Speech.stop();
+                    }
+                    return next;
+                })}
+            >
+                <Text style={styles.voiceToggleButtonText}>{isVoiceEnabled ? '🔊' : '🔇'}</Text>
+            </TouchableOpacity>
+
             <ResponseBox
                 isLoading={isLoading}
                 displayedText={displayedText}
@@ -190,6 +245,24 @@ export default function Home() {
                     isRecording={recorderState.isRecording}
                     animatedScale={animatedScale}
                 />
+
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                    style={styles.textInputRow}
+                >
+                    <TextInput
+                        style={styles.textInput}
+                        value={typedText}
+                        onChangeText={setTypedText}
+                        placeholder="Scriva un comando, signore..."
+                        placeholderTextColor="rgba(200, 244, 255, 0.35)"
+                        onSubmitEditing={sendTypedMessage}
+                        returnKeyType="send"
+                    />
+                    <TouchableOpacity style={styles.sendButton} onPress={sendTypedMessage}>
+                        <Text style={styles.sendButtonText}>➤</Text>
+                    </TouchableOpacity>
+                </KeyboardAvoidingView>
 
                 <TouchableOpacity style={styles.selectVoiceButton} onPress={() => setIsVoicePickerVisible(true)}>
                     <Text style={styles.selectVoiceButtonText}>🎙️ Scegli voce JARVIS</Text>
