@@ -3,7 +3,7 @@ import {Modal, View, Text, ScrollView, TouchableOpacity, TextInput, Linking} fro
 import {styles} from '../styles/mainStyles';
 import {FEATURE_SECTIONS} from '../utils/features';
 
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '2.0.0';
 const GITHUB_PROFILE = 'https://github.com/lorisz017';
 const GITHUB_REPO = 'https://github.com/lorisz017/jarvis-app';
 const UPSTREAM_REPO = 'https://github.com/az11k-dev/jarvis-app';
