@@ -90,6 +90,13 @@ export const styles = StyleSheet.create({
         textShadowOffset: {width: 0, height: 0},
         textShadowRadius: 8,
     },
+    // Contenitore dei controlli sotto la risposta: microfono, input testuale,
+    // scelta voce, cancella chat, ferma
+    controlsContainer: {
+        width: '100%',
+        maxWidth: 380,
+        alignItems: 'center',
+    },
     // Pulsante toggle voce, ancorato in alto a destra sopra tutto il resto
     voiceToggleButton: {
         position: 'absolute',
