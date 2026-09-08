@@ -18,13 +18,16 @@ const SEARCH_MODEL = 'groq/compound';
 // cronologia ad ogni richiesta fa presto a superare il limite di dimensione
 // della richiesta ("Request Entity Too Large"). Si manda al modello solo il
 // messaggio di sistema più gli scambi più recenti; la cronologia mostrata
-// in chat resta comunque intera.
+// in chat resta comunque intera. groq/compound (ricerca web) va in errore
+// molto prima del modello di chat normale, quindi per lui il limite è più
+// stretto.
 const MAX_HISTORY_MESSAGES = 20;
+const MAX_HISTORY_MESSAGES_SEARCH = 6;
 
-function trimHistoryForApi(history) {
-    if (history.length <= MAX_HISTORY_MESSAGES) return history;
+function trimHistoryForApi(history, limit) {
+    if (history.length <= limit) return history;
     const [systemMessage, ...rest] = history;
-    return [systemMessage, ...rest.slice(-(MAX_HISTORY_MESSAGES - 1))];
+    return [systemMessage, ...rest.slice(-(limit - 1))];
 }
 
 if (!groqApiKey) {
@@ -95,6 +98,7 @@ async function handleUserMessage(userMessage, {
         setChatHistory(updatedHistory);
 
         const chosenModel = chooseModelByText(userMessage);
+        const historyLimit = chosenModel === SEARCH_MODEL ? MAX_HISTORY_MESSAGES_SEARCH : MAX_HISTORY_MESSAGES;
 
         // === Risposta del modello ===
         const completion = await fetch(`${GROQ_BASE_URL}/chat/completions`, {
@@ -105,7 +109,7 @@ async function handleUserMessage(userMessage, {
             },
             body: JSON.stringify({
                 model: chosenModel,
-                messages: trimHistoryForApi(updatedHistory),
+                messages: trimHistoryForApi(updatedHistory, historyLimit),
             }),
         });
 
