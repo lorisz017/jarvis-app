@@ -1,4 +1,4 @@
-import React, {useState, useRef} from 'react';
+import React, {useState, useRef, useEffect} from 'react';
 import {
     Alert,
     TouchableOpacity,
@@ -15,6 +15,7 @@ import {useAudioRecorder, useAudioRecorderState, RecordingPresets} from 'expo-au
 import {Linking} from 'react-native';
 
 import Header from '../components/Header';
+import SystemStatus from '../components/SystemStatus';
 import MicrophoneButton from '../components/MicrophoneButton';
 import ActivityLog from '../components/ActivityLog';
 import ResponseBox from '../components/ResponseBox';
@@ -24,7 +25,10 @@ import {useVoiceSetup} from '../hooks/useVoiceSetup';
 import {speakJarvisResponse, stopJarvisVoice} from '../services/ttsService';
 import {processAudioWithOpenAI, processTextMessage} from '../services/jarvisService';
 import {setNativeAlarm, setNativeTimer, getWeatherByCity, createCalendarEvent} from '../services/deviceActions';
-import {openApp} from '../services/appLauncher';
+import {openApp, startNavigation} from '../services/appLauncher';
+import {callContact, sendWhatsAppToContact} from '../services/contactsService';
+import {loadState, saveState, DEFAULT_STATE} from '../services/storageService';
+import {buildBriefing} from '../services/briefingService';
 
 import {SYSTEM_MESSAGE} from '../utils/constants';
 import {styles} from '../styles/mainStyles';
@@ -46,9 +50,13 @@ export default function Home() {
     const [typedText, setTypedText] = useState('');
     // Toggle voce: quando false, JARVIS risponde solo a schermo (niente TTS)
     const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
+    // Città usata dal briefing di apertura per il meteo
+    const [homeCity, setHomeCity] = useState(DEFAULT_STATE.homeCity);
+    const [isStateLoaded, setIsStateLoaded] = useState(false);
 
     const scrollRef = useRef();
     const animatedScale = useRef(new Animated.Value(1)).current;
+    const briefingDoneRef = useRef(false);
 
     useVoiceSetup({
         setAvailableVoices,
@@ -56,6 +64,26 @@ export default function Home() {
         setRussianVoiceId,
         setSelectedVoiceId,
     });
+
+    // Ripristina conversazione e preferenze dell'ultima sessione. Il messaggio
+    // di sistema viene sempre riletto dal codice attuale, così i comandi
+    // aggiunti nel frattempo restano validi anche su una chat vecchia.
+    useEffect(() => {
+        (async () => {
+            const saved = await loadState();
+            setChatHistory([SYSTEM_MESSAGE, ...saved.messages]);
+            setIsVoiceEnabled(saved.isVoiceEnabled);
+            setHomeCity(saved.homeCity);
+            setIsStateLoaded(true);
+        })();
+    }, []);
+
+    // Salva solo dopo il caricamento iniziale: salvare prima sovrascriverebbe
+    // il file con lo stato vuoto di partenza.
+    useEffect(() => {
+        if (!isStateLoaded) return;
+        saveState({messages: chatHistory, isVoiceEnabled, homeCity});
+    }, [isStateLoaded, chatHistory, isVoiceEnabled, homeCity]);
 
     const startPulsing = () => {
         Animated.loop(
@@ -99,6 +127,25 @@ export default function Home() {
             russianVoiceId,
         });
     };
+
+    // Briefing di apertura: saluto in base all'ora, meteo della città
+    // impostata e impegni di oggi. Una sola volta per avvio dell'app, e solo
+    // dopo il ripristino delle preferenze, così usa la città giusta e
+    // rispetta il toggle della voce.
+    useEffect(() => {
+        if (!isStateLoaded || briefingDoneRef.current) return;
+        briefingDoneRef.current = true;
+
+        (async () => {
+            try {
+                const briefing = await buildBriefing(homeCity);
+                setChatHistory((prev) => [...prev, {role: 'assistant', content: briefing}]);
+                await speak(briefing);
+            } catch (error) {
+                console.warn('Briefing di apertura:', error);
+            }
+        })();
+    }, [isStateLoaded]);
 
     const openCamera = async () => {
         try {
@@ -193,6 +240,10 @@ export default function Home() {
                 openTelegram,
                 openYoutube,
                 openApp,
+                startNavigation,
+                callContact,
+                sendWhatsAppToContact,
+                setHomeCity,
                 setNativeAlarm,
                 setNativeTimer,
                 getWeatherByCity,
@@ -222,6 +273,10 @@ export default function Home() {
             openTelegram,
             openYoutube,
             openApp,
+            startNavigation,
+            callContact,
+            sendWhatsAppToContact,
+            setHomeCity,
             setNativeAlarm,
             setNativeTimer,
             getWeatherByCity,
@@ -249,6 +304,8 @@ export default function Home() {
 
             <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
                 <Header/>
+
+                <SystemStatus/>
 
                 <MicrophoneButton
                     onPress={recorderState.isRecording ? stopRecording : record}

@@ -126,6 +126,35 @@ async function getDefaultCalendarId() {
     return writable.id;
 }
 
+// Impegni di oggi, usati dal briefing di apertura. Se il permesso non è
+// ancora stato concesso restituisce una lista vuota invece di bloccare
+// tutto il briefing.
+export const getTodayEvents = async () => {
+    const {status} = await Calendar.requestCalendarPermissionsAsync();
+    if (status !== 'granted') return [];
+
+    const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
+    if (!calendars.length) return [];
+
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(startOfDay);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const events = await Calendar.getEventsAsync(
+        calendars.map((c) => c.id),
+        startOfDay,
+        endOfDay
+    );
+
+    return events
+        .sort((a, b) => new Date(a.startDate) - new Date(b.startDate))
+        .map((event) => ({
+            title: event.title,
+            time: new Date(event.startDate).toLocaleTimeString('it-IT', {hour: '2-digit', minute: '2-digit'}),
+        }));
+};
+
 export const createCalendarEvent = async (dayWord, hour, minute, title) => {
     const calendarId = await getDefaultCalendarId();
     const eventDate = resolveDayWord(dayWord);

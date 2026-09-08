@@ -80,6 +80,40 @@ export const styles = StyleSheet.create({
         marginTop: 2,
         letterSpacing: 1,
     },
+    // Striscia di stato del dispositivo, sotto l'intestazione
+    systemStatusRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: '100%',
+        maxWidth: 380,
+        marginBottom: 14,
+        gap: 10,
+    },
+    systemStatusLabel: {
+        fontFamily: MONO,
+        fontSize: 9,
+        color: CYAN_DIM,
+        letterSpacing: 1.5,
+    },
+    systemStatusBarTrack: {
+        flex: 1,
+        height: 4,
+        borderRadius: 2,
+        backgroundColor: 'rgba(0, 217, 255, 0.12)',
+        overflow: 'hidden',
+    },
+    systemStatusBarFill: {
+        height: '100%',
+        borderRadius: 2,
+    },
+    systemStatusValue: {
+        fontFamily: MONO,
+        fontSize: 10,
+        fontWeight: '600',
+        letterSpacing: 0.5,
+        minWidth: 46,
+        textAlign: 'right',
+    },
     // Radar/reattore centrale: cerchi concentrici, braccio rotante, angoli a
     // mirino e nucleo pulsante al centro — sostituisce il vecchio pulsante
     // circolare col microfono.

@@ -40,8 +40,32 @@ export async function scheduleReminder(message, seconds) {
 }
 
 export async function cancelAllReminders() {
+    const pending = await Notifications.getAllScheduledNotificationsAsync();
     await Notifications.cancelAllScheduledNotificationsAsync();
-    console.log('🛑 Tutti i promemoria sono stati annullati');
+    return pending.length;
+}
+
+// Promemoria ancora in attesa. L'orario si indica solo quando il trigger
+// contiene una data vera: per i promemoria "tra N minuti" il sistema
+// restituisce l'intervallo con cui erano stati creati, non quanto manca
+// davvero, quindi dedurne un orario darebbe un'ora sbagliata.
+export async function listReminders() {
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+
+    return scheduled.map((item) => {
+        const timestamp = item.trigger?.date ?? item.trigger?.value;
+        const fireDate = typeof timestamp === 'number' || typeof timestamp === 'string'
+            ? new Date(timestamp)
+            : null;
+        const isValidDate = fireDate && !Number.isNaN(fireDate.getTime());
+
+        return {
+            text: item.content?.body || 'promemoria',
+            time: isValidDate
+                ? fireDate.toLocaleTimeString('it-IT', {hour: '2-digit', minute: '2-digit'})
+                : null,
+        };
+    });
 }
 
 export function parseSecondsFromPhrase(text) {

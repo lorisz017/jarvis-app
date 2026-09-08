@@ -1,5 +1,11 @@
 import {Alert} from 'react-native';
-import {scheduleReminder, parseSecondsFromPhrase, parseReminderDetails} from './notificationsService';
+import {
+    scheduleReminder,
+    parseSecondsFromPhrase,
+    parseReminderDetails,
+    listReminders,
+    cancelAllReminders,
+} from './notificationsService';
 import {getLatestCommits} from "../core/github/commits";
 import {createGitHubRepo} from "../core/github/createRepo";
 import {deleteGitHubRepo} from "../core/github/deleteRepo";
@@ -94,12 +100,22 @@ async function handleUserMessage(userMessage, {
     openYoutube,
     openTelegram,
     openApp,
+    startNavigation,
+    callContact,
+    sendWhatsAppToContact,
+    setHomeCity,
     setNativeAlarm,
     setNativeTimer,
     getWeatherByCity,
     createCalendarEvent,
     setIsLoading,
 }) {
+    const respond = async (message) => {
+        setDisplayedText(message);
+        setJarvisResponseText(message);
+        await speak(message);
+    };
+
     try {
         const parsed = parseReminderDetails(userMessage);
 
@@ -199,6 +215,103 @@ async function handleUserMessage(userMessage, {
                 setJarvisResponseText(errText);
                 await speak(errText);
             }
+            return;
+        }
+
+        // === Navigazione stradale ===
+        if (jarvisReply.toLowerCase().startsWith('navigate_to')) {
+            const destination = jarvisReply.replace(/navigate_to/i, '').trim();
+            if (!destination) {
+                await speak('Signore, verso quale destinazione desidera andare?');
+                return;
+            }
+            try {
+                await startNavigation(destination);
+                await respond(`Signore, avvio la navigazione verso ${destination}.`);
+            } catch (error) {
+                await respond(`Non sono riuscito ad avviare la navigazione: ${error.message}`);
+            }
+            return;
+        }
+
+        // === Chiamata a un contatto in rubrica ===
+        if (jarvisReply.toLowerCase().startsWith('call_contact')) {
+            const name = jarvisReply.replace(/call_contact/i, '').trim();
+            if (!name) {
+                await speak('Signore, chi desidera chiamare?');
+                return;
+            }
+            try {
+                const contactName = await callContact(name);
+                await respond(`Signore, chiamo ${contactName}.`);
+            } catch (error) {
+                await respond(`Non sono riuscito a chiamare ${name}, signore: ${error.message}`);
+            }
+            return;
+        }
+
+        // === Messaggio WhatsApp a un contatto ===
+        if (jarvisReply.toLowerCase().startsWith('whatsapp_contact')) {
+            const payload = jarvisReply.replace(/whatsapp_contact/i, '').trim();
+            const [rawName, ...messageParts] = payload.split('|');
+            const name = rawName.trim();
+            const messageText = messageParts.join('|').trim();
+
+            if (!name || !messageText) {
+                await speak('Signore, mi servono il nome del contatto e il testo del messaggio.');
+                return;
+            }
+            try {
+                const contactName = await sendWhatsAppToContact(name, messageText);
+                await respond(`Signore, ho preparato il messaggio per ${contactName}.`);
+            } catch (error) {
+                await respond(`Non sono riuscito a scrivere a ${name}, signore: ${error.message}`);
+            }
+            return;
+        }
+
+        // === Promemoria ancora attivi ===
+        if (jarvisReply.toLowerCase().startsWith('list_reminders')) {
+            try {
+                const reminders = await listReminders();
+                if (!reminders.length) {
+                    await respond('Signore, non ha promemoria attivi.');
+                    return;
+                }
+                const list = reminders
+                    .map((r) => (r.time ? `— ${r.text} (alle ${r.time})` : `— ${r.text}`))
+                    .join('\n');
+                await respond(`Signore, ecco i suoi promemoria attivi:\n${list}`);
+            } catch (error) {
+                await respond(`Non sono riuscito a leggere i promemoria: ${error.message}`);
+            }
+            return;
+        }
+
+        // === Annullamento dei promemoria ===
+        if (jarvisReply.toLowerCase().startsWith('cancel_reminders')) {
+            try {
+                const removed = await cancelAllReminders();
+                await respond(
+                    removed
+                        ? `Signore, ho annullato ${removed} promemoria.`
+                        : 'Signore, non c\'era alcun promemoria da annullare.'
+                );
+            } catch (error) {
+                await respond(`Non sono riuscito ad annullare i promemoria: ${error.message}`);
+            }
+            return;
+        }
+
+        // === Città usata dal briefing di apertura ===
+        if (jarvisReply.toLowerCase().startsWith('set_home_city')) {
+            const city = jarvisReply.replace(/set_home_city/i, '').trim();
+            if (!city) {
+                await speak('Signore, quale città devo impostare?');
+                return;
+            }
+            setHomeCity(city);
+            await respond(`Signore, d'ora in poi userò ${city} per il riepilogo di apertura.`);
             return;
         }
 
@@ -428,6 +541,10 @@ export const processAudioWithOpenAI = async ({
                                                  openYoutube,
                                                  openTelegram,
                                                  openApp,
+                                                 startNavigation,
+                                                 callContact,
+                                                 sendWhatsAppToContact,
+                                                 setHomeCity,
                                                  setNativeAlarm,
                                                  setNativeTimer,
                                                  getWeatherByCity,
@@ -482,6 +599,10 @@ export const processAudioWithOpenAI = async ({
             openYoutube,
             openTelegram,
             openApp,
+            startNavigation,
+            callContact,
+            sendWhatsAppToContact,
+            setHomeCity,
             setNativeAlarm,
             setNativeTimer,
             getWeatherByCity,
@@ -510,6 +631,10 @@ export const processTextMessage = async ({
                                               openYoutube,
                                               openTelegram,
                                               openApp,
+                                              startNavigation,
+                                              callContact,
+                                              sendWhatsAppToContact,
+                                              setHomeCity,
                                               setNativeAlarm,
                                               setNativeTimer,
                                               getWeatherByCity,
@@ -533,6 +658,10 @@ export const processTextMessage = async ({
         openYoutube,
         openTelegram,
         openApp,
+        startNavigation,
+        callContact,
+        sendWhatsAppToContact,
+        setHomeCity,
         setNativeAlarm,
         setNativeTimer,
         getWeatherByCity,

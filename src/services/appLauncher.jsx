@@ -104,3 +104,16 @@ export const openApp = async (rawName) => {
         await Linking.openURL(`market://details?id=${app.packageName}`);
     }
 };
+
+// Avvia la navigazione verso una destinazione. Prova prima a far partire
+// direttamente le indicazioni stradali di Google Maps; se l'app non c'è,
+// ripiega sulla versione web.
+export const startNavigation = async (destination) => {
+    const query = encodeURIComponent(destination);
+
+    try {
+        await Linking.openURL(`google.navigation:q=${query}`);
+    } catch (error) {
+        await Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${query}`);
+    }
+};
