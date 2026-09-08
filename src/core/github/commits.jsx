@@ -1,6 +1,6 @@
 const BASE_URL = 'https://api.github.com';
-const OWNER = 'az11k-dev'; // Например: 'azizbek-dev'
-const REPO = 'jarvis-app';        // Например: 'jarvis-app'
+const OWNER = 'lorisz017';
+const REPO = 'jarvis-app';
 
 export async function getLatestCommits(limit = 5) {
     const token = process.env.EXPO_PUBLIC_GITHUB_TOKEN_KEY;

@@ -14,7 +14,7 @@ export default function VoicePickerModal({
         setSelectedVoiceId(voice.identifier);
         onClose();
 
-        Speech.speak(`Привет, я ${voice.name || 'этот голос'}.`, {
+        Speech.speak(`Buonasera, sono la voce ${voice.name || 'selezionata'}.`, {
             language: voice.language,
             voice: voice.identifier,
             rate: 1,
@@ -40,7 +40,7 @@ export default function VoicePickerModal({
         <Modal animationType="slide" transparent={true} visible={isVisible} onRequestClose={onClose}>
             <View style={styles.modalOverlay}>
                 <View style={styles.modalContent}>
-                    <Text style={styles.modalTitle}>Выберите голос JARVIS</Text>
+                    <Text style={styles.modalTitle}>Scelga la voce di JARVIS</Text>
                     {availableVoices.length > 0 ? (
                         <FlatList
                             data={availableVoices}
@@ -50,11 +50,11 @@ export default function VoicePickerModal({
                         />
                     ) : (
                         <Text style={styles.noVoicesText}>
-                            Русские голоса не найдены на этом устройстве.
+                            Nessuna voce disponibile trovata su questo dispositivo.
                         </Text>
                     )}
                     <TouchableOpacity style={styles.closeModalButton} onPress={onClose}>
-                        <Text style={styles.closeModalButtonText}>Закрыть</Text>
+                        <Text style={styles.closeModalButtonText}>Chiudi</Text>
                     </TouchableOpacity>
                 </View>
             </View>

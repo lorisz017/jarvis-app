@@ -1,10 +1,22 @@
 import React, {useState, useRef} from 'react';
-import {Alert, TouchableOpacity, Text, Animated, View, TextInput, KeyboardAvoidingView, Platform} from 'react-native';
+import {
+    Alert,
+    TouchableOpacity,
+    Text,
+    Animated,
+    View,
+    TextInput,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+} from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useAudioRecorder, useAudioRecorderState, RecordingPresets} from 'expo-audio';
 import {Linking} from 'react-native';
 
+import Header from '../components/Header';
 import MicrophoneButton from '../components/MicrophoneButton';
+import ActivityLog from '../components/ActivityLog';
 import ResponseBox from '../components/ResponseBox';
 import VoicePickerModal from '../components/VoicePickerModal';
 
@@ -217,7 +229,7 @@ export default function Home() {
 
     return (
         <SafeAreaView style={styles.container}>
-            {/* Toggle voce, fisso in alto a destra */}
+            {/* Toggle voce, fisso in alto a destra, sopra tutto il resto */}
             <TouchableOpacity
                 style={styles.voiceToggleButton}
                 onPress={() => setIsVoiceEnabled((prev) => {
@@ -232,56 +244,63 @@ export default function Home() {
                 <Text style={styles.voiceToggleButtonText}>{isVoiceEnabled ? '🔊' : '🔇'}</Text>
             </TouchableOpacity>
 
-            <ResponseBox
-                isLoading={isLoading}
-                displayedText={displayedText}
-                scrollRef={scrollRef}
-            />
+            <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+                <Header/>
 
-            <View style={styles.controlsContainer}>
                 <MicrophoneButton
                     onPress={recorderState.isRecording ? stopRecording : record}
                     isRecording={recorderState.isRecording}
+                    isLoading={isLoading}
                     animatedScale={animatedScale}
                 />
 
-                <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                    style={styles.textInputRow}
-                >
-                    <TextInput
-                        style={styles.textInput}
-                        value={typedText}
-                        onChangeText={setTypedText}
-                        placeholder="Scriva un comando, signore..."
-                        placeholderTextColor="rgba(200, 244, 255, 0.35)"
-                        onSubmitEditing={sendTypedMessage}
-                        returnKeyType="send"
-                    />
-                    <TouchableOpacity style={styles.sendButton} onPress={sendTypedMessage}>
-                        <Text style={styles.sendButtonText}>➤</Text>
+                <ActivityLog chatHistory={chatHistory}/>
+
+                <ResponseBox
+                    isLoading={isLoading}
+                    displayedText={displayedText}
+                    scrollRef={scrollRef}
+                />
+
+                <View style={styles.controlsContainer}>
+                    <KeyboardAvoidingView
+                        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                        style={styles.textInputRow}
+                    >
+                        <TextInput
+                            style={styles.textInput}
+                            value={typedText}
+                            onChangeText={setTypedText}
+                            placeholder="Scriva un comando, signore..."
+                            placeholderTextColor="rgba(200, 244, 255, 0.35)"
+                            onSubmitEditing={sendTypedMessage}
+                            returnKeyType="send"
+                        />
+                        <TouchableOpacity style={styles.sendButton} onPress={sendTypedMessage}>
+                            <Text style={styles.sendButtonText}>➤</Text>
+                        </TouchableOpacity>
+                    </KeyboardAvoidingView>
+
+                    <TouchableOpacity style={styles.selectVoiceButton} onPress={() => setIsVoicePickerVisible(true)}>
+                        <Text style={styles.selectVoiceButtonText}>🎙️ Scegli voce JARVIS</Text>
                     </TouchableOpacity>
-                </KeyboardAvoidingView>
 
-                <TouchableOpacity style={styles.selectVoiceButton} onPress={() => setIsVoicePickerVisible(true)}>
-                    <Text style={styles.selectVoiceButtonText}>🎙️ Scegli voce JARVIS</Text>
-                </TouchableOpacity>
+                    <TouchableOpacity style={styles.clearChatButton} onPress={() => {
+                        setChatHistory([SYSTEM_MESSAGE]);
+                        setDisplayedText('In attesa dei suoi comandi, signore.');
+                        Alert.alert('Chat cancellata', 'La cronologia della conversazione è stata azzerata.');
+                    }}>
+                        <Text style={styles.clearChatButtonText}>🗑 Cancella chat</Text>
+                    </TouchableOpacity>
 
-                <TouchableOpacity style={styles.clearChatButton} onPress={() => {
-                    setChatHistory([SYSTEM_MESSAGE]);
-                    setDisplayedText('In attesa dei suoi comandi, signore.');
-                    Alert.alert('Chat cancellata', 'La cronologia della conversazione è stata azzerata.');
-                }}>
-                    <Text style={styles.clearChatButtonText}>🗑 Cancella chat</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.stopCon} onPress={() => {
-                    stopJarvisVoice();
-                    setDisplayedText("");
-                }}>
-                    <Text style={styles.stop}>⛔️ Ferma</Text>
-                </TouchableOpacity>
-            </View>
+                    <TouchableOpacity style={styles.stopCon} onPress={() => {
+                        stopJarvisVoice();
+                        setDisplayedText("");
+                    }}>
+                        <Text style={styles.stop}>⛔️ Ferma</Text>
+                    </TouchableOpacity>
+                </View>
+            </ScrollView>
 
             <VoicePickerModal
                 isVisible={isVoicePickerVisible}
@@ -291,6 +310,5 @@ export default function Home() {
                 onClose={() => setIsVoicePickerVisible(false)}
             />
         </SafeAreaView>
-
     );
 }

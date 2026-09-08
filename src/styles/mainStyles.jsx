@@ -11,49 +11,221 @@ const CYAN_DIM = 'rgba(0, 217, 255, 0.35)';
 const TEXT = '#c8f4ff';
 const RED = '#ff2d55';
 const GREEN = '#00ff9d';
+const AMBER = '#ffb300';
+
+// Colori esposti ai componenti per stili calcolati a runtime (es. lo stato
+// del radar cambia colore in base a isRecording/isLoading)
+export const COLORS = {BG, PANEL, CYAN, CYAN_DIM, TEXT, RED, GREEN, AMBER};
+
+// Diametro del radar centrale e lunghezza del braccio rotante
+const RADAR_SIZE = 240;
+const RADAR_CENTER = RADAR_SIZE / 2;
+const SWEEP_LENGTH = 108;
 
 export const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: BG,
+    },
+    scrollContent: {
+        flexGrow: 1,
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 24,
+    },
+    // Riga di intestazione: titolo/sottotitolo a sinistra, orologio a destra
+    header: {
+        width: '100%',
+        maxWidth: 380,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        paddingRight: 56, // lascia spazio al toggle voce, ancorato in alto a destra
+        marginBottom: 18,
+    },
+    headerTitleBlock: {
+        flexShrink: 1,
+    },
+    headerTitle: {
+        fontSize: 24,
+        fontFamily: MONO,
+        fontWeight: 'bold',
+        color: CYAN,
+        letterSpacing: 3,
+        textShadowColor: CYAN,
+        textShadowOffset: {width: 0, height: 0},
+        textShadowRadius: 14,
+    },
+    headerSubtitle: {
+        fontFamily: MONO,
+        fontSize: 9,
+        color: CYAN_DIM,
+        letterSpacing: 0.5,
+        marginTop: 3,
+    },
+    headerClockBlock: {
+        alignItems: 'flex-end',
+    },
+    headerClockText: {
+        fontFamily: MONO,
+        fontSize: 16,
+        color: TEXT,
+        fontWeight: '600',
+        letterSpacing: 1,
+    },
+    headerDateText: {
+        fontFamily: MONO,
+        fontSize: 9,
+        color: CYAN_DIM,
+        marginTop: 2,
+        letterSpacing: 1,
+    },
+    // Radar/reattore centrale: cerchi concentrici, braccio rotante, angoli a
+    // mirino e nucleo pulsante al centro — sostituisce il vecchio pulsante
+    // circolare col microfono.
+    radarTouchable: {
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    radarWrapper: {
+        width: RADAR_SIZE,
+        height: RADAR_SIZE,
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 20,
     },
-    secondCon: {
-        backgroundColor: 'transparent',
+    radarRingOuter: {
+        position: 'absolute',
+        width: RADAR_SIZE - 20,
+        height: RADAR_SIZE - 20,
+        borderRadius: (RADAR_SIZE - 20) / 2,
+        borderWidth: 1,
+        borderColor: CYAN_DIM,
+    },
+    radarRingMiddle: {
+        position: 'absolute',
+        width: RADAR_SIZE - 80,
+        height: RADAR_SIZE - 80,
+        borderRadius: (RADAR_SIZE - 80) / 2,
+        borderWidth: 1,
+        borderColor: CYAN_DIM,
+    },
+    radarRingInner: {
+        position: 'absolute',
+        width: RADAR_SIZE - 140,
+        height: RADAR_SIZE - 140,
+        borderRadius: (RADAR_SIZE - 140) / 2,
+        borderWidth: 1,
+        borderColor: 'rgba(0, 217, 255, 0.5)',
+    },
+    radarSweep: {
+        position: 'absolute',
+        width: 2,
+        height: SWEEP_LENGTH,
+        top: RADAR_CENTER - SWEEP_LENGTH,
+        left: RADAR_CENTER - 1,
+        backgroundColor: CYAN,
+        opacity: 0.85,
+        transformOrigin: '50% 100%',
+        shadowColor: CYAN,
+        shadowOffset: {width: 0, height: 0},
+        shadowOpacity: 0.9,
+        shadowRadius: 6,
+    },
+    radarCorner: {
+        position: 'absolute',
+        width: 22,
+        height: 22,
+        borderColor: CYAN,
+    },
+    radarCornerTL: {top: 0, left: 0, borderTopWidth: 2, borderLeftWidth: 2},
+    radarCornerTR: {top: 0, right: 0, borderTopWidth: 2, borderRightWidth: 2},
+    radarCornerBL: {bottom: 0, left: 0, borderBottomWidth: 2, borderLeftWidth: 2},
+    radarCornerBR: {bottom: 0, right: 0, borderBottomWidth: 2, borderRightWidth: 2},
+    radarCore: {
+        position: 'absolute',
+        width: 76,
+        height: 76,
+        borderRadius: 38,
+        backgroundColor: 'rgba(0, 217, 255, 0.08)',
         borderWidth: 1,
         borderColor: CYAN,
-        padding: 60,
-        borderRadius: 4,
         alignItems: 'center',
         justifyContent: 'center',
         shadowColor: CYAN,
         shadowOffset: {width: 0, height: 0},
         shadowOpacity: 0.9,
-        shadowRadius: 24,
-        elevation: 12,
+        shadowRadius: 16,
+        elevation: 10,
     },
-    title: {
-        fontSize: 15,
-        fontFamily: MONO,
+    radarCoreText: {
         color: CYAN,
-        marginTop: 25,
-        fontWeight: '600',
-        letterSpacing: 3,
-        textShadowColor: CYAN,
-        textShadowOffset: {width: 0, height: 0},
-        textShadowRadius: 12,
+        fontFamily: MONO,
+        fontSize: 11,
+        fontWeight: 'bold',
+        letterSpacing: 1,
         textAlign: 'center',
     },
-    microAnimationContainer: {
+    statusRow: {
+        flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
+        marginTop: 12,
     },
-    micro: {
-        width: 90,
-        height: 90,
-        tintColor: CYAN,
+    statusDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        marginRight: 8,
+    },
+    statusText: {
+        fontFamily: MONO,
+        fontSize: 12,
+        letterSpacing: 2,
+        fontWeight: '600',
+    },
+    // Activity log: cronologia scorrevole degli scambi, come nella versione
+    // desktop Mark-LII
+    activityLogContainer: {
+        width: '100%',
+        maxWidth: 380,
+        height: 92,
+        backgroundColor: PANEL,
+        borderWidth: 1,
+        borderColor: CYAN_DIM,
+        borderRadius: 4,
+        padding: 10,
+        marginTop: 16,
+        marginBottom: 16,
+    },
+    activityLogTitle: {
+        fontFamily: MONO,
+        fontSize: 10,
+        color: CYAN_DIM,
+        letterSpacing: 2,
+        marginBottom: 4,
+    },
+    activityLogScroll: {
+        flex: 1,
+    },
+    activityLogLine: {
+        fontFamily: MONO,
+        fontSize: 11,
+        color: TEXT,
+        lineHeight: 16,
+        marginBottom: 3,
+    },
+    activityLogLabelUser: {
+        color: GREEN,
+        fontWeight: 'bold',
+    },
+    activityLogLabelJarvis: {
+        color: CYAN,
+        fontWeight: 'bold',
+    },
+    activityLogEmpty: {
+        fontFamily: MONO,
+        fontSize: 11,
+        color: CYAN_DIM,
+        fontStyle: 'italic',
     },
     thirdCon: {
         width: '100%',

@@ -7,7 +7,7 @@ export default function ResponseBox({isLoading, displayedText, scrollRef}) {
 
     const copyToClipboard = () => {
         Clipboard.setStringAsync(displayedText);
-        Alert.alert('Сэр', 'Ответ скопирован в буфер обмена.');
+        Alert.alert('Signore', 'Risposta copiata negli appunti.');
     };
 
     return (
@@ -19,7 +19,7 @@ export default function ResponseBox({isLoading, displayedText, scrollRef}) {
                 contentContainerStyle={styles.responseScrollViewContent}
             >
                 <Text onPress={copyToClipboard} style={styles.resp}>
-                    {displayedText || (isLoading ? 'Думаю...' : 'Жду ваших указаний, сэр.')}
+                    {displayedText || (isLoading ? 'Sto pensando...' : 'In attesa dei suoi comandi, signore.')}
                 </Text>
             </ScrollView>
         </View>

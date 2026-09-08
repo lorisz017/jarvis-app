@@ -20,7 +20,7 @@ export async function createGitHubRepo(options) {
         }),
     });
 
-    const text = await res.text(); // читаем один раз
+    const text = await res.text();
     let data;
 
     try {
