@@ -12,15 +12,14 @@ const CHAT_MODEL = 'openai/gpt-oss-120b';
 // Compound: stesso formato di chiamata, ma cerca davvero sul web prima di
 // rispondere (notizie, fatti attuali, prezzi) invece di affidarsi solo a
 // quello che il modello sa "a memoria".
-const SEARCH_MODEL = 'groq/compound';
+// Si usa la variante "mini": fa una sola ricerca per richiesta invece di
+// dieci, quindi consuma molti meno token al minuto (il limite che faceva
+// fallire ogni ricerca con "Request Entity Too Large") ed è più veloce.
+const SEARCH_MODEL = 'groq/compound-mini';
 
-// La chat cresce senza limiti mentre si parla con JARVIS: mandare l'intera
-// cronologia ad ogni richiesta fa presto a superare il limite di dimensione
-// della richiesta ("Request Entity Too Large"). Si manda al modello solo il
-// messaggio di sistema più gli scambi più recenti; la cronologia mostrata
-// in chat resta comunque intera. groq/compound (ricerca web) va in errore
-// molto prima del modello di chat normale, quindi per lui il limite è più
-// stretto.
+// La cronologia della chat cresce senza limiti mentre si parla con JARVIS:
+// si manda al modello solo il messaggio di sistema più gli scambi recenti,
+// mentre la cronologia mostrata a schermo resta comunque intera.
 const MAX_HISTORY_MESSAGES = 20;
 const MAX_HISTORY_MESSAGES_SEARCH = 6;
 
@@ -28,6 +27,29 @@ function trimHistoryForApi(history, limit) {
     if (history.length <= limit) return history;
     const [systemMessage, ...rest] = history;
     return [systemMessage, ...rest.slice(-(limit - 1))];
+}
+
+async function requestChatCompletion(model, messages) {
+    const completion = await fetch(`${GROQ_BASE_URL}/chat/completions`, {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${groqApiKey}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({model, messages}),
+    });
+
+    const responseData = await completion.json().catch(() => ({}));
+
+    if (!completion.ok) {
+        const error = new Error(
+            responseData.error?.message || `Errore Groq (HTTP ${completion.status})`
+        );
+        error.status = completion.status;
+        throw error;
+    }
+
+    return responseData;
 }
 
 if (!groqApiKey) {
@@ -102,22 +124,27 @@ async function handleUserMessage(userMessage, {
         const historyLimit = chosenModel === SEARCH_MODEL ? MAX_HISTORY_MESSAGES_SEARCH : MAX_HISTORY_MESSAGES;
 
         // === Risposta del modello ===
-        const completion = await fetch(`${GROQ_BASE_URL}/chat/completions`, {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${groqApiKey}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                model: chosenModel,
-                messages: trimHistoryForApi(updatedHistory, historyLimit),
-            }),
-        });
+        let responseData;
+        let searchLimitReached = false;
 
-        const responseData = await completion.json();
+        try {
+            responseData = await requestChatCompletion(
+                chosenModel,
+                trimHistoryForApi(updatedHistory, historyLimit)
+            );
+        } catch (error) {
+            // La ricerca web legge pagine intere e brucia in fretta il limite
+            // di token al minuto di Groq, che risponde 413 (o 429). In quel
+            // caso è meglio rispondere lo stesso col modello normale, dicendo
+            // che la risposta non arriva dal web, invece di un errore secco.
+            const isRateLimited = error.status === 413 || error.status === 429;
+            if (chosenModel !== SEARCH_MODEL || !isRateLimited) throw error;
 
-        if (!completion.ok) {
-            throw new Error(responseData.error?.message || 'Groq Chat Error');
+            searchLimitReached = true;
+            responseData = await requestChatCompletion(
+                CHAT_MODEL,
+                trimHistoryForApi(updatedHistory, MAX_HISTORY_MESSAGES)
+            );
         }
 
         const jarvisReply = stripMarkdown(responseData.choices?.[0]?.message?.content) || '...';
@@ -371,8 +398,15 @@ async function handleUserMessage(userMessage, {
             return;
         }
 
-        setJarvisResponseText(jarvisReply);
-        await speak(jarvisReply);
+        // Il testo del comando resta intatto fin qui, così i controlli sopra
+        // riescono a riconoscerlo: l'avviso si aggiunge solo alla risposta
+        // normale, quella che viene letta e mostrata.
+        const finalReply = searchLimitReached
+            ? `Signore, la ricerca web ha raggiunto il limite di richieste; le rispondo con le mie conoscenze. ${jarvisReply}`
+            : jarvisReply;
+
+        setJarvisResponseText(finalReply);
+        await speak(finalReply);
     } catch (err) {
         console.error('Jarvis error:', err);
         setJarvisResponseText('Si è verificato un errore durante l\'elaborazione del messaggio.');

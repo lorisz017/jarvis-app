@@ -284,24 +284,35 @@ export default function Home() {
                         </TouchableOpacity>
                     </KeyboardAvoidingView>
 
-                    <TouchableOpacity style={styles.selectVoiceButton} onPress={() => setIsVoicePickerVisible(true)}>
-                        <Text style={styles.selectVoiceButtonText}>🎙️ Scegli voce JARVIS</Text>
-                    </TouchableOpacity>
+                    <View style={styles.actionRow}>
+                        <TouchableOpacity style={styles.pillButton} onPress={() => setIsVoicePickerVisible(true)}>
+                            <Text style={styles.pillButtonIcon}>🎙</Text>
+                            <Text style={styles.pillButtonText}>VOCE</Text>
+                        </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.clearChatButton} onPress={() => {
-                        setChatHistory([SYSTEM_MESSAGE]);
-                        setDisplayedText('In attesa dei suoi comandi, signore.');
-                        Alert.alert('Chat cancellata', 'La cronologia della conversazione è stata azzerata.');
-                    }}>
-                        <Text style={styles.clearChatButtonText}>🗑 Cancella chat</Text>
-                    </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.pillButton, styles.pillButtonDanger]}
+                            onPress={() => {
+                                setChatHistory([SYSTEM_MESSAGE]);
+                                setDisplayedText('In attesa dei suoi comandi, signore.');
+                                Alert.alert('Chat cancellata', 'La cronologia della conversazione è stata azzerata.');
+                            }}
+                        >
+                            <Text style={styles.pillButtonIcon}>🗑</Text>
+                            <Text style={[styles.pillButtonText, styles.pillButtonTextDanger]}>PULISCI</Text>
+                        </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.stopCon} onPress={() => {
-                        stopJarvisVoice();
-                        setDisplayedText("");
-                    }}>
-                        <Text style={styles.stop}>⛔️ Ferma</Text>
-                    </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.pillButton, styles.pillButtonDanger]}
+                            onPress={() => {
+                                stopJarvisVoice();
+                                setDisplayedText('');
+                            }}
+                        >
+                            <Text style={styles.pillButtonIcon}>⛔</Text>
+                            <Text style={[styles.pillButtonText, styles.pillButtonTextDanger]}>FERMA</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </ScrollView>
 
