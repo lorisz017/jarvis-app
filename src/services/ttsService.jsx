@@ -85,6 +85,15 @@ function base64ByteLength(b64) {
 
 let currentPlayer = null;
 
+// Ferma la voce in corso, qualunque delle due sia: quella di sistema o
+// l'audio generato da Gemini.
+//
+// Qui si mette solo in pausa, senza rimuovere il player: rimuoverlo lo rende
+// inutilizzabile e sembra lasciare l'audio in uno stato da cui le
+// riproduzioni successive non si sentono più — era il motivo per cui, dopo
+// aver zittito JARVIS una volta, riattivando la voce non tornava a parlare.
+// La rimozione avviene invece quando si crea il player successivo, dove il
+// vecchio è ormai davvero da buttare.
 export const stopJarvisVoice = () => {
     try {
         Speech.stop();
@@ -92,24 +101,10 @@ export const stopJarvisVoice = () => {
         console.warn('Stop voce di sistema:', e);
     }
 
-    if (currentPlayer) {
-        const player = currentPlayer;
-        currentPlayer = null;
-
-        // Pausa e rimozione separate: se una fallisce (es. il player è già
-        // stato ripulito dal sistema) l'altra deve comunque eseguire, così
-        // l'audio si ferma sempre invece di continuare a suonare in
-        // sottofondo.
-        try {
-            player.pause();
-        } catch (e) {
-            console.warn('Pausa voce Gemini:', e);
-        }
-        try {
-            player.remove();
-        } catch (e) {
-            console.warn('Rimozione voce Gemini:', e);
-        }
+    try {
+        currentPlayer?.pause();
+    } catch (e) {
+        console.warn('Pausa voce Gemini:', e);
     }
 };
 
@@ -202,6 +197,14 @@ export const speakJarvisResponse = async ({
         });
 
         stopJarvisVoice();
+
+        // Il player precedente non serve più: si libera qui, dove al suo
+        // posto ne arriva subito uno nuovo.
+        try {
+            currentPlayer?.remove();
+        } catch (e) {
+            console.warn('Rilascio player precedente:', e);
+        }
 
         currentPlayer = createAudioPlayer({ uri: fileUri });
         currentPlayer.play();

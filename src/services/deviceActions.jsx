@@ -1,26 +1,50 @@
-import { Linking, Platform } from 'react-native';
+import { Platform } from 'react-native';
 import * as Calendar from 'expo-calendar';
+import * as IntentLauncher from 'expo-intent-launcher';
 
 // ============================================================
 // SVEGLIA E TIMER NATIVI
-// Usano l'Intent nativo di Android per aprire l'app Orologio
-// del telefono (qualsiasi essa sia) e impostare davvero una
-// sveglia o un timer — non un promemoria interno all'app.
-// Funziona solo su Android (su iOS non esiste un equivalente
-// pubblico per le app di terze parti).
+// Aprono l'app Orologio del telefono (qualsiasi essa sia) e vi
+// impostano davvero una sveglia o un timer — non un promemoria
+// interno all'app. Solo Android: su iOS non esiste un
+// equivalente pubblico per le app di terze parti.
+//
+// Si usa IntentLauncher e NON Linking.sendIntent di React
+// Native: quest'ultimo manda ogni numero come Double, mentre
+// l'app Orologio legge ora, minuti e durata con getIntExtra.
+// Non trovando degli interi usava i valori di default, e da lì
+// venivano la sveglia sempre all'ora corrente (cioè fra 24 ore)
+// e il timer che si apriva vuoto. IntentLauncher converte i
+// numeri in Int, che è quello che l'app Orologio si aspetta.
 // ============================================================
+
+// startActivityAsync si risolve quando l'app lanciata si chiude. Con SKIP_UI
+// l'app Orologio si chiude da sola, ma se su qualche dispositivo restasse
+// aperta la promessa non si risolverebbe mai e la conferma non arriverebbe:
+// si attende un attimo, quanto basta a intercettare l'errore se l'app manca.
+async function launchIntent(action, extra) {
+    let launchError = null;
+
+    const launch = IntentLauncher.startActivityAsync(action, {extra}).catch((error) => {
+        launchError = error;
+    });
+
+    await Promise.race([launch, new Promise((resolve) => setTimeout(resolve, 1500))]);
+
+    if (launchError) throw launchError;
+}
 
 export const setNativeAlarm = async (hour, minute, label) => {
     if (Platform.OS !== 'android') {
         throw new Error('Le sveglie native sono disponibili solo su Android');
     }
 
-    await Linking.sendIntent('android.intent.action.SET_ALARM', [
-        { key: 'android.intent.extra.alarm.HOUR', value: hour },
-        { key: 'android.intent.extra.alarm.MINUTES', value: minute },
-        { key: 'android.intent.extra.alarm.MESSAGE', value: label },
-        { key: 'android.intent.extra.alarm.SKIP_UI', value: true },
-    ]);
+    await launchIntent('android.intent.action.SET_ALARM', {
+        'android.intent.extra.alarm.HOUR': hour,
+        'android.intent.extra.alarm.MINUTES': minute,
+        'android.intent.extra.alarm.MESSAGE': label,
+        'android.intent.extra.alarm.SKIP_UI': true,
+    });
 };
 
 export const setNativeTimer = async (seconds, label) => {
@@ -28,11 +52,11 @@ export const setNativeTimer = async (seconds, label) => {
         throw new Error('I timer nativi sono disponibili solo su Android');
     }
 
-    await Linking.sendIntent('android.intent.action.SET_TIMER', [
-        { key: 'android.intent.extra.alarm.LENGTH', value: seconds },
-        { key: 'android.intent.extra.alarm.MESSAGE', value: label },
-        { key: 'android.intent.extra.alarm.SKIP_UI', value: true },
-    ]);
+    await launchIntent('android.intent.action.SET_TIMER', {
+        'android.intent.extra.alarm.LENGTH': seconds,
+        'android.intent.extra.alarm.MESSAGE': label,
+        'android.intent.extra.alarm.SKIP_UI': true,
+    });
 };
 
 // ============================================================

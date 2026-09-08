@@ -27,12 +27,27 @@ const SEARCH_MODEL = 'groq/compound-mini';
 // si manda al modello solo il messaggio di sistema più gli scambi recenti,
 // mentre la cronologia mostrata a schermo resta comunque intera.
 const MAX_HISTORY_MESSAGES = 20;
-const MAX_HISTORY_MESSAGES_SEARCH = 6;
 
 function trimHistoryForApi(history, limit) {
     if (history.length <= limit) return history;
     const [systemMessage, ...rest] = history;
     return [systemMessage, ...rest.slice(-(limit - 1))];
+}
+
+// Alla ricerca web si manda solo la domanda, con un prompt minimo.
+// Il prompt di sistema completo elenca tutti i comandi dell'app: sono più di
+// mille token che al modello di ricerca non servono (non deve emettere
+// comandi, deve solo cercare e rispondere) e che pesavano sul limite di
+// token al minuto, quello che faceva fallire ogni ricerca.
+const SEARCH_SYSTEM_MESSAGE = {
+    role: 'system',
+    content:
+        'Sei J.A.R.V.I.S. Rispondi in italiano, in modo breve e preciso, ' +
+        'rivolgendoti all\'utente come "Signore". Usa le informazioni che trovi sul web.',
+};
+
+function buildSearchMessages(userMessage) {
+    return [SEARCH_SYSTEM_MESSAGE, {role: 'user', content: userMessage}];
 }
 
 async function requestChatCompletion(model, messages) {
@@ -137,7 +152,6 @@ async function handleUserMessage(userMessage, {
         setChatHistory(updatedHistory);
 
         const chosenModel = chooseModelByText(userMessage);
-        const historyLimit = chosenModel === SEARCH_MODEL ? MAX_HISTORY_MESSAGES_SEARCH : MAX_HISTORY_MESSAGES;
 
         // === Risposta del modello ===
         let responseData;
@@ -146,7 +160,9 @@ async function handleUserMessage(userMessage, {
         try {
             responseData = await requestChatCompletion(
                 chosenModel,
-                trimHistoryForApi(updatedHistory, historyLimit)
+                chosenModel === SEARCH_MODEL
+                    ? buildSearchMessages(userMessage)
+                    : trimHistoryForApi(updatedHistory, MAX_HISTORY_MESSAGES)
             );
         } catch (error) {
             // La ricerca web legge pagine intere e brucia in fretta il limite
