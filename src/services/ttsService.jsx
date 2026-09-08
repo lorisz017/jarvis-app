@@ -88,12 +88,28 @@ let currentPlayer = null;
 export const stopJarvisVoice = () => {
     try {
         Speech.stop();
-        if (currentPlayer) {
-            currentPlayer.remove();
-            currentPlayer = null;
-        }
     } catch (e) {
-        console.warn('Stop voce:', e);
+        console.warn('Stop voce di sistema:', e);
+    }
+
+    if (currentPlayer) {
+        const player = currentPlayer;
+        currentPlayer = null;
+
+        // Pausa e rimozione separate: se una fallisce (es. il player è già
+        // stato ripulito dal sistema) l'altra deve comunque eseguire, così
+        // l'audio si ferma sempre invece di continuare a suonare in
+        // sottofondo.
+        try {
+            player.pause();
+        } catch (e) {
+            console.warn('Pausa voce Gemini:', e);
+        }
+        try {
+            player.remove();
+        } catch (e) {
+            console.warn('Rimozione voce Gemini:', e);
+        }
     }
 };
 
@@ -185,10 +201,7 @@ export const speakJarvisResponse = async ({
             encoding: FileSystem.EncodingType.Base64,
         });
 
-        if (currentPlayer) {
-            currentPlayer.remove();
-            currentPlayer = null;
-        }
+        stopJarvisVoice();
 
         currentPlayer = createAudioPlayer({ uri: fileUri });
         currentPlayer.play();

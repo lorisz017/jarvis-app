@@ -16,7 +16,12 @@ export default function ActivityLog({chatHistory}) {
     return (
         <View style={styles.activityLogContainer}>
             <Text style={styles.activityLogTitle}>REGISTRO ATTIVITÀ</Text>
-            <ScrollView ref={scrollRef} style={styles.activityLogScroll}>
+            <ScrollView
+                ref={scrollRef}
+                style={styles.activityLogScroll}
+                nestedScrollEnabled
+                showsVerticalScrollIndicator
+            >
                 {entries.length === 0 ? (
                     <Text style={styles.activityLogEmpty}>Nessuna attività, in attesa dei suoi comandi.</Text>
                 ) : (
