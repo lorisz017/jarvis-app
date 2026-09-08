@@ -3,14 +3,13 @@ import {Alert, TouchableOpacity, Text, Animated, View, TextInput, KeyboardAvoidi
 import {SafeAreaView} from 'react-native-safe-area-context';
 import {useAudioRecorder, useAudioRecorderState, RecordingPresets} from 'expo-audio';
 import {Linking} from 'react-native';
-import * as Speech from 'expo-speech';
 
 import MicrophoneButton from '../components/MicrophoneButton';
 import ResponseBox from '../components/ResponseBox';
 import VoicePickerModal from '../components/VoicePickerModal';
 
 import {useVoiceSetup} from '../hooks/useVoiceSetup';
-import {speakJarvisResponse} from '../services/ttsService';
+import {speakJarvisResponse, stopJarvisVoice} from '../services/ttsService';
 import {processAudioWithOpenAI, processTextMessage} from '../services/jarvisService';
 import {setNativeAlarm, setNativeTimer, getWeatherByCity, createCalendarEvent} from '../services/deviceActions';
 
@@ -157,7 +156,7 @@ export default function Home() {
         // Interrompe subito qualsiasi voce ancora in corso: senza questo,
         // premendo di nuovo il microfono mentre JARVIS sta ancora parlando,
         // le voci si accavallano invece di fermarsi.
-        Speech.stop();
+        stopJarvisVoice();
         setDisplayedText('');
         setIsLoading(false);
         stopPulsing();
@@ -195,7 +194,7 @@ export default function Home() {
 
         // Stessa logica di interruzione voce usata dal microfono: scrivere
         // un nuovo messaggio mentre JARVIS sta ancora parlando lo interrompe.
-        Speech.stop();
+        stopJarvisVoice();
         setTypedText('');
 
         await processTextMessage({
@@ -225,7 +224,7 @@ export default function Home() {
                     const next = !prev;
                     if (!next) {
                         // Disattivando la voce, ferma subito quella in corso
-                        Speech.stop();
+                        stopJarvisVoice();
                     }
                     return next;
                 })}
@@ -277,7 +276,7 @@ export default function Home() {
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.stopCon} onPress={() => {
-                    Speech.stop();
+                    stopJarvisVoice();
                     setDisplayedText("");
                 }}>
                     <Text style={styles.stop}>⛔️ Ferma</Text>

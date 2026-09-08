@@ -14,6 +14,19 @@ const CHAT_MODEL = 'openai/gpt-oss-120b';
 // quello che il modello sa "a memoria".
 const SEARCH_MODEL = 'groq/compound';
 
+// La chat cresce senza limiti mentre si parla con JARVIS: mandare l'intera
+// cronologia ad ogni richiesta fa presto a superare il limite di dimensione
+// della richiesta ("Request Entity Too Large"). Si manda al modello solo il
+// messaggio di sistema più gli scambi più recenti; la cronologia mostrata
+// in chat resta comunque intera.
+const MAX_HISTORY_MESSAGES = 20;
+
+function trimHistoryForApi(history) {
+    if (history.length <= MAX_HISTORY_MESSAGES) return history;
+    const [systemMessage, ...rest] = history;
+    return [systemMessage, ...rest.slice(-(MAX_HISTORY_MESSAGES - 1))];
+}
+
 if (!groqApiKey) {
     Alert.alert('Groq API Key Missing', 'Please set your Groq API key in app.json');
 }
@@ -92,7 +105,7 @@ async function handleUserMessage(userMessage, {
             },
             body: JSON.stringify({
                 model: chosenModel,
-                messages: updatedHistory,
+                messages: trimHistoryForApi(updatedHistory),
             }),
         });
 
