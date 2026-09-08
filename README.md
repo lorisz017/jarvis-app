@@ -123,7 +123,7 @@ MIT — see [LICENSE](./LICENSE). Copyright (c) 2025 Azizbek Anvarjonov.
 
 ## Che cos'è
 
-J.A.R.V.I.S. è un assistente vocale personale per Android, ispirato all'intelligenza artificiale di Tony Stark in Iron Man. Tocchi il radar, parli, e lui risponde — a voce e a schermo. Ma soprattutto *agisce*: mette sveglie vere nell'app Orologio, crea eventi veri nel calendario, chiama le persone in rubrica, avvia la navigazione e apre le app.
+J.A.R.V.I.S. è un assistente vocale personale per Android, ispirato all'intelligenza artificiale di Tony Stark in Iron Man. Si tocca il radar, si parla, e lui risponde — a voce e a schermo. Ma soprattutto *agisce*: mette sveglie vere nell'app Orologio, crea eventi veri nel calendario, chiama le persone in rubrica, avvia la navigazione e apre le app.
 
 Parla e capisce **italiano**, e funziona interamente con quote gratuite.
 
@@ -137,7 +137,7 @@ Gli assistenti sul telefono tendono a dividersi in due categorie: quelli di sist
 
 Il percorso di una singola richiesta:
 
-1. **Lei parla** — la registrazione viene mandata a **Whisper** (tramite Groq) e trascritta.
+1. **Si parla** — la registrazione viene mandata a **Whisper** (tramite Groq) e trascritta.
 2. **Ragiona** — il testo va a un modello linguistico (**GPT-OSS 120B** tramite Groq) insieme a un prompt di sistema che descrive tutti i comandi che conosce.
 3. **Decide** — se la risposta è normale, viene letta ad alta voce. Se invece il modello restituisce un comando tipo `set_alarm 07:30 palestra`, l'app lo intercetta ed esegue l'azione vera sul dispositivo.
 4. **Risponde** — la risposta viene letta con la voce naturale di **Gemini**, ripiegando sulla voce di sistema del telefono se non è disponibile.
@@ -158,7 +158,7 @@ Non serve un ambiente di sviluppo sul computer: si può fare tutto da browser. C
 
 ### 1. Prendere il codice
 
-Faccia un fork di questo repository sul suo account GitHub.
+Per iniziare bisogna fare un fork di questo repository sul proprio account GitHub.
 
 ### 2. Procurarsi le chiavi API
 
@@ -170,7 +170,7 @@ Faccia un fork di questo repository sul suo account GitHub.
 
 ### 3. Creare il progetto su Expo
 
-Si registri su [expo.dev](https://expo.dev) e crei un progetto. Poi, in **Project settings → Environment variables**, aggiunga le chiavi come **Plain text**, per tutti gli ambienti:
+Bisogna registrarsi su [expo.dev](https://expo.dev) e creare un progetto. Poi, in **Project settings → Environment variables**, vanno aggiunte le chiavi come **Plain text**, per tutti gli ambienti:
 
 ```
 EXPO_PUBLIC_GROQ_API_KEY
@@ -180,13 +180,13 @@ EXPO_PUBLIC_GITHUB_TOKEN_KEY    (facoltativo)
 
 Il prefisso `EXPO_PUBLIC_` è obbligatorio: senza, Expo non passa la variabile all'app.
 
-### 4. Puntare l'app al suo progetto
+### 4. Puntare l'app al proprio progetto
 
-In `app.config.js`, sostituisca:
+In `app.config.js` vanno sostituiti:
 
-- `extra.eas.projectId` con l'ID progetto che vede sulla dashboard di Expo
-- `slug` con lo slug del suo progetto
-- `android.package` con un identificatore suo, ad esempio `com.suonome.jarvis`
+- `extra.eas.projectId` con l'ID progetto mostrato sulla dashboard di Expo
+- `slug` con lo slug del proprio progetto
+- `android.package` con un identificatore proprio, ad esempio `com.nomeutente.jarvis`
 
 ### 5. Compilare
 
@@ -197,13 +197,13 @@ Su expo.dev: **Builds → Build from GitHub**, quindi:
 - Build profile: **preview**
 - Base directory: **lasciare vuoto** — scriverci qualcosa fa fallire la build
 
-Il profilo `preview` è già configurato per produrre un `.apk` installabile invece di un pacchetto per il Play Store. A build finita, lo scarichi sul telefono e lo installi. Android avviserà che l'origine è sconosciuta: è normale per un'app compilata da sé.
+Il profilo `preview` è già configurato per produrre un `.apk` installabile invece di un pacchetto per il Play Store. A build finita si scarica sul telefono e si installa. Android avviserà che l'origine è sconosciuta: è normale per un'app compilata da sé.
 
 ### 6. Primo avvio
 
-L'app chiederà i permessi per microfono, notifiche, calendario e rubrica. Conceda quelli che le interessano — quelli che nega disattivano semplicemente la funzione corrispondente.
+L'app chiederà i permessi per microfono, notifiche, calendario e rubrica. Vanno concessi quelli che interessano: quelli negati disattivano semplicemente la funzione corrispondente.
 
-Poi dica *"la mia città è Bologna"*, oppure la imposti dal pannello impostazioni, così il riepilogo di apertura le dà il meteo giusto.
+Poi basta dire *"la mia città è Bologna"*, oppure impostarla dal pannello impostazioni, così il riepilogo di apertura dà il meteo giusto.
 
 ## Note per chi mette mano al codice
 
@@ -214,7 +214,7 @@ Poi dica *"la mia città è Bologna"*, oppure la imposti dal pannello impostazio
 
 Altre due cose che vale la pena sapere:
 
-- `Linking.sendIntent` di React Native manda ogni numero come `Double`, quindi gli intent Android che leggono interi (`SET_ALARM`, `SET_TIMER`) si ritrovano con i valori di default senza dare errore. Si usi `expo-intent-launcher`, che li converte in `Int`.
+- `Linking.sendIntent` di React Native manda ogni numero come `Double`, quindi gli intent Android che leggono interi (`SET_ALARM`, `SET_TIMER`) si ritrovano con i valori di default senza dare errore. Conviene usare `expo-intent-launcher`, che li converte in `Int`.
 - Su Groq, l'errore HTTP 413 "Request Entity Too Large" è un **limite di token al minuto**, non un problema di dimensione della richiesta. Mandare meno cronologia non aiuta se è il modello stesso a consumare il budget.
 
 ## Crediti
