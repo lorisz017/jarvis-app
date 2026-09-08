@@ -20,6 +20,7 @@ import MicrophoneButton from '../components/MicrophoneButton';
 import ActivityLog from '../components/ActivityLog';
 import ResponseBox from '../components/ResponseBox';
 import VoicePickerModal from '../components/VoicePickerModal';
+import SettingsModal from '../components/SettingsModal';
 
 import {useVoiceSetup} from '../hooks/useVoiceSetup';
 import {speakJarvisResponse, stopJarvisVoice} from '../services/ttsService';
@@ -52,6 +53,8 @@ export default function Home() {
     const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
     // Città usata dal briefing di apertura per il meteo
     const [homeCity, setHomeCity] = useState(DEFAULT_STATE.homeCity);
+    const [isBriefingEnabled, setIsBriefingEnabled] = useState(true);
+    const [isSettingsVisible, setIsSettingsVisible] = useState(false);
     const [isStateLoaded, setIsStateLoaded] = useState(false);
 
     const scrollRef = useRef();
@@ -73,6 +76,7 @@ export default function Home() {
             const saved = await loadState();
             setChatHistory([SYSTEM_MESSAGE, ...saved.messages]);
             setIsVoiceEnabled(saved.isVoiceEnabled);
+            setIsBriefingEnabled(saved.isBriefingEnabled);
             setHomeCity(saved.homeCity);
             setIsStateLoaded(true);
         })();
@@ -82,8 +86,8 @@ export default function Home() {
     // il file con lo stato vuoto di partenza.
     useEffect(() => {
         if (!isStateLoaded) return;
-        saveState({messages: chatHistory, isVoiceEnabled, homeCity});
-    }, [isStateLoaded, chatHistory, isVoiceEnabled, homeCity]);
+        saveState({messages: chatHistory, isVoiceEnabled, isBriefingEnabled, homeCity});
+    }, [isStateLoaded, chatHistory, isVoiceEnabled, isBriefingEnabled, homeCity]);
 
     const startPulsing = () => {
         Animated.loop(
@@ -105,6 +109,16 @@ export default function Home() {
     const stopPulsing = () => {
         animatedScale.stopAnimation();
         animatedScale.setValue(1);
+    };
+
+    // Usato sia dal pulsante in alto a destra sia dalla riga nelle
+    // impostazioni: spegnendo la voce, quella in corso si ferma subito.
+    const toggleVoice = () => {
+        setIsVoiceEnabled((prev) => {
+            const next = !prev;
+            if (!next) stopJarvisVoice();
+            return next;
+        });
     };
 
     const speak = async (text) => {
@@ -135,6 +149,7 @@ export default function Home() {
     useEffect(() => {
         if (!isStateLoaded || briefingDoneRef.current) return;
         briefingDoneRef.current = true;
+        if (!isBriefingEnabled) return;
 
         (async () => {
             try {
@@ -287,18 +302,12 @@ export default function Home() {
 
     return (
         <SafeAreaView style={styles.container}>
-            {/* Toggle voce, fisso in alto a destra, sopra tutto il resto */}
-            <TouchableOpacity
-                style={styles.voiceToggleButton}
-                onPress={() => setIsVoiceEnabled((prev) => {
-                    const next = !prev;
-                    if (!next) {
-                        // Disattivando la voce, ferma subito quella in corso
-                        stopJarvisVoice();
-                    }
-                    return next;
-                })}
-            >
+            {/* Impostazioni e toggle voce, fissi in alto a destra */}
+            <TouchableOpacity style={styles.settingsButton} onPress={() => setIsSettingsVisible(true)}>
+                <Text style={styles.settingsButtonText}>⋮</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.voiceToggleButton} onPress={toggleVoice}>
                 <Text style={styles.voiceToggleButtonText}>{isVoiceEnabled ? '🔊' : '🔇'}</Text>
             </TouchableOpacity>
 
@@ -379,6 +388,17 @@ export default function Home() {
                 selectedVoiceId={selectedVoiceId}
                 setSelectedVoiceId={setSelectedVoiceId}
                 onClose={() => setIsVoicePickerVisible(false)}
+            />
+
+            <SettingsModal
+                isVisible={isSettingsVisible}
+                onClose={() => setIsSettingsVisible(false)}
+                homeCity={homeCity}
+                setHomeCity={setHomeCity}
+                isVoiceEnabled={isVoiceEnabled}
+                onToggleVoice={toggleVoice}
+                isBriefingEnabled={isBriefingEnabled}
+                setIsBriefingEnabled={setIsBriefingEnabled}
             />
         </SafeAreaView>
     );
