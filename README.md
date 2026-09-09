@@ -54,7 +54,7 @@ Fork this repository to your own GitHub account.
 | Key | Where | Cost | Needed for |
 |---|---|---|---|
 | Groq | [console.groq.com](https://console.groq.com) | Free | **Required** — transcription, replies, web search |
-| Gemini | [aistudio.google.com](https://aistudio.google.com) | Free | Optional — the natural voice. Without it, the phone's built-in voice is used |
+| Gemini | [aistudio.google.com](https://aistudio.google.com) | Free | Optional — the natural voice. Its free quota runs out after roughly six replies in quick succession, at which point the phone's built-in voice takes over automatically |
 | GitHub token | GitHub → Settings → Developer settings → Personal access tokens, `repo` scope | Free | Optional — only for the repository commands |
 
 ### 3. Create the Expo project
@@ -171,7 +171,7 @@ Per iniziare bisogna fare un fork di questo repository sul proprio account GitHu
 | Chiave | Dove | Costo | Serve per |
 |---|---|---|---|
 | Groq | [console.groq.com](https://console.groq.com) | Gratis | **Obbligatoria** — trascrizione, risposte, ricerca web |
-| Gemini | [aistudio.google.com](https://aistudio.google.com) | Gratis | Facoltativa — la voce naturale. Senza, si usa la voce di sistema |
+| Gemini | [aistudio.google.com](https://aistudio.google.com) | Gratis | Facoltativa — la voce naturale. La quota gratuita si esaurisce dopo circa sei risposte ravvicinate, dopodiché subentra automaticamente la voce di sistema |
 | Token GitHub | GitHub → Settings → Developer settings → Personal access tokens, ambito `repo` | Gratis | Facoltativo — solo per i comandi sui repository |
 
 ### 3. Creare il progetto su Expo

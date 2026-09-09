@@ -156,6 +156,10 @@ async function handleUserMessage(userMessage, {
         // === Risposta del modello ===
         let responseData;
         let searchLimitReached = false;
+        // Diagnostica temporanea: il messaggio esatto restituito da Groq quando
+        // la ricerca web fallisce. Tre tentativi di correzione a scatola chiusa
+        // non hanno risolto, quindi serve vedere l'errore vero.
+        let searchDiagnostic = null;
 
         try {
             responseData = await requestChatCompletion(
@@ -173,6 +177,7 @@ async function handleUserMessage(userMessage, {
             if (chosenModel !== SEARCH_MODEL || !isRateLimited) throw error;
 
             searchLimitReached = true;
+            searchDiagnostic = `HTTP ${error.status} — ${error.message}`;
             responseData = await requestChatCompletion(
                 CHAT_MODEL,
                 trimHistoryForApi(updatedHistory, MAX_HISTORY_MESSAGES)
@@ -531,11 +536,19 @@ async function handleUserMessage(userMessage, {
         // riescono a riconoscerlo: l'avviso si aggiunge solo alla risposta
         // normale, quella che viene letta e mostrata.
         const finalReply = searchLimitReached
-            ? `Signore, la ricerca web ha raggiunto il limite di richieste; le rispondo con le mie conoscenze. ${jarvisReply}`
+            ? `Signore, la ricerca web non è disponibile al momento; le rispondo con le mie conoscenze. ${jarvisReply}`
             : jarvisReply;
 
         setJarvisResponseText(finalReply);
         await speak(finalReply);
+
+        // L'errore tecnico compare a schermo dopo la risposta, ma non viene
+        // letto ad alta voce: serve a capire perché la ricerca web fallisce.
+        if (searchDiagnostic) {
+            const withDiagnostic = `${finalReply}\n\n[diagnostica ricerca web]\n${searchDiagnostic}`;
+            setDisplayedText(withDiagnostic);
+            setJarvisResponseText(withDiagnostic);
+        }
     } catch (err) {
         console.error('Jarvis error:', err);
         setJarvisResponseText('Si è verificato un errore durante l\'elaborazione del messaggio.');
