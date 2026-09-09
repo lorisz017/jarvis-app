@@ -88,6 +88,12 @@ On expo.dev: **Builds → Build from GitHub**, then:
 
 The `preview` profile is already set up to produce an installable `.apk` rather than a Play Store bundle. When it's done, download it to your phone and install it. Android will warn you about installing from an unknown source; that's expected for an app you built yourself.
 
+#### Building without Expo
+
+Expo's free tier allows 15 Android builds a month, which goes quickly. This repository also ships `.github/workflows/build-apk.yml`, which builds the same APK on GitHub Actions — free and unmetered on public repositories. Run it from the **Actions** tab; the APK appears as an artifact on the run's page. It needs the same keys, added under **Settings → Secrets and variables → Actions**.
+
+Two caveats. It signs with the project's `debug.keystore`, a different key from the one Expo uses, so the first time you switch you have to uninstall the existing app. And artifacts of a public repository are downloadable by anyone, while the keys are compiled into the APK — so if you use a GitHub token, run the workflow from a private repository instead, where 2000 free monthly minutes still allow roughly a hundred builds.
+
 ### 6. First run
 
 The app will ask for microphone, notification, calendar and contacts permissions. Grant the ones you want to use — anything you deny simply disables the matching feature.
@@ -198,6 +204,12 @@ Su expo.dev: **Builds → Build from GitHub**, quindi:
 - Base directory: **lasciare vuoto** — scriverci qualcosa fa fallire la build
 
 Il profilo `preview` è già configurato per produrre un `.apk` installabile invece di un pacchetto per il Play Store. A build finita si scarica sul telefono e si installa. Android avviserà che l'origine è sconosciuta: è normale per un'app compilata da sé.
+
+#### Compilare senza Expo
+
+Il piano gratuito di Expo consente 15 build Android al mese, che finiscono in fretta. Nel repository c'è anche `.github/workflows/build-apk.yml`, che produce lo stesso APK tramite GitHub Actions — gratis e senza limiti sui repository pubblici. Si avvia dalla scheda **Actions** e l'APK compare come artifact nella pagina della build. Servono le stesse chiavi, da inserire in **Settings → Secrets and variables → Actions**.
+
+Due avvertenze. La firma usa la `debug.keystore` del progetto, che è una chiave diversa da quella di Expo: la prima volta che si passa da una all'altra bisogna disinstallare l'app esistente. E gli artifact di un repository pubblico sono scaricabili da chiunque, mentre le chiavi vengono compilate dentro l'APK — quindi chi usa un token GitHub conviene che esegua il workflow da un repository privato, dove i 2.000 minuti gratuiti mensili bastano comunque per un centinaio di build.
 
 ### 6. Primo avvio
 
