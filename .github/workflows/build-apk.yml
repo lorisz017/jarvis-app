@@ -1,0 +1,61 @@
+# Alternativa gratuita e senza limiti alla build su EAS.
+#
+# I repository pubblici hanno minuti di GitHub Actions illimitati, e questo
+# progetto ha le cartelle native già committate, quindi non serve il prebuild:
+# si compila direttamente con Gradle. La build "release" è già configurata per
+# firmare con la debug.keystore presente nel repository, quindi l'APK esce
+# installabile senza altra configurazione.
+#
+# Si avvia a mano da GitHub: scheda Actions > "Build APK Android" > "Run
+# workflow". L'APK compare come artifact in fondo alla pagina della build.
+
+name: Build APK Android
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Scarica il codice
+        uses: actions/checkout@v4
+
+      - name: Prepara Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.1'
+
+      - name: Prepara Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Installa le dipendenze
+        env:
+          # Husky serve solo per i controlli prima dei commit in locale:
+          # in CI non c'è niente da agganciare e la sua installazione
+          # farebbe fallire il passaggio.
+          HUSKY: 0
+        run: npm install --legacy-peer-deps
+
+      - name: Compila l'APK
+        working-directory: android
+        env:
+          # Le chiavi vengono lette dai Secrets del repository
+          # (Settings > Secrets and variables > Actions).
+          EXPO_PUBLIC_GROQ_API_KEY: ${{ secrets.EXPO_PUBLIC_GROQ_API_KEY }}
+          EXPO_PUBLIC_GEMINI_API_KEY: ${{ secrets.EXPO_PUBLIC_GEMINI_API_KEY }}
+          EXPO_PUBLIC_GITHUB_TOKEN_KEY: ${{ secrets.EXPO_PUBLIC_GITHUB_TOKEN_KEY }}
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Pubblica l'APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: jarvis-apk
+          path: android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
