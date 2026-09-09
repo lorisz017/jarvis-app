@@ -9,6 +9,14 @@ Legenda:
 
 Ultimo aggiornamento: dopo il collaudo della 2.0.0 sul dispositivo.
 
+> **Su cosa è stato provato.** Il progetto è nelle sue prime fasi e tutte le
+> spunte qui sotto vengono da **un solo dispositivo: uno Xiaomi 17 con
+> Android 17**. Le azioni di sistema (sveglie, timer, apertura app) passano una
+> richiesta all'app del telefono che se ne occupa, quindi il risultato cambia
+> con le personalizzazioni del produttore e con le app installate: su un altro
+> telefono qualcosa può comportarsi diversamente, e in quel caso è probabile
+> che dipenda dal dispositivo più che dal codice.
+
 ---
 
 ## Voce e testo

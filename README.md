@@ -41,6 +41,21 @@ Voice and text input · spoken replies with a natural voice · web search · wea
 
 A live status list of what's working is kept in [`STATO_FUNZIONI.md`](./STATO_FUNZIONI.md).
 
+### Tested on
+
+The project is in its early stages and has so far been tested on a single
+device: a **Xiaomi 17 running Android 17**. Everything marked as working is
+confirmed there and nowhere else yet.
+
+This matters more than it might seem. The device actions — alarms, timers,
+opening other apps — work by handing an intent to whatever app on the phone
+handles it, and both the manufacturer's customisations and which apps are
+installed change the outcome. On a different phone the clock app may interpret
+the same request differently, an app may not answer the URL scheme this project
+expects, or a permission may be requested at another moment. So if something
+misbehaves elsewhere, it is likely a difference in the device rather than a
+fault in the code. Reports from other devices are welcome.
+
 ## Setting it up
 
 You don't need a development environment on your computer — everything can be done from a browser. It takes about twenty minutes.
@@ -157,6 +172,22 @@ Si può anche scrivere invece di parlare — stessi comandi, stesso comportament
 Comandi a voce e scritti · risposta parlata con voce naturale · ricerca sul web · meteo · sveglie e timer nativi · eventi in calendario · promemoria (crea, elenca, annulla) · chiamate e messaggi WhatsApp per nome del contatto · navigazione · apertura di una ventina di app · fotocamera, Telegram, YouTube · gestione repository GitHub · riepilogo all'apertura con ora, meteo e impegni del giorno · memoria che sopravvive alla chiusura · monitor della batteria · pannello impostazioni con l'elenco completo dei comandi.
 
 L'elenco aggiornato di cosa funziona è in [`STATO_FUNZIONI.md`](./STATO_FUNZIONI.md).
+
+### Su cosa è stato provato
+
+Il progetto è nelle sue prime fasi ed è stato finora provato su **un solo
+dispositivo: uno Xiaomi 17 con Android 17**. Tutto ciò che risulta funzionante
+è confermato lì e, per ora, da nessun'altra parte.
+
+Non è un dettaglio da poco. Le azioni sul dispositivo — sveglie, timer,
+apertura di altre app — funzionano passando una richiesta all'app del telefono
+che se ne occupa, e il risultato cambia sia con le personalizzazioni del
+produttore sia con le app installate. Su un altro telefono l'app Orologio
+potrebbe interpretare diversamente la stessa richiesta, un'applicazione
+potrebbe non rispondere allo schema di collegamento previsto qui, o un permesso
+potrebbe essere chiesto in un altro momento. Quindi, se altrove qualcosa non
+funziona, è probabile che dipenda dal dispositivo più che da un difetto del
+codice. Segnalazioni da altri telefoni sono benvenute.
 
 ## Come metterlo in funzione
 
