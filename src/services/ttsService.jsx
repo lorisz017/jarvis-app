@@ -92,7 +92,166 @@ function base64ByteLength(b64) {
     return (b64.length / 4) * 3 - padding;
 }
 
+// === Pareggiamento del volume ===
+//
+// Le voci di Deepgram non sono incise tutte allo stesso livello: alcune si
+// sentono bene, altre costringono ad alzare il telefono al massimo per
+// capire cosa dicono. Non c'è un parametro per chiederle più forti, e il
+// volume del lettore non può salire sopra il massimo del dispositivo, quindi
+// l'unico modo è alzare il guadagno dell'audio prima di riprodurlo.
+//
+// Si misura quanto suona in media lo spezzone (il valore efficace, non il
+// picco: è quello che l'orecchio percepisce come "volume") e lo si porta a un
+// livello di riferimento uguale per tutte le voci. Chi è già abbastanza alto
+// resta com'è: il guadagno non scende mai sotto 1.
+const TARGET_RMS = 0.12;
+const MAX_GAIN = 4;
+
+const B64_LOOKUP = new Uint8Array(256);
+for (let i = 0; i < B64_CHARS.length; i++) B64_LOOKUP[B64_CHARS.charCodeAt(i)] = i;
+
+function base64ToBytes(b64) {
+    const puliti = b64.replace(/[^A-Za-z0-9+/]/g, '');
+    const gruppi = puliti.length >> 2;
+    const coda = puliti.length & 3;
+    const bytes = new Uint8Array(gruppi * 3 + (coda === 3 ? 2 : coda === 2 ? 1 : 0));
+    let i = 0;
+    let p = 0;
+
+    for (let g = 0; g < gruppi; g++) {
+        const n =
+            (B64_LOOKUP[puliti.charCodeAt(i++)] << 18) |
+            (B64_LOOKUP[puliti.charCodeAt(i++)] << 12) |
+            (B64_LOOKUP[puliti.charCodeAt(i++)] << 6) |
+            B64_LOOKUP[puliti.charCodeAt(i++)];
+        bytes[p++] = n >> 16;
+        bytes[p++] = (n >> 8) & 255;
+        bytes[p++] = n & 255;
+    }
+
+    if (coda >= 2) {
+        const c0 = B64_LOOKUP[puliti.charCodeAt(i++)];
+        const c1 = B64_LOOKUP[puliti.charCodeAt(i++)];
+        bytes[p++] = (c0 << 2) | (c1 >> 4);
+        if (coda === 3) bytes[p++] = ((c1 & 15) << 4) | (B64_LOOKUP[puliti.charCodeAt(i)] >> 2);
+    }
+
+    return bytes;
+}
+
+// Come bytesToBase64, ma regge una lunghezza qualsiasi (aggiunge il
+// riempimento finale) e costruisce il risultato a pezzi invece che
+// concatenando centinaia di migliaia di volte una stringa che cresce.
+function pcmToBase64(bytes) {
+    const pezzi = [];
+    const n = bytes.length;
+    const interi = n - (n % 3);
+
+    for (let i = 0; i < interi; i += 3) {
+        const b0 = bytes[i];
+        const b1 = bytes[i + 1];
+        const b2 = bytes[i + 2];
+        pezzi.push(
+            B64_CHARS[b0 >> 2] +
+            B64_CHARS[((b0 & 3) << 4) | (b1 >> 4)] +
+            B64_CHARS[((b1 & 15) << 2) | (b2 >> 6)] +
+            B64_CHARS[b2 & 63]
+        );
+    }
+
+    const resto = n - interi;
+    if (resto === 1) {
+        const b0 = bytes[n - 1];
+        pezzi.push(`${B64_CHARS[b0 >> 2]}${B64_CHARS[(b0 & 3) << 4]}==`);
+    } else if (resto === 2) {
+        const b0 = bytes[n - 2];
+        const b1 = bytes[n - 1];
+        pezzi.push(
+            `${B64_CHARS[b0 >> 2]}${B64_CHARS[((b0 & 3) << 4) | (b1 >> 4)]}${B64_CHARS[(b1 & 15) << 2]}=`
+        );
+    }
+
+    return pezzi.join('');
+}
+
+// Deepgram dovrebbe restituire il PCM nudo, ma se dovesse arrivare dentro un
+// contenitore WAV si salta l'intestazione cercando il blocco "data": meglio
+// che riprodurre l'intestazione come se fosse audio.
+function pcmStart(bytes) {
+    if (bytes.length < 12) return 0;
+    const riff = bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46;
+    if (!riff) return 0;
+
+    for (let i = 12; i + 8 <= bytes.length; i++) {
+        if (bytes[i] === 0x64 && bytes[i + 1] === 0x61 && bytes[i + 2] === 0x74 && bytes[i + 3] === 0x61) {
+            return i + 8;
+        }
+    }
+    return 44;
+}
+
+// Alza il volume di uno spezzone PCM a 16 bit e lo restituisce in base64.
+// I campioni si leggono byte per byte invece che con Int16Array: così non
+// dipende da dove inizia l'audio né da come il dispositivo ordina i byte.
+function normalizePcmBase64(pcmBase64) {
+    const bytes = base64ToBytes(pcmBase64);
+    const inizio = pcmStart(bytes);
+    const fine = bytes.length - ((bytes.length - inizio) % 2);
+
+    let somma = 0;
+    let campioni = 0;
+
+    for (let i = inizio; i < fine; i += 2) {
+        let s = bytes[i] | (bytes[i + 1] << 8);
+        if (s > 32767) s -= 65536;
+        somma += s * s;
+        campioni++;
+    }
+
+    if (!campioni) return pcmToBase64(bytes.subarray(inizio));
+
+    const rms = Math.sqrt(somma / campioni) / 32768;
+    // Silenzio quasi totale: non c'è niente da alzare, e dividere per un
+    // valore vicino a zero darebbe un guadagno assurdo.
+    if (rms < 0.0005) return pcmToBase64(bytes.subarray(inizio));
+
+    const guadagno = Math.min(Math.max(TARGET_RMS / rms, 1), MAX_GAIN);
+    if (guadagno <= 1.01) return pcmToBase64(bytes.subarray(inizio));
+
+    for (let i = inizio; i < fine; i += 2) {
+        let s = bytes[i] | (bytes[i + 1] << 8);
+        if (s > 32767) s -= 65536;
+
+        s = Math.round(s * guadagno);
+        // I picchi che escono dalla scala si appiattiscono qui: su una voce
+        // parlata sono pochi e brevi, e si sentono molto meno di quanto si
+        // senta una voce troppo bassa.
+        if (s > 32767) s = 32767;
+        else if (s < -32768) s = -32768;
+
+        bytes[i] = s & 255;
+        bytes[i + 1] = (s >> 8) & 255;
+    }
+
+    return pcmToBase64(bytes.subarray(inizio));
+}
+
+// Scrive uno spezzone PCM come file WAV riproducibile, pareggiandone prima
+// il volume, e restituisce il percorso del file.
+async function writeWavFile(pcmBase64) {
+    const pareggiato = normalizePcmBase64(pcmBase64);
+    const wavBase64 = buildWavHeaderBase64(base64ByteLength(pareggiato)) + pareggiato;
+    const fileUri = `${FileSystem.cacheDirectory}jarvis-voice-${Date.now()}.wav`;
+
+    await FileSystem.writeAsStringAsync(fileUri, wavBase64, {
+        encoding: FileSystem.EncodingType.Base64,
+    });
+
+    return fileUri;
+}
+
 let currentPlayer = null;
+let currentFileUri = null;
 
 // Riproduce un file audio già scritto su disco, sostituendo quello in corso.
 async function playAudioFile(fileUri) {
@@ -105,6 +264,13 @@ async function playAudioFile(fileUri) {
     } catch (e) {
         console.warn('Rilascio player precedente:', e);
     }
+
+    // Il file appena sostituito si cancella: l'audio non compresso pesa
+    // qualche centinaio di kilobyte a frase, e la cache non si svuota da sé.
+    if (currentFileUri && currentFileUri !== fileUri) {
+        FileSystem.deleteAsync(currentFileUri, {idempotent: true}).catch(() => {});
+    }
+    currentFileUri = fileUri;
 
     currentPlayer = createAudioPlayer({ uri: fileUri });
     currentPlayer.play();
@@ -191,7 +357,12 @@ async function speakWithDeepgram(text) {
     const voce = await resolveDeepgramVoice();
     if (!voce) return false;
 
-    const response = await fetch(`${DEEPGRAM_URL}?model=${voce}`, {
+    // Si chiede l'audio non compresso (PCM a 16 bit, 24 kHz, senza
+    // contenitore) invece dell'MP3 predefinito: l'MP3 andrebbe decodificato
+    // per poterne alzare il volume, il PCM è già la forma d'onda.
+    const parametri = `model=${voce}&encoding=linear16&sample_rate=${SAMPLE_RATE}&container=none`;
+
+    const response = await fetch(`${DEEPGRAM_URL}?${parametri}`, {
         method: 'POST',
         headers: {
             Authorization: `Token ${deepgramApiKey}`,
@@ -206,13 +377,8 @@ async function speakWithDeepgram(text) {
     }
 
     const base64 = await blobToBase64(await response.blob());
-    const fileUri = `${FileSystem.cacheDirectory}jarvis-voice-${Date.now()}.mp3`;
 
-    await FileSystem.writeAsStringAsync(fileUri, base64, {
-        encoding: FileSystem.EncodingType.Base64,
-    });
-
-    await playAudioFile(fileUri);
+    await playAudioFile(await writeWavFile(base64));
     return true;
 }
 
@@ -328,15 +494,8 @@ export const speakJarvisResponse = async ({
             throw new Error('Nessun audio restituito da Gemini TTS');
         }
 
-        // PCM grezzo -> file WAV riproducibile
-        const wavBase64 = buildWavHeaderBase64(base64ByteLength(pcmBase64)) + pcmBase64;
-        const fileUri = `${FileSystem.cacheDirectory}jarvis-voice-${Date.now()}.wav`;
-
-        await FileSystem.writeAsStringAsync(fileUri, wavBase64, {
-            encoding: FileSystem.EncodingType.Base64,
-        });
-
-        await playAudioFile(fileUri);
+        // PCM grezzo -> file WAV riproducibile, al volume di riferimento
+        await playAudioFile(await writeWavFile(pcmBase64));
     } catch (err) {
         console.error('Gemini TTS error:', err);
         // Se la voce di Gemini non funziona (quota esaurita, rete assente,

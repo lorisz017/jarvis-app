@@ -27,6 +27,7 @@ Ultimo aggiornamento: dopo il collaudo della voce Deepgram e del tool calling.
 | Comando scritto | Campo di testo in fondo | ✅ |
 | Risposta parlata (voce Deepgram) | Automatica | ✅ non degrada più: il credito Deepgram regge l'uso quotidiano |
 | Scelta della voce naturale | Impostazioni → Voce naturale | ✅ nove voci italiane, si cambia senza ricompilare |
+| Volume pari fra le voci | Automatico | ⏳ alcune voci sono incise molto più basse delle altre: ora l'audio viene portato a un livello di riferimento comune prima di essere riprodotto, da confermare |
 | Ripiego su Gemini e voce di sistema | Automatico | ✅ entra solo se Deepgram non è disponibile |
 | Scelta della voce di sistema | Pill "VOCE" | ✅ riguarda solo la voce di riserva del telefono |
 | Spegnere la voce | Pulsante 🔊 in alto a destra | ✅ |
