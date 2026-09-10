@@ -131,8 +131,10 @@ Two more things worth knowing:
 
 ## Credits
 
-- Original project by **[Azizbek Anvarjonov](https://github.com/az11k-dev)** — [az11k-dev/jarvis-app](https://github.com/az11k-dev/jarvis-app)
+- Original project by **[Azizbek Anvarjonov](https://github.com/az11k-dev)** — [az11k-dev/jarvis-app](https://github.com/az11k-dev/jarvis-app), the codebase this one is forked from
 - This version, Italian adaptation, interface and additional features by **[lorisz017](https://github.com/lorisz017)**
+
+Special thanks to **[FatihMakes](https://github.com/FatihMakes)** for [Mark-LIII](https://github.com/FatihMakes/Mark-LIII), the desktop assistant that gave this project its idea and the look of its interface. No code was taken from it — that project is licensed CC BY-NC, and this one is MIT — only inspiration.
 
 ## License
 
@@ -266,8 +268,10 @@ Altre due cose che vale la pena sapere:
 
 ## Crediti
 
-- Progetto originale di **[Azizbek Anvarjonov](https://github.com/az11k-dev)** — [az11k-dev/jarvis-app](https://github.com/az11k-dev/jarvis-app)
+- Progetto originale di **[Azizbek Anvarjonov](https://github.com/az11k-dev)** — [az11k-dev/jarvis-app](https://github.com/az11k-dev/jarvis-app), il codice da cui questo è nato come fork
 - Questa versione, adattamento italiano, interfaccia e funzioni aggiuntive di **[lorisz017](https://github.com/lorisz017)**
+
+Un ringraziamento particolare a **[FatihMakes](https://github.com/FatihMakes)** per [Mark-LIII](https://github.com/FatihMakes/Mark-LIII), l'assistente desktop che ha dato a questo progetto l'idea di partenza e l'aspetto della sua interfaccia. Da lì non è stata presa alcuna riga di codice — quel progetto è sotto licenza CC BY-NC, questo è MIT — soltanto ispirazione.
 
 ## Licenza
 

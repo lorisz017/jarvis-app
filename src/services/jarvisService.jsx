@@ -10,6 +10,7 @@ import {getLatestCommits} from "../core/github/commits";
 import {createGitHubRepo} from "../core/github/createRepo";
 import {deleteGitHubRepo} from "../core/github/deleteRepo";
 import {TOOLS, executeTool} from './tools';
+import {searchWeb} from './webSearchService';
 
 const groqApiKey = process.env.EXPO_PUBLIC_GROQ_API_KEY;
 
@@ -208,13 +209,32 @@ async function handleUserMessage(userMessage, {
 
         const chosenModel = chooseModelByText(userMessage);
 
-        // === Risposta del modello ===
         let responseData;
         let searchLimitReached = false;
-        // Diagnostica temporanea: il messaggio esatto restituito da Groq quando
-        // la ricerca web fallisce. Tre tentativi di correzione a scatola chiusa
-        // non hanno risolto, quindi serve vedere l'errore vero.
+        // Errore esatto restituito da chi doveva cercare sul web: serve a
+        // capire perché la ricerca fallisce, e viene mostrato in un avviso.
         let searchDiagnostic = null;
+
+        // === Ricerca sul web ===
+        // Si tenta prima con Gemini, che cerca su Google per conto suo. Se
+        // non è disponibile si prosegue con Groq Compound più sotto, che però
+        // finora ha sempre risposto con un limite superato.
+        if (chosenModel === SEARCH_MODEL) {
+            try {
+                const risposta = await searchWeb(userMessage);
+                if (risposta) {
+                    const pulita = stripMarkdown(risposta);
+                    setChatHistory([...updatedHistory, {role: 'assistant', content: pulita}]);
+                    await respond(pulita);
+                    return;
+                }
+            } catch (error) {
+                console.warn('Ricerca web con Gemini non riuscita:', error.message);
+                searchDiagnostic = `Gemini: ${error.message}`;
+            }
+        }
+
+        // === Risposta del modello ===
 
         const isSearch = chosenModel === SEARCH_MODEL;
         const messages = isSearch
