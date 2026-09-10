@@ -37,6 +37,7 @@ export default function SettingsModal({
                                           onToggleVoice,
                                           isBriefingEnabled,
                                           setIsBriefingEnabled,
+                                          onSelectVoice,
                                       }) {
     const [activeTab, setActiveTab] = useState('settings');
     // La voce viene scelta alla prima frase pronunciata: si rilegge ogni volta
@@ -105,15 +106,29 @@ export default function SettingsModal({
                                     <Text style={styles.settingsHint}>
                                         Nessuna chiave Deepgram configurata: si usa la voce di riserva.
                                     </Text>
-                                ) : voiceInfo.selected ? (
+                                ) : voiceInfo.available.length ? (
                                     <>
-                                        <Text style={styles.settingsHint}>In uso: {voiceInfo.selected}</Text>
-                                        {voiceInfo.available.length > 1 && (
-                                            <Text style={styles.settingsHint}>
-                                                Altre voci italiane disponibili:{'\n'}
-                                                {voiceInfo.available.join('\n')}
-                                            </Text>
-                                        )}
+                                        <Text style={styles.settingsHint}>
+                                            Tocchi una voce per usarla: cambia dalla frase successiva.
+                                        </Text>
+                                        {voiceInfo.available.map((nome) => {
+                                            const inUso = nome === voiceInfo.selected;
+                                            return (
+                                                <TouchableOpacity
+                                                    key={nome}
+                                                    style={[styles.voiceItem, inUso && styles.selectedVoiceItem]}
+                                                    onPress={() => {
+                                                        onSelectVoice(nome);
+                                                        setVoiceInfo(getVoiceInfo());
+                                                    }}
+                                                >
+                                                    <Text style={styles.voiceText}>
+                                                        {inUso ? '● ' : '   '}
+                                                        {nome.replace(/^aura-2-|-it$/g, '')}
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            );
+                                        })}
                                     </>
                                 ) : (
                                     <Text style={styles.settingsHint}>

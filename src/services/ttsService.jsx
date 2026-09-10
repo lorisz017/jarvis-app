@@ -8,10 +8,10 @@ const deepgramApiKey = process.env.EXPO_PUBLIC_DEEPGRAM_API_KEY;
 const DEEPGRAM_URL = 'https://api.deepgram.com/v1/speak';
 const DEEPGRAM_MODELS_URL = 'https://api.deepgram.com/v1/models';
 
-// Voce italiana preferita, nella forma aura-2-<nome>-it. Lasciandola vuota
-// l'app sceglie da sola fra le voci italiane disponibili: basta scriverci un
-// nome per imporre quella, senza dover cercare niente a mano.
-const PREFERRED_DEEPGRAM_VOICE = '';
+// Voce italiana scelta dall'utente nelle impostazioni, nella forma
+// aura-2-<nome>-it. Vuota significa "decidi tu": l'app prende la prima delle
+// voci italiane disponibili.
+let preferredVoice = '';
 
 // Modello TTS di Gemini e voce predefinita.
 // Voci disponibili (30+): Charon, Puck, Kore, Fenrir, Aoede, Zephyr, Leda,
@@ -138,6 +138,21 @@ export const getVoiceInfo = () => ({
     hasKey: Boolean(deepgramApiKey),
 });
 
+// Sceglie fra le voci già note: la preferita se c'è ancora, altrimenti la
+// prima disponibile.
+function pickVoice() {
+    return availableVoiceNames.find((nome) => nome === preferredVoice) || availableVoiceNames[0] || null;
+}
+
+// Cambia voce senza ricompilare: la scelta ha effetto dalla frase successiva.
+// Passando una stringa vuota si torna alla scelta automatica.
+export const setPreferredVoice = (voiceName) => {
+    preferredVoice = voiceName || '';
+    // L'elenco delle voci è già in memoria: si ripesca da lì, senza rifare
+    // la chiamata di rete a ogni cambio.
+    if (availableVoiceNames.length) resolvedVoice = pickVoice();
+};
+
 async function resolveDeepgramVoice() {
     if (resolvedVoice !== undefined) return resolvedVoice;
 
@@ -154,14 +169,14 @@ async function resolveDeepgramVoice() {
             .filter((nome) => nome.startsWith('aura-2') && nome.endsWith('-it'));
 
         availableVoiceNames = nomi;
-        resolvedVoice = nomi.find((nome) => nome === PREFERRED_DEEPGRAM_VOICE) || nomi[0] || null;
+        resolvedVoice = pickVoice();
 
         if (!resolvedVoice) {
             console.warn('Nessuna voce italiana Aura-2 trovata su Deepgram');
         }
     } catch (error) {
         console.warn('Elenco voci Deepgram non raggiungibile:', error.message);
-        resolvedVoice = PREFERRED_DEEPGRAM_VOICE || null;
+        resolvedVoice = preferredVoice || null;
     }
 
     return resolvedVoice;

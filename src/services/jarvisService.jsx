@@ -637,12 +637,11 @@ async function handleUserMessage(userMessage, {
         setJarvisResponseText(finalReply);
         await speak(finalReply);
 
-        // L'errore tecnico compare a schermo dopo la risposta, ma non viene
-        // letto ad alta voce: serve a capire perché la ricerca web fallisce.
+        // L'errore tecnico va mostrato in un avviso e non solo sotto la
+        // risposta: il riquadro del testo è alto poche righe e la diagnostica
+        // finiva fuori campo senza che nessuno la vedesse.
         if (searchDiagnostic) {
-            const withDiagnostic = `${finalReply}\n\n[diagnostica ricerca web]\n${searchDiagnostic}`;
-            setDisplayedText(withDiagnostic);
-            setJarvisResponseText(withDiagnostic);
+            Alert.alert('Diagnostica ricerca web', searchDiagnostic);
         }
     } catch (err) {
         console.error('Jarvis error:', err);

@@ -23,7 +23,7 @@ import VoicePickerModal from '../components/VoicePickerModal';
 import SettingsModal from '../components/SettingsModal';
 
 import {useVoiceSetup} from '../hooks/useVoiceSetup';
-import {speakJarvisResponse, stopJarvisVoice} from '../services/ttsService';
+import {speakJarvisResponse, stopJarvisVoice, setPreferredVoice} from '../services/ttsService';
 import {processAudioWithOpenAI, processTextMessage} from '../services/jarvisService';
 import {setNativeAlarm, setNativeTimer, getWeatherByCity, createCalendarEvent} from '../services/deviceActions';
 import {openApp, startNavigation} from '../services/appLauncher';
@@ -54,6 +54,8 @@ export default function Home() {
     // Città usata dal briefing di apertura per il meteo
     const [homeCity, setHomeCity] = useState(DEFAULT_STATE.homeCity);
     const [isBriefingEnabled, setIsBriefingEnabled] = useState(true);
+    // Voce Deepgram scelta nelle impostazioni; vuota = scelta automatica
+    const [voiceName, setVoiceName] = useState('');
     const [isSettingsVisible, setIsSettingsVisible] = useState(false);
     const [isStateLoaded, setIsStateLoaded] = useState(false);
 
@@ -77,6 +79,8 @@ export default function Home() {
             setChatHistory([SYSTEM_MESSAGE, ...saved.messages]);
             setIsVoiceEnabled(saved.isVoiceEnabled);
             setIsBriefingEnabled(saved.isBriefingEnabled);
+            setVoiceName(saved.voiceName);
+            setPreferredVoice(saved.voiceName);
             setHomeCity(saved.homeCity);
             setIsStateLoaded(true);
         })();
@@ -86,8 +90,8 @@ export default function Home() {
     // il file con lo stato vuoto di partenza.
     useEffect(() => {
         if (!isStateLoaded) return;
-        saveState({messages: chatHistory, isVoiceEnabled, isBriefingEnabled, homeCity});
-    }, [isStateLoaded, chatHistory, isVoiceEnabled, isBriefingEnabled, homeCity]);
+        saveState({messages: chatHistory, isVoiceEnabled, isBriefingEnabled, homeCity, voiceName});
+    }, [isStateLoaded, chatHistory, isVoiceEnabled, isBriefingEnabled, homeCity, voiceName]);
 
     const startPulsing = () => {
         Animated.loop(
@@ -119,6 +123,13 @@ export default function Home() {
             if (!next) stopJarvisVoice();
             return next;
         });
+    };
+
+    // Cambia la voce naturale dalle impostazioni: vale già dalla frase
+    // successiva, senza ricompilare, e viene ricordata al prossimo avvio.
+    const chooseVoice = (name) => {
+        setVoiceName(name);
+        setPreferredVoice(name);
     };
 
     const speak = async (text) => {
@@ -399,6 +410,7 @@ export default function Home() {
                 onToggleVoice={toggleVoice}
                 isBriefingEnabled={isBriefingEnabled}
                 setIsBriefingEnabled={setIsBriefingEnabled}
+                onSelectVoice={chooseVoice}
             />
         </SafeAreaView>
     );
