@@ -1,7 +1,8 @@
-import React, {useState} from 'react';
+import React, {useState, useEffect} from 'react';
 import {Modal, View, Text, ScrollView, TouchableOpacity, TextInput, Linking} from 'react-native';
 import {styles} from '../styles/mainStyles';
 import {FEATURE_SECTIONS} from '../utils/features';
+import {getVoiceInfo} from '../services/ttsService';
 
 const APP_VERSION = '2.0.0';
 const GITHUB_PROFILE = 'https://github.com/lorisz017';
@@ -38,6 +39,13 @@ export default function SettingsModal({
                                           setIsBriefingEnabled,
                                       }) {
     const [activeTab, setActiveTab] = useState('settings');
+    // La voce viene scelta alla prima frase pronunciata: si rilegge ogni volta
+    // che il pannello si apre, così mostra sempre lo stato aggiornato.
+    const [voiceInfo, setVoiceInfo] = useState(getVoiceInfo);
+
+    useEffect(() => {
+        if (isVisible) setVoiceInfo(getVoiceInfo());
+    }, [isVisible]);
 
     return (
         <Modal animationType="slide" transparent visible={isVisible} onRequestClose={onClose}>
@@ -91,6 +99,27 @@ export default function SettingsModal({
                                 <Text style={styles.settingsHint}>
                                     Con la voce spenta, J.A.R.V.I.S. risponde solo a schermo.
                                 </Text>
+
+                                <Text style={styles.settingsSectionTitle}>VOCE NATURALE</Text>
+                                {!voiceInfo.hasKey ? (
+                                    <Text style={styles.settingsHint}>
+                                        Nessuna chiave Deepgram configurata: si usa la voce di riserva.
+                                    </Text>
+                                ) : voiceInfo.selected ? (
+                                    <>
+                                        <Text style={styles.settingsHint}>In uso: {voiceInfo.selected}</Text>
+                                        {voiceInfo.available.length > 1 && (
+                                            <Text style={styles.settingsHint}>
+                                                Altre voci italiane disponibili:{'\n'}
+                                                {voiceInfo.available.join('\n')}
+                                            </Text>
+                                        )}
+                                    </>
+                                ) : (
+                                    <Text style={styles.settingsHint}>
+                                        Ancora da determinare: verrà scelta alla prima risposta parlata.
+                                    </Text>
+                                )}
                             </View>
                         )}
 

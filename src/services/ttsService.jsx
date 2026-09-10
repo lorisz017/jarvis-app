@@ -6,12 +6,12 @@ const geminiApiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
 const deepgramApiKey = process.env.EXPO_PUBLIC_DEEPGRAM_API_KEY;
 
 const DEEPGRAM_URL = 'https://api.deepgram.com/v1/speak';
+const DEEPGRAM_MODELS_URL = 'https://api.deepgram.com/v1/models';
 
-// Voce italiana di Aura-2. Il formato è aura-2-<nome voce>-it: l'elenco dei
-// nomi disponibili si trova nella console Deepgram, alla pagina delle voci.
-// Se il nome non esiste, la richiesta fallisce e si scende al ripiego
-// successivo senza che l'utente resti in silenzio.
-const DEEPGRAM_MODEL = 'aura-2-orfeo-it';
+// Voce italiana preferita, nella forma aura-2-<nome>-it. Lasciandola vuota
+// l'app sceglie da sola fra le voci italiane disponibili: basta scriverci un
+// nome per imporre quella, senza dover cercare niente a mano.
+const PREFERRED_DEEPGRAM_VOICE = '';
 
 // Modello TTS di Gemini e voce predefinita.
 // Voci disponibili (30+): Charon, Puck, Kore, Fenrir, Aoede, Zephyr, Leda,
@@ -123,13 +123,60 @@ function blobToBase64(blob) {
     });
 }
 
+// Nome del modello vocale, chiesto a Deepgram invece che scritto a mano: i
+// nomi delle voci italiane non sono documentati pubblicamente e cambiano nel
+// tempo, così non c'è niente da cercare né da aggiornare. Si risolve una
+// volta per avvio dell'app e poi resta in memoria.
+let resolvedVoice;
+let availableVoiceNames = [];
+
+// Serve al pannello impostazioni per mostrare quale voce è in uso e quali
+// altre ci sono: sul telefono i messaggi di log non sono consultabili.
+export const getVoiceInfo = () => ({
+    selected: resolvedVoice ?? null,
+    available: availableVoiceNames,
+    hasKey: Boolean(deepgramApiKey),
+});
+
+async function resolveDeepgramVoice() {
+    if (resolvedVoice !== undefined) return resolvedVoice;
+
+    try {
+        const response = await fetch(DEEPGRAM_MODELS_URL, {
+            headers: { Authorization: `Token ${deepgramApiKey}` },
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const data = await response.json();
+        const nomi = (data.tts || [])
+            .map((model) => model.canonical_name || model.name || '')
+            .filter((nome) => nome.startsWith('aura-2') && nome.endsWith('-it'));
+
+        availableVoiceNames = nomi;
+        resolvedVoice = nomi.find((nome) => nome === PREFERRED_DEEPGRAM_VOICE) || nomi[0] || null;
+
+        if (!resolvedVoice) {
+            console.warn('Nessuna voce italiana Aura-2 trovata su Deepgram');
+        }
+    } catch (error) {
+        console.warn('Elenco voci Deepgram non raggiungibile:', error.message);
+        resolvedVoice = PREFERRED_DEEPGRAM_VOICE || null;
+    }
+
+    return resolvedVoice;
+}
+
 // Voce principale: Deepgram Aura-2. Il credito iniziale vale milioni di
 // caratteri e non scade, quindi regge l'uso quotidiano — al contrario di
 // Gemini, che si esaurisce dopo pochi scambi ravvicinati.
 async function speakWithDeepgram(text) {
     if (!deepgramApiKey) return false;
 
-    const response = await fetch(`${DEEPGRAM_URL}?model=${DEEPGRAM_MODEL}`, {
+    const voce = await resolveDeepgramVoice();
+    if (!voce) return false;
+
+    const response = await fetch(`${DEEPGRAM_URL}?model=${voce}`, {
         method: 'POST',
         headers: {
             Authorization: `Token ${deepgramApiKey}`,
