@@ -9,6 +9,7 @@ import {
 import {getLatestCommits} from "../core/github/commits";
 import {createGitHubRepo} from "../core/github/createRepo";
 import {deleteGitHubRepo} from "../core/github/deleteRepo";
+import {TOOLS, executeTool} from './tools';
 
 const groqApiKey = process.env.EXPO_PUBLIC_GROQ_API_KEY;
 
@@ -50,14 +51,14 @@ function buildSearchMessages(userMessage) {
     return [SEARCH_SYSTEM_MESSAGE, {role: 'user', content: userMessage}];
 }
 
-async function requestChatCompletion(model, messages) {
+async function requestChatCompletion(model, messages, tools) {
     const completion = await fetch(`${GROQ_BASE_URL}/chat/completions`, {
         method: 'POST',
         headers: {
             Authorization: `Bearer ${groqApiKey}`,
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({model, messages}),
+        body: JSON.stringify(tools ? {model, messages, tools, tool_choice: 'auto'} : {model, messages}),
     });
 
     const responseData = await completion.json().catch(() => ({}));
@@ -148,6 +149,43 @@ async function handleUserMessage(userMessage, {
         await speak(message);
     };
 
+    // Eliminare un repository è irreversibile: si chiede sempre conferma
+    // esplicita, qualunque sia la strada da cui arriva la richiesta.
+    const confirmRepoDeletion = (repoName) => new Promise((resolve) => {
+        Alert.alert(
+            'Conferma eliminazione',
+            `È sicuro di voler eliminare il repository: ${repoName}?`,
+            [
+                {text: 'Annulla', style: 'cancel', onPress: () => resolve(false)},
+                {text: 'Elimina', style: 'destructive', onPress: () => resolve(true)},
+            ],
+        );
+    });
+
+    // Tutto ciò che le azioni possono usare: alcune funzioni arrivano dalla
+    // schermata (hanno bisogno dello stato di React), altre da questo modulo.
+    const toolContext = {
+        setNativeAlarm,
+        setNativeTimer,
+        scheduleReminder,
+        listReminders,
+        cancelAllReminders,
+        getWeatherByCity,
+        createCalendarEvent,
+        openApp,
+        openCamera,
+        openTelegram,
+        openYoutube,
+        startNavigation,
+        callContact,
+        sendWhatsAppToContact,
+        setHomeCity,
+        createGitHubRepo,
+        deleteGitHubRepo,
+        getLatestCommits,
+        confirmRepoDeletion,
+    };
+
     try {
         const parsed = parseReminderDetails(userMessage);
 
@@ -178,27 +216,67 @@ async function handleUserMessage(userMessage, {
         // non hanno risolto, quindi serve vedere l'errore vero.
         let searchDiagnostic = null;
 
-        try {
-            responseData = await requestChatCompletion(
-                chosenModel,
-                chosenModel === SEARCH_MODEL
-                    ? buildSearchMessages(userMessage)
-                    : trimHistoryForApi(updatedHistory, MAX_HISTORY_MESSAGES)
-            );
-        } catch (error) {
-            // La ricerca web legge pagine intere e brucia in fretta il limite
-            // di token al minuto di Groq, che risponde 413 (o 429). In quel
-            // caso è meglio rispondere lo stesso col modello normale, dicendo
-            // che la risposta non arriva dal web, invece di un errore secco.
-            const isRateLimited = error.status === 413 || error.status === 429;
-            if (chosenModel !== SEARCH_MODEL || !isRateLimited) throw error;
+        const isSearch = chosenModel === SEARCH_MODEL;
+        const messages = isSearch
+            ? buildSearchMessages(userMessage)
+            : trimHistoryForApi(updatedHistory, MAX_HISTORY_MESSAGES);
+        // Gli strumenti si mandano solo al modello di chat: quello di ricerca
+        // deve cercare e rispondere, non eseguire azioni.
+        const tools = isSearch ? undefined : TOOLS;
 
-            searchLimitReached = true;
-            searchDiagnostic = `HTTP ${error.status} — ${error.message}`;
-            responseData = await requestChatCompletion(
-                CHAT_MODEL,
-                trimHistoryForApi(updatedHistory, MAX_HISTORY_MESSAGES)
-            );
+        try {
+            responseData = await requestChatCompletion(chosenModel, messages, tools);
+        } catch (error) {
+            const isRateLimited = error.status === 413 || error.status === 429;
+
+            if (tools && !isRateLimited) {
+                // Se il modello rifiuta la richiesta con gli strumenti, si
+                // riprova senza: si perdono le azioni concatenate, ma la
+                // vecchia strada a comandi testuali funziona ancora e
+                // l'utente riceve comunque una risposta.
+                console.warn('Richiesta con strumenti rifiutata, riprovo senza:', error.message);
+                responseData = await requestChatCompletion(chosenModel, messages);
+            } else if (isSearch && isRateLimited) {
+                // La ricerca web brucia in fretta il limite di token al minuto
+                // di Groq, che risponde 413 (o 429): meglio rispondere lo
+                // stesso col modello normale, dicendo che la risposta non
+                // arriva dal web, invece di un errore secco.
+                searchLimitReached = true;
+                searchDiagnostic = `HTTP ${error.status} — ${error.message}`;
+                responseData = await requestChatCompletion(
+                    CHAT_MODEL,
+                    trimHistoryForApi(updatedHistory, MAX_HISTORY_MESSAGES)
+                );
+            } else {
+                throw error;
+            }
+        }
+
+        // === Azioni richieste dal modello ===
+        // Possono essere più di una: è così che funzionano le richieste
+        // concatenate ("manda un messaggio a Marco e mettimi la sveglia
+        // alle 8"). Vengono eseguite nell'ordine in cui il modello le ha
+        // chieste, e se una fallisce le altre proseguono comunque.
+        const toolCalls = responseData.choices?.[0]?.message?.tool_calls;
+
+        if (toolCalls?.length) {
+            const esiti = [];
+
+            for (const call of toolCalls) {
+                const nome = call.function?.name;
+                try {
+                    const args = JSON.parse(call.function?.arguments || '{}');
+                    esiti.push(await executeTool(nome, args, toolContext));
+                } catch (error) {
+                    console.error(`Azione ${nome}:`, error);
+                    esiti.push(`Non sono riuscito a completare "${nome}": ${error.message}`);
+                }
+            }
+
+            const risposta = `Signore. ${esiti.join(' ')}`;
+            setChatHistory([...updatedHistory, {role: 'assistant', content: risposta}]);
+            await respond(risposta);
+            return;
         }
 
         const jarvisReply = stripMarkdown(responseData.choices?.[0]?.message?.content) || '...';
