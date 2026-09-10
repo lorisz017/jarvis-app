@@ -77,14 +77,31 @@ if (!groqApiKey) {
     Alert.alert('Groq API Key Missing', 'Please set your Groq API key in app.json');
 }
 
+// Toglie la formattazione markdown lasciando intatto il testo.
+//
+// La versione precedente cancellava ogni "-" ovunque si trovasse, non solo
+// quelli usati come elenco puntato: "costa 1-2 euro" diventava "costa 12
+// euro" e "COVID-19" diventava "COVID19". Qui ogni simbolo viene rimosso
+// soltanto dove ha davvero valore di markup.
+//
+// Il corsivo con "_" non viene gestito di proposito: i comandi dell'app
+// contengono underscore (open_app, whatsapp_contact) e verrebbero spezzati.
 function stripMarkdown(text) {
-    return text
-        .replace(/[*~`#>-]+/g, '')
-        .replace(/\[(.*?)\]\(.*?\)/g, '$1')
+    return (text || '')
+        // Immagini e collegamenti: resta il testo, sparisce l'indirizzo
         .replace(/!\[(.*?)\]\(.*?\)/g, '$1')
-        .replace(/^\s*\n/gm, '')
-        .replace(/^\s+|\s+$/g, '')
-        .replace(/\n{2,}/g, '\n');
+        .replace(/\[(.*?)\]\(.*?\)/g, '$1')
+        // Titoli, citazioni ed elenchi: solo a inizio riga
+        .replace(/^\s{0,3}#{1,6}\s+/gm, '')
+        .replace(/^\s{0,3}>\s?/gm, '')
+        .replace(/^\s*[-*+]\s+/gm, '')
+        // Grassetto, corsivo, barrato, codice
+        .replace(/\*\*(.*?)\*\*/g, '$1')
+        .replace(/\*([^*\n]+)\*/g, '$1')
+        .replace(/~~(.*?)~~/g, '$1')
+        .replace(/`([^`]*)`/g, '$1')
+        .replace(/\n{2,}/g, '\n')
+        .trim();
 }
 
 function chooseModelByText(text) {
