@@ -3,6 +3,15 @@ import * as FileSystem from 'expo-file-system/legacy';
 import { createAudioPlayer } from 'expo-audio';
 
 const geminiApiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+const deepgramApiKey = process.env.EXPO_PUBLIC_DEEPGRAM_API_KEY;
+
+const DEEPGRAM_URL = 'https://api.deepgram.com/v1/speak';
+
+// Voce italiana di Aura-2. Il formato è aura-2-<nome voce>-it: l'elenco dei
+// nomi disponibili si trova nella console Deepgram, alla pagina delle voci.
+// Se il nome non esiste, la richiesta fallisce e si scende al ripiego
+// successivo senza che l'utente resti in silenzio.
+const DEEPGRAM_MODEL = 'aura-2-orfeo-it';
 
 // Modello TTS di Gemini e voce predefinita.
 // Voci disponibili (30+): Charon, Puck, Kore, Fenrir, Aoede, Zephyr, Leda,
@@ -85,6 +94,66 @@ function base64ByteLength(b64) {
 
 let currentPlayer = null;
 
+// Riproduce un file audio già scritto su disco, sostituendo quello in corso.
+async function playAudioFile(fileUri) {
+    stopJarvisVoice();
+
+    // Il player precedente non serve più: si libera qui, dove al suo posto ne
+    // arriva subito uno nuovo.
+    try {
+        currentPlayer?.remove();
+    } catch (e) {
+        console.warn('Rilascio player precedente:', e);
+    }
+
+    currentPlayer = createAudioPlayer({ uri: fileUri });
+    currentPlayer.play();
+}
+
+// I dati binari che tornano da Deepgram vanno scritti su file, e FileSystem
+// scrive testo: la conversione in base64 la fa FileReader, che è nativo e
+// quindi non blocca l'interfaccia come farebbe un ciclo in JavaScript su
+// centinaia di kilobyte.
+function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error('Conversione audio fallita'));
+        reader.onloadend = () => resolve(String(reader.result).split(',')[1]);
+        reader.readAsDataURL(blob);
+    });
+}
+
+// Voce principale: Deepgram Aura-2. Il credito iniziale vale milioni di
+// caratteri e non scade, quindi regge l'uso quotidiano — al contrario di
+// Gemini, che si esaurisce dopo pochi scambi ravvicinati.
+async function speakWithDeepgram(text) {
+    if (!deepgramApiKey) return false;
+
+    const response = await fetch(`${DEEPGRAM_URL}?model=${DEEPGRAM_MODEL}`, {
+        method: 'POST',
+        headers: {
+            Authorization: `Token ${deepgramApiKey}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text }),
+    });
+
+    if (!response.ok) {
+        const detail = await response.text().catch(() => '');
+        throw new Error(`Deepgram HTTP ${response.status} ${detail}`.trim());
+    }
+
+    const base64 = await blobToBase64(await response.blob());
+    const fileUri = `${FileSystem.cacheDirectory}jarvis-voice-${Date.now()}.mp3`;
+
+    await FileSystem.writeAsStringAsync(fileUri, base64, {
+        encoding: FileSystem.EncodingType.Base64,
+    });
+
+    await playAudioFile(fileUri);
+    return true;
+}
+
 // Ferma la voce in corso, qualunque delle due sia: quella di sistema o
 // l'audio generato da Gemini.
 //
@@ -142,10 +211,19 @@ export const speakJarvisResponse = async ({
                                           }) => {
     if (!text) return;
 
-    // Il testo compare subito: con l'audio generato da Gemini non esiste
-    // l'evento "onBoundary" che faceva scorrere il testo parola per parola.
+    // Il testo compare subito: con l'audio generato non esiste l'evento
+    // "onBoundary" che faceva scorrere il testo parola per parola.
     setDisplayedText(text);
     scrollRef?.current?.scrollToEnd({ animated: true });
+
+    // Si prova prima la voce migliore e si scende di livello solo se fallisce,
+    // così l'assistente non resta mai muto: Deepgram, poi Gemini, infine la
+    // voce di sistema del telefono.
+    try {
+        if (await speakWithDeepgram(text)) return;
+    } catch (err) {
+        console.warn('Voce Deepgram non disponibile, passo a Gemini:', err.message);
+    }
 
     if (!geminiApiKey) {
         speakWithDeviceVoice(text, { scrollRef, setDisplayedText });
@@ -196,18 +274,7 @@ export const speakJarvisResponse = async ({
             encoding: FileSystem.EncodingType.Base64,
         });
 
-        stopJarvisVoice();
-
-        // Il player precedente non serve più: si libera qui, dove al suo
-        // posto ne arriva subito uno nuovo.
-        try {
-            currentPlayer?.remove();
-        } catch (e) {
-            console.warn('Rilascio player precedente:', e);
-        }
-
-        currentPlayer = createAudioPlayer({ uri: fileUri });
-        currentPlayer.play();
+        await playAudioFile(fileUri);
     } catch (err) {
         console.error('Gemini TTS error:', err);
         // Se la voce di Gemini non funziona (quota esaurita, rete assente,

@@ -29,7 +29,7 @@ The flow of a single request:
 1. **You speak** — the recording is sent to **Whisper** (via Groq) and transcribed.
 2. **It thinks** — the text goes to a language model (**GPT-OSS 120B** via Groq) together with a system prompt describing every command it knows.
 3. **It decides** — if the answer is a plain reply, it's spoken back. If the model instead returns a command like `set_alarm 07:30 gym`, the app intercepts it and performs the real action on the device.
-4. **It speaks** — the reply is read aloud with **Gemini's** natural voice, falling back to the phone's built-in voice if that's unavailable.
+4. **It speaks** — the reply is read aloud with a natural voice from **Deepgram Aura-2**, stepping down to Gemini and then to the phone's built-in voice if a provider is unavailable, so it never falls silent.
 
 Questions that need current information ("who won yesterday?", "price of...") are routed to **Groq Compound**, which actually searches the web before answering.
 
@@ -69,7 +69,8 @@ Fork this repository to your own GitHub account.
 | Key | Where | Cost | Needed for |
 |---|---|---|---|
 | Groq | [console.groq.com](https://console.groq.com) | Free | **Required** — transcription, replies, web search |
-| Gemini | [aistudio.google.com](https://aistudio.google.com) | Free | Optional — the natural voice. Its free quota runs out after roughly six replies in quick succession, at which point the phone's built-in voice takes over automatically |
+| Deepgram | [console.deepgram.com](https://console.deepgram.com) | Free, no card | Recommended — the natural voice. Signing up grants credit worth millions of characters that does not expire |
+| Gemini | [aistudio.google.com](https://aistudio.google.com) | Free | Optional — a second voice, used if Deepgram is unavailable. Its own quota runs out after roughly six replies in quick succession |
 | GitHub token | GitHub → Settings → Developer settings → Personal access tokens, `repo` scope | Free | Optional — only for the repository commands |
 
 ### 3. Create the Expo project
@@ -78,6 +79,7 @@ Sign up at [expo.dev](https://expo.dev) and create a project. Then, in **Project
 
 ```
 EXPO_PUBLIC_GROQ_API_KEY
+EXPO_PUBLIC_DEEPGRAM_API_KEY    (voice)
 EXPO_PUBLIC_GEMINI_API_KEY      (optional)
 EXPO_PUBLIC_GITHUB_TOKEN_KEY    (optional)
 ```
@@ -161,7 +163,7 @@ Il percorso di una singola richiesta:
 1. **Si parla** — la registrazione viene mandata a **Whisper** (tramite Groq) e trascritta.
 2. **Ragiona** — il testo va a un modello linguistico (**GPT-OSS 120B** tramite Groq) insieme a un prompt di sistema che descrive tutti i comandi che conosce.
 3. **Decide** — se la risposta è normale, viene letta ad alta voce. Se invece il modello restituisce un comando tipo `set_alarm 07:30 palestra`, l'app lo intercetta ed esegue l'azione vera sul dispositivo.
-4. **Risponde** — la risposta viene letta con la voce naturale di **Gemini**, ripiegando sulla voce di sistema del telefono se non è disponibile.
+4. **Risponde** — la risposta viene letta con una voce naturale di **Deepgram Aura-2**, scendendo su Gemini e poi sulla voce di sistema del telefono se un fornitore non è disponibile, così non resta mai muto.
 
 Le domande che richiedono informazioni aggiornate ("chi ha vinto ieri?", "prezzo di...") vengono indirizzate a **Groq Compound**, che cerca davvero sul web prima di rispondere.
 
@@ -202,7 +204,8 @@ Per iniziare bisogna fare un fork di questo repository sul proprio account GitHu
 | Chiave | Dove | Costo | Serve per |
 |---|---|---|---|
 | Groq | [console.groq.com](https://console.groq.com) | Gratis | **Obbligatoria** — trascrizione, risposte, ricerca web |
-| Gemini | [aistudio.google.com](https://aistudio.google.com) | Gratis | Facoltativa — la voce naturale. La quota gratuita si esaurisce dopo circa sei risposte ravvicinate, dopodiché subentra automaticamente la voce di sistema |
+| Deepgram | [console.deepgram.com](https://console.deepgram.com) | Gratis, senza carta | Consigliata — la voce naturale. All'iscrizione si riceve un credito che vale milioni di caratteri e non scade |
+| Gemini | [aistudio.google.com](https://aistudio.google.com) | Gratis | Facoltativa — seconda voce, usata se Deepgram non è disponibile. La sua quota si esaurisce dopo circa sei risposte ravvicinate |
 | Token GitHub | GitHub → Settings → Developer settings → Personal access tokens, ambito `repo` | Gratis | Facoltativo — solo per i comandi sui repository |
 
 ### 3. Creare il progetto su Expo
@@ -211,6 +214,7 @@ Bisogna registrarsi su [expo.dev](https://expo.dev) e creare un progetto. Poi, i
 
 ```
 EXPO_PUBLIC_GROQ_API_KEY
+EXPO_PUBLIC_DEEPGRAM_API_KEY    (voce)
 EXPO_PUBLIC_GEMINI_API_KEY      (facoltativa)
 EXPO_PUBLIC_GITHUB_TOKEN_KEY    (facoltativo)
 ```
