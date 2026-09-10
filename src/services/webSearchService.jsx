@@ -1,5 +1,10 @@
 const geminiApiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
 
+// Serve a chi chiama per distinguere "la chiave non c'è" da "la ricerca è
+// andata male": senza questa distinzione le due cose davano lo stesso
+// messaggio, e la mancanza di una chiave sembrava un errore del provider.
+export const hasSearchKey = Boolean(geminiApiKey);
+
 // Ricerca sul web tramite Gemini con la ricerca Google integrata.
 //
 // Il tentativo precedente passava da Groq Compound, che però risponde sempre

@@ -106,9 +106,9 @@ Ultimo aggiornamento: dopo il collaudo della voce Deepgram e del tool calling.
 
 ## Cosa resta aperto
 
-**Ricerca web** — riscritta, ma da confermare. Tre tentativi di aggiustare la strada vecchia (ridurre la cronologia inviata, passare a `compound-mini`, alleggerire il prompt di sistema) non avevano risolto: Groq rispondeva che un limite era superato qualunque cosa gli si mandasse. Ora la ricerca passa da Gemini, che cerca su Google per conto suo e restituisce una risposta già scritta; Groq resta sotto come riserva. Serve una prova sul telefono.
+**Ricerca web** — ancora ferma, ma ora si sa perché. La strada nuova passa da Gemini, che cerca su Google per conto suo; la diagnostica del collaudo però ha restituito l'errore di Groq, il provider di riserva, senza alcun errore di Gemini prima. Vuol dire che Gemini non ha nemmeno provato: la sua chiave non è arrivata nella build. Da qui in avanti l'avviso lo dice esplicitamente invece di lasciarlo dedurre.
 
-**Catene di azioni** — implementate ma non ancora confermate. Al primo collaudo il modello scriveva i comandi come testo invece di usare gli strumenti, perché il prompt di sistema glielo ordinava: partiva solo la prima azione. Il prompt è stato riscritto, serve una prova.
+**Catene di azioni** — corrette. Gli strumenti funzionavano (i nomi dei comandi non compaiono più nella risposta), ma partiva solo la prima azione: il modello ne chiede una per volta, aspettando di sapere com'è andata prima di chiedere la successiva, e il codice eseguiva il primo gruppo e si fermava. Ora l'esito di ogni azione torna al modello finché non smette di chiederne, fino a quattro giri.
 
 **Vecchio meccanismo a comandi testuali** — resta nel codice come rete di sicurezza sotto agli strumenti. Una volta confermato il funzionamento delle catene va rimosso, insieme alla duplicazione che si porta dietro.
 

@@ -10,7 +10,7 @@ import {getLatestCommits} from "../core/github/commits";
 import {createGitHubRepo} from "../core/github/createRepo";
 import {deleteGitHubRepo} from "../core/github/deleteRepo";
 import {TOOLS, executeTool} from './tools';
-import {searchWeb} from './webSearchService';
+import {searchWeb, hasSearchKey} from './webSearchService';
 
 const groqApiKey = process.env.EXPO_PUBLIC_GROQ_API_KEY;
 
@@ -29,6 +29,11 @@ const SEARCH_MODEL = 'groq/compound-mini';
 // si manda al modello solo il messaggio di sistema più gli scambi recenti,
 // mentre la cronologia mostrata a schermo resta comunque intera.
 const MAX_HISTORY_MESSAGES = 20;
+
+// Quante volte si torna dal modello a chiedere se resta un'altra azione da
+// fare. Quattro basta per le richieste concatenate più lunghe che si dicono
+// a voce, e mette un tetto se il modello dovesse insistere a vuoto.
+const MAX_TOOL_ROUNDS = 4;
 
 function trimHistoryForApi(history, limit) {
     if (history.length <= limit) return history;
@@ -229,6 +234,11 @@ async function handleUserMessage(userMessage, {
                     await respond(pulita);
                     return;
                 }
+                searchDiagnostics.push(
+                    hasSearchKey
+                        ? 'Gemini: ha risposto senza testo'
+                        : 'Gemini: chiave EXPO_PUBLIC_GEMINI_API_KEY assente nella build'
+                );
             } catch (error) {
                 console.warn('Ricerca web con Gemini non riuscita:', error.message);
                 searchDiagnostics.push(`Gemini: ${error.message}`);
@@ -274,24 +284,54 @@ async function handleUserMessage(userMessage, {
         }
 
         // === Azioni richieste dal modello ===
-        // Possono essere più di una: è così che funzionano le richieste
-        // concatenate ("manda un messaggio a Marco e mettimi la sveglia
-        // alle 8"). Vengono eseguite nell'ordine in cui il modello le ha
-        // chieste, e se una fallisce le altre proseguono comunque.
-        const toolCalls = responseData.choices?.[0]?.message?.tool_calls;
+        // Una richiesta concatenata ("sveglia alle 8, timer di 10 minuti e
+        // chiama Marco") può diventare più azioni. Il modello però non le
+        // chiede quasi mai tutte insieme: ne chiede una, si aspetta di
+        // sapere com'è andata, e solo allora chiede la successiva. La
+        // versione precedente eseguiva il primo gruppo e si fermava lì,
+        // ed è per questo che partiva solo la sveglia.
+        //
+        // Qui invece si continua a rispondere al modello con l'esito di
+        // ogni azione finché non smette di chiederne. Il limite di giri
+        // evita che una richiesta mal interpretata giri all'infinito.
+        let toolCalls = responseData.choices?.[0]?.message?.tool_calls;
 
         if (toolCalls?.length) {
             const esiti = [];
+            const conversazione = [...messages];
+            let ultimaRisposta = responseData;
+            let giro = 0;
 
-            for (const call of toolCalls) {
-                const nome = call.function?.name;
-                try {
-                    const args = JSON.parse(call.function?.arguments || '{}');
-                    esiti.push(await executeTool(nome, args, toolContext));
-                } catch (error) {
-                    console.error(`Azione ${nome}:`, error);
-                    esiti.push(`Non sono riuscito a completare "${nome}": ${error.message}`);
+            while (toolCalls?.length && giro < MAX_TOOL_ROUNDS) {
+                giro += 1;
+                conversazione.push(ultimaRisposta.choices[0].message);
+
+                for (const call of toolCalls) {
+                    const nome = call.function?.name;
+                    let esito;
+                    try {
+                        const args = JSON.parse(call.function?.arguments || '{}');
+                        esito = await executeTool(nome, args, toolContext);
+                    } catch (error) {
+                        console.error(`Azione ${nome}:`, error);
+                        esito = `Non sono riuscito a completare "${nome}": ${error.message}`;
+                    }
+                    esiti.push(esito);
+                    // L'esito torna al modello con l'id della chiamata a cui
+                    // risponde: senza, l'API rifiuta il messaggio.
+                    conversazione.push({role: 'tool', tool_call_id: call.id, content: esito});
                 }
+
+                try {
+                    ultimaRisposta = await requestChatCompletion(chosenModel, conversazione, TOOLS);
+                } catch (error) {
+                    // Se il giro successivo non parte si tiene comunque quello
+                    // che è già stato fatto, invece di perdere tutto.
+                    console.warn('Giro di azioni interrotto:', error.message);
+                    break;
+                }
+
+                toolCalls = ultimaRisposta.choices?.[0]?.message?.tool_calls;
             }
 
             const risposta = `Signore. ${esiti.join(' ')}`;
