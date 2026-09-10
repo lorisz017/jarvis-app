@@ -134,11 +134,13 @@ Two more things worth knowing:
 - Original project by **[Azizbek Anvarjonov](https://github.com/az11k-dev)** — [az11k-dev/jarvis-app](https://github.com/az11k-dev/jarvis-app), the codebase this one is forked from
 - This version, Italian adaptation, interface and additional features by **[lorisz017](https://github.com/lorisz017)**
 
-Special thanks to **[FatihMakes](https://github.com/FatihMakes)** for [Mark-LIII](https://github.com/FatihMakes/Mark-LIII), the desktop assistant that gave this project its idea and the look of its interface. No code was taken from it — that project is licensed CC BY-NC, and this one is MIT — only inspiration.
+And a special thank you to **[FatihMakes](https://github.com/FatihMakes)** for [Mark-LIII](https://github.com/FatihMakes/Mark-LIII). That desktop assistant is where the idea for this one came from, and its interface is why this app looks the way it does.
 
 ## License
 
 MIT — see [LICENSE](./LICENSE). Copyright (c) 2025 Azizbek Anvarjonov, copyright (c) 2026 lorisz017.
+
+Mark-LIII, mentioned above, is licensed CC BY-NC, which does not mix with MIT. Nothing was copied from it: the debt is one of inspiration only.
 
 ---
 
@@ -271,8 +273,10 @@ Altre due cose che vale la pena sapere:
 - Progetto originale di **[Azizbek Anvarjonov](https://github.com/az11k-dev)** — [az11k-dev/jarvis-app](https://github.com/az11k-dev/jarvis-app), il codice da cui questo è nato come fork
 - Questa versione, adattamento italiano, interfaccia e funzioni aggiuntive di **[lorisz017](https://github.com/lorisz017)**
 
-Un ringraziamento particolare a **[FatihMakes](https://github.com/FatihMakes)** per [Mark-LIII](https://github.com/FatihMakes/Mark-LIII), l'assistente desktop che ha dato a questo progetto l'idea di partenza e l'aspetto della sua interfaccia. Da lì non è stata presa alcuna riga di codice — quel progetto è sotto licenza CC BY-NC, questo è MIT — soltanto ispirazione.
+E un ringraziamento speciale a **[FatihMakes](https://github.com/FatihMakes)** per [Mark-LIII](https://github.com/FatihMakes/Mark-LIII). È da quell'assistente desktop che è nata l'idea di questo, ed è per via della sua interfaccia che quest'app ha l'aspetto che ha.
 
 ## Licenza
 
 MIT — vedere [LICENSE](./LICENSE). Copyright (c) 2025 Azizbek Anvarjonov, copyright (c) 2026 lorisz017.
+
+Mark-LIII, citato sopra, è sotto licenza CC BY-NC, che non si combina con MIT. Da lì non è stato copiato nulla: il debito è soltanto di ispirazione.

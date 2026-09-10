@@ -181,10 +181,11 @@ export default function SettingsModal({
                                     <Text style={styles.aboutLink}>github.com/az11k-dev/jarvis-app</Text>
                                 </TouchableOpacity>
 
-                                <Text style={styles.settingsSectionTitle}>RINGRAZIAMENTI</Text>
+                                <Text style={styles.settingsSectionTitle}>UN GRAZIE PARTICOLARE</Text>
                                 <Text style={styles.aboutText}>
-                                    A FatihMakes, autore dell&apos;assistente desktop Mark-LIII, che ha dato a
-                                    questo progetto l&apos;idea di partenza e l&apos;aspetto della sua interfaccia.
+                                    A FatihMakes, autore dell&apos;assistente desktop Mark-LIII. È da lì che è
+                                    nata l&apos;idea di questo progetto, ed è per via della sua interfaccia che
+                                    quest&apos;app ha l&apos;aspetto che ha.
                                 </Text>
                                 <TouchableOpacity onPress={() => Linking.openURL(INSPIRATION_REPO)}>
                                     <Text style={styles.aboutLink}>github.com/FatihMakes/Mark-LIII</Text>
