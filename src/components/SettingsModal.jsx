@@ -163,7 +163,8 @@ export default function SettingsModal({
 
                                 <Text style={styles.settingsSectionTitle}>QUESTA VERSIONE</Text>
                                 <Text style={styles.aboutText}>
-                                    Adattamento italiano, interfaccia e funzioni aggiuntive di lorisz017.
+                                    Di lorisz017: l&apos;interfaccia, le azioni sul telefono, la voce e in
+                                    pratica tutto quello che l&apos;app fa oggi.
                                 </Text>
                                 <TouchableOpacity onPress={() => Linking.openURL(GITHUB_PROFILE)}>
                                     <Text style={styles.aboutLink}>github.com/lorisz017</Text>
@@ -172,10 +173,10 @@ export default function SettingsModal({
                                     <Text style={styles.aboutLink}>github.com/lorisz017/jarvis-app</Text>
                                 </TouchableOpacity>
 
-                                <Text style={styles.settingsSectionTitle}>PROGETTO ORIGINALE</Text>
+                                <Text style={styles.settingsSectionTitle}>SCHELETRO INIZIALE</Text>
                                 <Text style={styles.aboutText}>
-                                    Basato sul lavoro di Azizbek Anvarjonov, distribuito con licenza MIT.
-                                    Copyright (c) 2025 Azizbek Anvarjonov, copyright (c) 2026 lorisz017.
+                                    Di Azizbek Anvarjonov: è il progetto da cui questo è nato. Licenza MIT,
+                                    copyright (c) 2025 Azizbek Anvarjonov, copyright (c) 2026 lorisz017.
                                 </Text>
                                 <TouchableOpacity onPress={() => Linking.openURL(UPSTREAM_REPO)}>
                                     <Text style={styles.aboutLink}>github.com/az11k-dev/jarvis-app</Text>
@@ -193,9 +194,9 @@ export default function SettingsModal({
 
                                 <Text style={styles.settingsSectionTitle}>TECNOLOGIE</Text>
                                 <Text style={styles.aboutText}>
-                                    Trascrizione e ragionamento tramite Groq (Whisper, GPT-OSS, Compound per la
-                                    ricerca sul web), voce naturale tramite Gemini, meteo tramite Open-Meteo.
-                                    Applicazione realizzata con React Native ed Expo.
+                                    Trascrizione e ragionamento tramite Groq (Whisper, GPT-OSS), ricerca sul
+                                    web tramite Gemini, voce naturale tramite Deepgram, meteo tramite
+                                    Open-Meteo. Applicazione realizzata con React Native ed Expo.
                                 </Text>
                             </View>
                         )}

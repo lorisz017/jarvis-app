@@ -106,7 +106,7 @@ Ultimo aggiornamento: dopo il collaudo della voce Deepgram e del tool calling.
 
 ## Cosa resta aperto
 
-**Ricerca web** — l'unica funzione che non fa quello che dovrebbe. Tre ipotesi di correzione (ridurre la cronologia inviata, passare a `compound-mini`, ridurre il prompt di sistema) non hanno risolto: Groq continua a rispondere che un limite è superato, qualunque cosa gli si mandi. La versione attuale mostra l'errore esatto in una finestra di avviso, per capire finalmente di quale limite si tratti prima di tentare una quarta volta.
+**Ricerca web** — riscritta, ma da confermare. Tre tentativi di aggiustare la strada vecchia (ridurre la cronologia inviata, passare a `compound-mini`, alleggerire il prompt di sistema) non avevano risolto: Groq rispondeva che un limite era superato qualunque cosa gli si mandasse. Ora la ricerca passa da Gemini, che cerca su Google per conto suo e restituisce una risposta già scritta; Groq resta sotto come riserva. Serve una prova sul telefono.
 
 **Catene di azioni** — implementate ma non ancora confermate. Al primo collaudo il modello scriveva i comandi come testo invece di usare gli strumenti, perché il prompt di sistema glielo ordinava: partiva solo la prima azione. Il prompt è stato riscritto, serve una prova.
 

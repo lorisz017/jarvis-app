@@ -37,7 +37,7 @@ You can also type instead of speaking — same actions, same behaviour.
 
 Voice and text input · spoken replies with a natural voice, selectable in the app · several actions from one request · weather · native alarms and timers · calendar events · reminders (create, list, cancel) · phone calls and WhatsApp messages by contact name · navigation · launching ~20 common apps · camera, Telegram, YouTube · GitHub repository management · an opening briefing with the time, weather and your day's appointments · persistent memory across restarts · battery monitor · a settings panel listing every command.
 
-Web search is wired up through **Groq Compound** but does not currently work: the request comes back over a rate limit whatever is sent to it, and the assistant answers from the model's own knowledge instead, saying so.
+Web search now goes through **Gemini** and its built-in Google search. The previous route, Groq Compound, answered with a rate limit whatever was sent to it and is kept only as a fallback. The new route is in the code but has not been confirmed on a device yet.
 
 A live status list of what works, and what does not, is kept in [`STATO_FUNZIONI.md`](./STATO_FUNZIONI.md).
 
@@ -131,8 +131,8 @@ Two more things worth knowing:
 
 ## Credits
 
-- Original project by **[Azizbek Anvarjonov](https://github.com/az11k-dev)** — [az11k-dev/jarvis-app](https://github.com/az11k-dev/jarvis-app), the codebase this one is forked from
-- This version, Italian adaptation, interface and additional features by **[lorisz017](https://github.com/lorisz017)**
+- **[Azizbek Anvarjonov](https://github.com/az11k-dev)** — [az11k-dev/jarvis-app](https://github.com/az11k-dev/jarvis-app), the initial skeleton this project grew out of
+- **[lorisz017](https://github.com/lorisz017)** — everything since: the interface, the actions on the phone, the voice, and essentially all of what the app does today
 
 And a special thank you to **[FatihMakes](https://github.com/FatihMakes)** for [Mark-LIII](https://github.com/FatihMakes/Mark-LIII). That desktop assistant is where the idea for this one came from, and its interface is why this app looks the way it does.
 
@@ -175,7 +175,7 @@ Si può anche scrivere invece di parlare — stesse azioni, stesso comportamento
 
 Comandi a voce e scritti · risposta parlata con voce naturale, selezionabile dall'app · più azioni con una sola richiesta · meteo · sveglie e timer nativi · eventi in calendario · promemoria (crea, elenca, annulla) · chiamate e messaggi WhatsApp per nome del contatto · navigazione · apertura di una ventina di app · fotocamera, Telegram, YouTube · gestione repository GitHub · riepilogo all'apertura con ora, meteo e impegni del giorno · memoria che sopravvive alla chiusura · monitor della batteria · pannello impostazioni con l'elenco di tutti i comandi.
 
-La ricerca sul web è collegata a **Groq Compound** ma al momento non funziona: qualunque cosa le si mandi, la richiesta torna indietro per un limite superato, e l'assistente risponde con le conoscenze del modello dicendolo apertamente.
+La ricerca sul web passa ora da **Gemini** e dalla sua ricerca Google integrata. La strada precedente, Groq Compound, rispondeva con un limite superato qualunque cosa le si mandasse e resta solo come riserva. La nuova è nel codice ma non è ancora stata confermata sul telefono.
 
 L'elenco aggiornato di cosa funziona, e cosa no, è in [`STATO_FUNZIONI.md`](./STATO_FUNZIONI.md).
 
@@ -270,8 +270,8 @@ Altre due cose che vale la pena sapere:
 
 ## Crediti
 
-- Progetto originale di **[Azizbek Anvarjonov](https://github.com/az11k-dev)** — [az11k-dev/jarvis-app](https://github.com/az11k-dev/jarvis-app), il codice da cui questo è nato come fork
-- Questa versione, adattamento italiano, interfaccia e funzioni aggiuntive di **[lorisz017](https://github.com/lorisz017)**
+- **[Azizbek Anvarjonov](https://github.com/az11k-dev)** — [az11k-dev/jarvis-app](https://github.com/az11k-dev/jarvis-app), lo scheletro iniziale da cui è nato questo progetto
+- **[lorisz017](https://github.com/lorisz017)** — tutto il resto: l'interfaccia, le azioni sul telefono, la voce e in pratica tutto quello che l'app fa oggi
 
 E un ringraziamento speciale a **[FatihMakes](https://github.com/FatihMakes)** per [Mark-LIII](https://github.com/FatihMakes/Mark-LIII). È da quell'assistente desktop che è nata l'idea di questo, ed è per via della sua interfaccia che quest'app ha l'aspetto che ha.
 
