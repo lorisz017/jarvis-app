@@ -7,7 +7,7 @@ Legenda:
 - ❌ **Non funziona** — provata e non funzionante
 - ⏳ **Non testabile** — bloccata da qualcosa di esterno (chiave mancante)
 
-Ultimo aggiornamento: dopo il collaudo della 2.0.0 sul dispositivo.
+Ultimo aggiornamento: dopo il collaudo della voce Deepgram e del tool calling.
 
 > **Su cosa è stato provato.** Il progetto è nelle sue prime fasi e tutte le
 > spunte qui sotto vengono da **un solo dispositivo: uno Xiaomi 17 con
@@ -25,13 +25,21 @@ Ultimo aggiornamento: dopo il collaudo della 2.0.0 sul dispositivo.
 |---|---|---|
 | Comando vocale | Tocchi il radar e parli | ✅ |
 | Comando scritto | Campo di testo in fondo | ✅ |
-| Risposta parlata (voce Gemini) | Automatica | ⚠️ dopo circa sei richieste ravvicinate si esaurisce la quota gratuita e subentra la voce di sistema |
-| Ripiego sulla voce di sistema | Automatico | ✅ funziona, ma è nettamente più robotica |
-| Scelta della voce | Pill "VOCE" | ✅ |
+| Risposta parlata (voce Deepgram) | Automatica | ✅ non degrada più: il credito Deepgram regge l'uso quotidiano |
+| Scelta della voce naturale | Impostazioni → Voce naturale | ✅ nove voci italiane, si cambia senza ricompilare |
+| Ripiego su Gemini e voce di sistema | Automatico | ✅ entra solo se Deepgram non è disponibile |
+| Scelta della voce di sistema | Pill "VOCE" | ✅ riguarda solo la voce di riserva del telefono |
 | Spegnere la voce | Pulsante 🔊 in alto a destra | ✅ |
 | Interrompere la voce mentre parla | 🔊, FERMA, o il microfono | ✅ |
 | Riattivare la voce | Pulsante 🔊 | ✅ riprende dal messaggio successivo: un audio interrotto non è recuperabile a metà, andrebbe rigenerato |
 | Registro attività scorrevole | Sotto il radar | ✅ |
+
+## Azioni
+
+| Funzione | Come si usa | Stato |
+|---|---|---|
+| Più azioni in una richiesta | "Sveglia alle 8, timer di 10 minuti e chiama Marco" | ⚠️ da riverificare: al primo tentativo partiva solo la prima azione, il prompt è stato corretto |
+| Azione singola | Qualunque comando da solo | ✅ |
 
 ## Informazioni
 
@@ -39,7 +47,7 @@ Ultimo aggiornamento: dopo il collaudo della 2.0.0 sul dispositivo.
 |---|---|---|
 | Riepilogo all'apertura | Automatico all'avvio | ✅ |
 | Meteo | "Che tempo fa a Milano?" | ✅ |
-| Ricerca sul web | "Chi ha vinto...", "Prezzo di..." | ❌ Groq risponde sempre con un limite superato; risponde comunque, ma dalle conoscenze del modello, non dal web |
+| Ricerca sul web | "Chi ha vinto...", "Prezzo di..." | ❌ Groq risponde sempre con un limite superato; l'assistente risponde dalle conoscenze del modello, dicendolo |
 
 ## Tempo e promemoria
 
@@ -98,10 +106,14 @@ Ultimo aggiornamento: dopo il collaudo della 2.0.0 sul dispositivo.
 
 ## Cosa resta aperto
 
-**Ricerca web** — è l'unica funzione che non fa quello che dovrebbe. Tre ipotesi di correzione (ridurre la cronologia inviata, passare a `compound-mini`, ridurre il prompt di sistema) non hanno risolto: Groq continua a rispondere che un limite è superato. La versione attuale mostra a schermo l'errore esatto restituito da Groq, sotto la risposta, per capire finalmente di quale limite si tratti.
+**Ricerca web** — l'unica funzione che non fa quello che dovrebbe. Tre ipotesi di correzione (ridurre la cronologia inviata, passare a `compound-mini`, ridurre il prompt di sistema) non hanno risolto: Groq continua a rispondere che un limite è superato, qualunque cosa gli si mandi. La versione attuale mostra l'errore esatto in una finestra di avviso, per capire finalmente di quale limite si tratti prima di tentare una quarta volta.
 
-**Voce Gemini che si esaurisce** — dopo circa sei richieste ravvicinate la quota gratuita finisce e subentra la voce di sistema, più robotica. Il ripiego funziona come previsto e l'app continua a parlare, ma per un utente esterno il cambio di voce è percepibile.
+**Catene di azioni** — implementate ma non ancora confermate. Al primo collaudo il modello scriveva i comandi come testo invece di usare gli strumenti, perché il prompt di sistema glielo ordinava: partiva solo la prima azione. Il prompt è stato riscritto, serve una prova.
+
+**Vecchio meccanismo a comandi testuali** — resta nel codice come rete di sicurezza sotto agli strumenti. Una volta confermato il funzionamento delle catene va rimosso, insieme alla duplicazione che si porta dietro.
 
 ## Non ancora implementato
 
 **Parola di attivazione "Jarvis"** — ascolto continuo senza toccare lo schermo. Rimandata: è l'unica funzione non verificabile senza un dispositivo e rischia di destabilizzare il resto.
+
+**Report in PDF, salvataggio file e riordino cartelle** — discussi e fattibili, appoggiati sugli strumenti: si costruiscono una volta confermate le catene.

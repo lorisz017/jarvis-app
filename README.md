@@ -27,19 +27,19 @@ It started as a fork of an existing open-source assistant and grew from there: t
 The flow of a single request:
 
 1. **You speak** — the recording is sent to **Whisper** (via Groq) and transcribed.
-2. **It thinks** — the text goes to a language model (**GPT-OSS 120B** via Groq) together with a system prompt describing every command it knows.
-3. **It decides** — if the answer is a plain reply, it's spoken back. If the model instead returns a command like `set_alarm 07:30 gym`, the app intercepts it and performs the real action on the device.
+2. **It thinks** — the text goes to a language model (**GPT-OSS 120B** via Groq), which is handed the list of actions the app can perform on the phone.
+3. **It acts** — if the model asks for one or more of those actions, the app carries them out in order and reports back on all of them at once, so a single request can set an alarm, start a timer and place a call. Otherwise the answer is simply spoken.
 4. **It speaks** — the reply is read aloud with a natural voice from **Deepgram Aura-2**, stepping down to Gemini and then to the phone's built-in voice if a provider is unavailable, so it never falls silent.
 
-Questions that need current information ("who won yesterday?", "price of...") are routed to **Groq Compound**, which actually searches the web before answering.
-
-You can also type instead of speaking — same commands, same behaviour.
+You can also type instead of speaking — same actions, same behaviour.
 
 ## Features
 
-Voice and text input · spoken replies with a natural voice · web search · weather · native alarms and timers · calendar events · reminders (create, list, cancel) · phone calls and WhatsApp messages by contact name · navigation · launching ~20 common apps · camera, Telegram, YouTube · GitHub repository management · an opening briefing with the time, weather and your day's appointments · persistent memory across restarts · battery monitor · a settings panel with a full command reference.
+Voice and text input · spoken replies with a natural voice, selectable in the app · several actions from one request · weather · native alarms and timers · calendar events · reminders (create, list, cancel) · phone calls and WhatsApp messages by contact name · navigation · launching ~20 common apps · camera, Telegram, YouTube · GitHub repository management · an opening briefing with the time, weather and your day's appointments · persistent memory across restarts · battery monitor · a settings panel listing every command.
 
-A live status list of what's working is kept in [`STATO_FUNZIONI.md`](./STATO_FUNZIONI.md).
+Web search is wired up through **Groq Compound** but does not currently work: the request comes back over a rate limit whatever is sent to it, and the assistant answers from the model's own knowledge instead, saying so.
+
+A live status list of what works, and what does not, is kept in [`STATO_FUNZIONI.md`](./STATO_FUNZIONI.md).
 
 ### Tested on
 
@@ -68,7 +68,7 @@ Fork this repository to your own GitHub account.
 
 | Key | Where | Cost | Needed for |
 |---|---|---|---|
-| Groq | [console.groq.com](https://console.groq.com) | Free | **Required** — transcription, replies, web search |
+| Groq | [console.groq.com](https://console.groq.com) | Free | **Required** — transcription and replies |
 | Deepgram | [console.deepgram.com](https://console.deepgram.com) | Free, no card | Recommended — the natural voice. Signing up grants credit worth millions of characters that does not expire |
 | Gemini | [aistudio.google.com](https://aistudio.google.com) | Free | Optional — a second voice, used if Deepgram is unavailable. Its own quota runs out after roughly six replies in quick succession |
 | GitHub token | GitHub → Settings → Developer settings → Personal access tokens, `repo` scope | Free | Optional — only for the repository commands |
@@ -161,19 +161,19 @@ Gli assistenti sul telefono tendono a dividersi in due categorie: quelli di sist
 Il percorso di una singola richiesta:
 
 1. **Si parla** — la registrazione viene mandata a **Whisper** (tramite Groq) e trascritta.
-2. **Ragiona** — il testo va a un modello linguistico (**GPT-OSS 120B** tramite Groq) insieme a un prompt di sistema che descrive tutti i comandi che conosce.
-3. **Decide** — se la risposta è normale, viene letta ad alta voce. Se invece il modello restituisce un comando tipo `set_alarm 07:30 palestra`, l'app lo intercetta ed esegue l'azione vera sul dispositivo.
+2. **Ragiona** — il testo va a un modello linguistico (**GPT-OSS 120B** tramite Groq), a cui viene consegnato l'elenco delle azioni che l'app sa compiere sul telefono.
+3. **Agisce** — se il modello ne richiede una o più, l'app le esegue in ordine e le conferma tutte insieme: una sola richiesta può quindi mettere una sveglia, avviare un timer e fare una chiamata. Altrimenti la risposta viene semplicemente letta.
 4. **Risponde** — la risposta viene letta con una voce naturale di **Deepgram Aura-2**, scendendo su Gemini e poi sulla voce di sistema del telefono se un fornitore non è disponibile, così non resta mai muto.
 
-Le domande che richiedono informazioni aggiornate ("chi ha vinto ieri?", "prezzo di...") vengono indirizzate a **Groq Compound**, che cerca davvero sul web prima di rispondere.
-
-Si può anche scrivere invece di parlare — stessi comandi, stesso comportamento.
+Si può anche scrivere invece di parlare — stesse azioni, stesso comportamento.
 
 ## Funzioni
 
-Comandi a voce e scritti · risposta parlata con voce naturale · ricerca sul web · meteo · sveglie e timer nativi · eventi in calendario · promemoria (crea, elenca, annulla) · chiamate e messaggi WhatsApp per nome del contatto · navigazione · apertura di una ventina di app · fotocamera, Telegram, YouTube · gestione repository GitHub · riepilogo all'apertura con ora, meteo e impegni del giorno · memoria che sopravvive alla chiusura · monitor della batteria · pannello impostazioni con l'elenco completo dei comandi.
+Comandi a voce e scritti · risposta parlata con voce naturale, selezionabile dall'app · più azioni con una sola richiesta · meteo · sveglie e timer nativi · eventi in calendario · promemoria (crea, elenca, annulla) · chiamate e messaggi WhatsApp per nome del contatto · navigazione · apertura di una ventina di app · fotocamera, Telegram, YouTube · gestione repository GitHub · riepilogo all'apertura con ora, meteo e impegni del giorno · memoria che sopravvive alla chiusura · monitor della batteria · pannello impostazioni con l'elenco di tutti i comandi.
 
-L'elenco aggiornato di cosa funziona è in [`STATO_FUNZIONI.md`](./STATO_FUNZIONI.md).
+La ricerca sul web è collegata a **Groq Compound** ma al momento non funziona: qualunque cosa le si mandi, la richiesta torna indietro per un limite superato, e l'assistente risponde con le conoscenze del modello dicendolo apertamente.
+
+L'elenco aggiornato di cosa funziona, e cosa no, è in [`STATO_FUNZIONI.md`](./STATO_FUNZIONI.md).
 
 ### Su cosa è stato provato
 
@@ -203,7 +203,7 @@ Per iniziare bisogna fare un fork di questo repository sul proprio account GitHu
 
 | Chiave | Dove | Costo | Serve per |
 |---|---|---|---|
-| Groq | [console.groq.com](https://console.groq.com) | Gratis | **Obbligatoria** — trascrizione, risposte, ricerca web |
+| Groq | [console.groq.com](https://console.groq.com) | Gratis | **Obbligatoria** — trascrizione e risposte |
 | Deepgram | [console.deepgram.com](https://console.deepgram.com) | Gratis, senza carta | Consigliata — la voce naturale. All'iscrizione si riceve un credito che vale milioni di caratteri e non scade |
 | Gemini | [aistudio.google.com](https://aistudio.google.com) | Gratis | Facoltativa — seconda voce, usata se Deepgram non è disponibile. La sua quota si esaurisce dopo circa sei risposte ravvicinate |
 | Token GitHub | GitHub → Settings → Developer settings → Personal access tokens, ambito `repo` | Gratis | Facoltativo — solo per i comandi sui repository |
