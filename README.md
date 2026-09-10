@@ -136,7 +136,7 @@ Two more things worth knowing:
 
 ## License
 
-MIT — see [LICENSE](./LICENSE). Copyright (c) 2025 Azizbek Anvarjonov.
+MIT — see [LICENSE](./LICENSE). Copyright (c) 2025 Azizbek Anvarjonov, copyright (c) 2026 lorisz017.
 
 ---
 
@@ -271,4 +271,4 @@ Altre due cose che vale la pena sapere:
 
 ## Licenza
 
-MIT — vedere [LICENSE](./LICENSE). Copyright (c) 2025 Azizbek Anvarjonov.
+MIT — vedere [LICENSE](./LICENSE). Copyright (c) 2025 Azizbek Anvarjonov, copyright (c) 2026 lorisz017.

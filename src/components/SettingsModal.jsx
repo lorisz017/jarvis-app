@@ -174,7 +174,7 @@ export default function SettingsModal({
                                 <Text style={styles.settingsSectionTitle}>PROGETTO ORIGINALE</Text>
                                 <Text style={styles.aboutText}>
                                     Basato sul lavoro di Azizbek Anvarjonov, distribuito con licenza MIT.
-                                    Copyright (c) 2025 Azizbek Anvarjonov.
+                                    Copyright (c) 2025 Azizbek Anvarjonov, copyright (c) 2026 lorisz017.
                                 </Text>
                                 <TouchableOpacity onPress={() => Linking.openURL(UPSTREAM_REPO)}>
                                     <Text style={styles.aboutLink}>github.com/az11k-dev/jarvis-app</Text>
