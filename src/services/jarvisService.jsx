@@ -211,9 +211,10 @@ async function handleUserMessage(userMessage, {
 
         let responseData;
         let searchLimitReached = false;
-        // Errore esatto restituito da chi doveva cercare sul web: serve a
-        // capire perché la ricerca fallisce, e viene mostrato in un avviso.
-        let searchDiagnostic = null;
+        // Errori esatti restituiti da chi doveva cercare sul web, uno per
+        // provider tentato: servono a capire quale dei due ha fallito e
+        // perché, e vengono mostrati in un avviso.
+        const searchDiagnostics = [];
 
         // === Ricerca sul web ===
         // Si tenta prima con Gemini, che cerca su Google per conto suo. Se
@@ -230,7 +231,7 @@ async function handleUserMessage(userMessage, {
                 }
             } catch (error) {
                 console.warn('Ricerca web con Gemini non riuscita:', error.message);
-                searchDiagnostic = `Gemini: ${error.message}`;
+                searchDiagnostics.push(`Gemini: ${error.message}`);
             }
         }
 
@@ -262,7 +263,7 @@ async function handleUserMessage(userMessage, {
                 // stesso col modello normale, dicendo che la risposta non
                 // arriva dal web, invece di un errore secco.
                 searchLimitReached = true;
-                searchDiagnostic = `HTTP ${error.status} — ${error.message}`;
+                searchDiagnostics.push(`Groq: HTTP ${error.status} — ${error.message}`);
                 responseData = await requestChatCompletion(
                     CHAT_MODEL,
                     trimHistoryForApi(updatedHistory, MAX_HISTORY_MESSAGES)
@@ -660,8 +661,8 @@ async function handleUserMessage(userMessage, {
         // L'errore tecnico va mostrato in un avviso e non solo sotto la
         // risposta: il riquadro del testo è alto poche righe e la diagnostica
         // finiva fuori campo senza che nessuno la vedesse.
-        if (searchDiagnostic) {
-            Alert.alert('Diagnostica ricerca web', searchDiagnostic);
+        if (searchDiagnostics.length) {
+            Alert.alert('Diagnostica ricerca web', searchDiagnostics.join('\n\n'));
         }
     } catch (err) {
         console.error('Jarvis error:', err);
