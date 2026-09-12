@@ -1,4 +1,4 @@
-import {Alert} from 'react-native';
+import {Alert, AppState} from 'react-native';
 import {
     scheduleReminder,
     parseSecondsFromPhrase,
@@ -48,9 +48,10 @@ const SEARCH_MODEL = 'groq/compound-mini';
 const MAX_HISTORY_MESSAGES = 20;
 
 // Quante volte si torna dal modello a chiedere se resta un'altra azione da
-// fare. Quattro basta per le richieste concatenate più lunghe che si dicono
-// a voce, e mette un tetto se il modello dovesse insistere a vuoto.
-const MAX_TOOL_ROUNDS = 4;
+// fare. Sei basta per le richieste concatenate più lunghe che si dicono a
+// voce, tenendo conto che il controllo finale ne consuma uno, e mette un
+// tetto se il modello dovesse insistere a vuoto.
+const MAX_TOOL_ROUNDS = 6;
 
 function trimHistoryForApi(history, limit) {
     if (history.length <= limit) return history;
@@ -74,8 +75,51 @@ function buildSearchMessages(userMessage) {
     return [SEARCH_SYSTEM_MESSAGE, {role: 'user', content: userMessage}];
 }
 
+// Una richiesta di rete senza limite di tempo, se il server non risponde, non
+// finisce mai. Dentro l'app si vede girare la rotella; dalla bolla, fuori, non
+// si vede niente e sembra che J.A.R.V.I.S. sia morto — ed è esattamente quello
+// che è successo al collaudo.
+const TIMEOUT_RETE_MS = 45000;
+
+export async function fetchConTimeout(url, opzioni = {}, millisecondi = TIMEOUT_RETE_MS) {
+    const controller = new AbortController();
+    const scadenza = setTimeout(() => controller.abort(), millisecondi);
+
+    try {
+        return await fetch(url, {...opzioni, signal: controller.signal});
+    } catch (error) {
+        // L'interruzione per scadenza arriva come un errore qualsiasi: va
+        // riscritta, altrimenti diventa un "Aborted" che non dice niente.
+        if (error.name === 'AbortError') {
+            throw new Error(`Nessuna risposta entro ${Math.round(millisecondi / 1000)} secondi`);
+        }
+        throw error;
+    } finally {
+        clearTimeout(scadenza);
+    }
+}
+
+// Riporta l'app davanti e aspetta che ci sia davvero, invece di sperarci dopo
+// un tempo fisso: un'azione lanciata mentre siamo ancora dietro viene scartata
+// da Android senza dire niente, ed è così che sparivano i pezzi di catena.
+async function tornaInPrimoPiano() {
+    bringAppToFront();
+
+    const scadenza = Date.now() + 4000;
+    while (Date.now() < scadenza) {
+        if (AppState.currentState === 'active') {
+            // Un istante perché la finestra si assesti davvero.
+            await new Promise((resolve) => setTimeout(resolve, 350));
+            return true;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 150));
+    }
+
+    return false;
+}
+
 async function requestChatCompletion(model, messages, tools) {
-    const completion = await fetch(`${GROQ_BASE_URL}/chat/completions`, {
+    const completion = await fetchConTimeout(`${GROQ_BASE_URL}/chat/completions`, {
         method: 'POST',
         headers: {
             Authorization: `Bearer ${groqApiKey}`,
@@ -362,6 +406,7 @@ async function handleUserMessage(userMessage, {
             let ultimaRisposta = responseData;
             let giro = 0;
             let davantiCeUnAltraApp = false;
+            let promemoriaFatto = false;
 
             while (toolCalls?.length && giro < MAX_TOOL_ROUNDS) {
                 giro += 1;
@@ -374,8 +419,7 @@ async function handleUserMessage(userMessage, {
                     // fine della catena l'utente deve restare dov'è finito,
                     // non essere riportato dentro J.A.R.V.I.S. a forza.
                     if (davantiCeUnAltraApp) {
-                        bringAppToFront();
-                        await new Promise((resolve) => setTimeout(resolve, 1200));
+                        await tornaInPrimoPiano();
                     }
 
                     let esito;
@@ -403,6 +447,31 @@ async function handleUserMessage(userMessage, {
                 }
 
                 toolCalls = ultimaRisposta.choices?.[0]?.message?.tool_calls;
+
+                // Il modello tende a considerare chiusa la richiesta appena
+                // un'azione riesce: "sveglia, timer e chiamata" si fermava
+                // dopo le prime due. Quando smette di chiedere strumenti gli
+                // si ricorda una volta sola di rileggere la richiesta. Una
+                // sola, altrimenti si rischia di girare a vuoto.
+                if (!toolCalls?.length && !promemoriaFatto) {
+                    promemoriaFatto = true;
+                    conversazione.push(ultimaRisposta.choices[0].message);
+                    conversazione.push({
+                        role: 'user',
+                        content:
+                            'Rileggi la mia richiesta iniziale e controlla azione per azione. ' +
+                            'Se ne è rimasta anche una sola non ancora eseguita, eseguila adesso ' +
+                            'con lo strumento giusto. Se invece è tutto fatto, non usare altri ' +
+                            'strumenti e non rispondere niente.',
+                    });
+
+                    try {
+                        ultimaRisposta = await requestChatCompletion(chosenModel, conversazione, TOOLS);
+                        toolCalls = ultimaRisposta.choices?.[0]?.message?.tool_calls;
+                    } catch (error) {
+                        console.warn('Controllo finale della catena non riuscito:', error.message);
+                    }
+                }
             }
 
             const risposta = `Signore. ${esiti.join(' ')}`;
@@ -821,7 +890,7 @@ export const processAudioWithOpenAI = async ({
         formData.append('model', TRANSCRIPTION_MODEL);
         formData.append('language', 'it');
 
-        const whisperResponse = await fetch(`${GROQ_BASE_URL}/audio/transcriptions`, {
+        const whisperResponse = await fetchConTimeout(`${GROQ_BASE_URL}/audio/transcriptions`, {
             method: 'POST',
             headers: {
                 Authorization: `Bearer ${groqApiKey}`,
@@ -866,9 +935,16 @@ export const processAudioWithOpenAI = async ({
         });
     } catch (err) {
         console.error('Jarvis error (audio):', err);
-        setJarvisResponseText('Si è verificato un errore durante l\'elaborazione dell\'audio.');
-        setDisplayedText('Si è verificato un errore durante l\'elaborazione dell\'audio.');
-        Alert.alert('Errore', err.message);
+        const avviso = `Signore, non sono riuscito a elaborare la sua richiesta. ${err.message}`;
+        setJarvisResponseText(avviso);
+        setDisplayedText(avviso);
+        // Detto a voce e non solo in una finestra: dalla bolla, fuori
+        // dall'app, una finestra di avviso non si vede.
+        try {
+            await speak(avviso);
+        } catch (e) {
+            console.warn('Avviso non pronunciato:', e);
+        }
         setIsLoading(false);
     }
 };

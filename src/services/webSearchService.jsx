@@ -69,27 +69,50 @@ function estraiTutti(html, regex) {
 export function parseDuckDuckGo(html) {
     if (!html) return [];
 
-    // Pagina completa: titolo e riassunto sono due link con classi note.
-    let titoli = estraiTutti(html, /<a[^>]*class="[^"]*result__a[^"]*"[^>]*>([\s\S]*?)<\/a>/g);
-    let brani = estraiTutti(html, /<a[^>]*class="[^"]*result__snippet[^"]*"[^>]*>([\s\S]*?)<\/a>/g);
-
-    // Versione leggera: i risultati stanno in una tabella.
-    if (!brani.length) {
-        titoli = estraiTutti(html, /<a[^>]*class="[^"]*result-link[^"]*"[^>]*>([\s\S]*?)<\/a>/g);
-        brani = estraiTutti(html, /<td[^>]*class="[^"]*result-snippet[^"]*"[^>]*>([\s\S]*?)<\/td>/g);
-    }
-
     const risultati = [];
-    const quanti = Math.min(brani.length || titoli.length, 6);
+    let inAttesaDiBrano = null;
 
-    for (let i = 0; i < quanti; i++) {
-        const titolo = titoli[i] || '';
-        const brano = brani[i] || '';
-        if (!titolo && !brano) continue;
-        risultati.push({titolo, brano});
+    // Si scorrono i link uno per uno invece di cercare titoli e riassunti con
+    // due ricerche separate: le due pagine di DuckDuckGo mettono gli attributi
+    // in ordine diverso, e accoppiare per posizione sbagliava gli abbinamenti
+    // appena una riga usciva dallo schema.
+    const tag = /<(a|td)\b([^>]*)>([\s\S]*?)<\/\1>/g;
+    let m;
+
+    while ((m = tag.exec(html)) !== null) {
+        const attributi = m[2];
+        const contenuto = ripulisci(m[3]);
+        if (!contenuto) continue;
+
+        if (/result__a|result-link/.test(attributi)) {
+            inAttesaDiBrano = {titolo: contenuto, url: estraiUrl(attributi), brano: ''};
+            risultati.push(inAttesaDiBrano);
+        } else if (/result__snippet|result-snippet/.test(attributi)) {
+            if (inAttesaDiBrano && !inAttesaDiBrano.brano) {
+                inAttesaDiBrano.brano = contenuto;
+            } else {
+                risultati.push({titolo: '', url: '', brano: contenuto});
+            }
+        }
+
+        if (risultati.length >= 8) break;
     }
 
-    return risultati;
+    return risultati.filter((r) => r.titolo || r.brano);
+}
+
+// DuckDuckGo non mette l'indirizzo vero nel link: lo nasconde dentro un
+// proprio rimando, nel parametro uddg.
+function estraiUrl(attributi) {
+    const href = /href="([^"]*)"/.exec(attributi);
+    if (!href) return '';
+
+    const grezzo = decodeEntities(href[1]);
+    const rimando = /[?&]uddg=([^&"]+)/.exec(grezzo);
+    const indirizzo = rimando ? decodeURIComponent(rimando[1]) : grezzo;
+
+    if (indirizzo.startsWith('//')) return `https:${indirizzo}`;
+    return indirizzo.startsWith('http') ? indirizzo : '';
 }
 
 // Al primo collaudo la richiesta è tornata con "Network request failed": non
@@ -141,29 +164,68 @@ async function scarica(tentativo, query) {
     }
 }
 
+// Toglie a una pagina tutto quello che non è testo leggibile.
+function testoDellaPagina(html) {
+    return ripulisci(
+        String(html)
+            .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+            .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+            .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' ')
+    );
+}
+
+async function leggiPagina(url) {
+    const controller = new AbortController();
+    const scadenza = setTimeout(() => controller.abort(), 9000);
+
+    try {
+        const response = await fetch(url, {
+            signal: controller.signal,
+            headers: {'User-Agent': BROWSER_UA, Accept: 'text/html'},
+        });
+        if (!response.ok) return '';
+        return testoDellaPagina(await response.text()).slice(0, 1800);
+    } catch (error) {
+        return '';
+    } finally {
+        clearTimeout(scadenza);
+    }
+}
+
 /** Restituisce i brani trovati pronti da riassumere, o null. */
 export async function searchWithDuckDuckGo(query) {
     const problemi = [];
+    let risultati = [];
 
     for (const tentativo of TENTATIVI) {
         try {
-            const risultati = parseDuckDuckGo(await scarica(tentativo, query));
-            if (risultati.length) {
-                return risultati
-                    .map((r, i) => `[${i + 1}] ${r.titolo}\n${r.brano}`)
-                    .join('\n\n');
-            }
+            risultati = parseDuckDuckGo(await scarica(tentativo, query));
+            if (risultati.length) break;
             problemi.push(`${tentativo.nome}: nessun risultato`);
         } catch (error) {
             problemi.push(`${tentativo.nome}: ${error.message}`);
         }
     }
 
-    // Nessuna delle strade ha portato niente: si dice quali si sono provate
-    // e come è andata ciascuna, invece di un generico "non ha funzionato".
-    const error = new Error(problemi.join('; '));
-    error.tutteFallite = true;
-    throw error;
+    if (!risultati.length) {
+        const error = new Error(problemi.join('; '));
+        error.tutteFallite = true;
+        throw error;
+    }
+
+    // I riassunti di DuckDuckGo spesso descrivono il sito, non la notizia: al
+    // collaudo c'erano i risultati giusti ma nessuno diceva chi avesse vinto.
+    // Quindi si aprono davvero le prime pagine e si legge cosa c'è scritto.
+    const daLeggere = risultati.filter((r) => r.url).slice(0, 2);
+    const pagine = await Promise.all(daLeggere.map((r) => leggiPagina(r.url)));
+
+    const pezzi = risultati.slice(0, 6).map((r, i) => {
+        const lettura = pagine[daLeggere.indexOf(r)];
+        const corpo = lettura ? `${r.brano}\n${lettura}` : r.brano;
+        return `[${i + 1}] ${r.titolo}\n${corpo}`.trim();
+    });
+
+    return pezzi.join('\n\n');
 }
 
 const GEMINI_MODEL = 'gemini-flash-latest';

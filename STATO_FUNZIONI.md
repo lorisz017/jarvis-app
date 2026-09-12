@@ -28,7 +28,7 @@ Ultimo aggiornamento: dopo il collaudo della voce Deepgram e del tool calling.
 | Risposta parlata (voce Deepgram) | Automatica | ✅ non degrada più: il credito Deepgram regge l'uso quotidiano |
 | Scelta della voce naturale | Impostazioni → Voce naturale | ✅ nove voci italiane, si cambia senza ricompilare |
 | Volume pari fra le voci | Automatico | ✅ confermato: le voci più basse arrivano al livello delle altre |
-| Bolla flottante sopra le altre app | Impostazioni → Bolla flottante | ⏳ compare, ma al primo collaudo mandava in crash l'app: il servizio partiva nel momento sbagliato. Corretta, da riconfermare |
+| Bolla flottante sopra le altre app | Impostazioni → Bolla flottante | ⏳ non crasha più, il tocco avvia e chiude la registrazione, la linguetta "Rimuovi" c'è. Restava un'attesa senza fine quando la rete non rispondeva: ora tutte le richieste hanno un limite di tempo e l'errore viene detto a voce |
 | Ripiego su Gemini e voce di sistema | Automatico | ✅ entra solo se Deepgram non è disponibile |
 | Scelta della voce di sistema | Pill "VOCE" | ✅ riguarda solo la voce di riserva del telefono |
 | Spegnere la voce | Pulsante 🔊 in alto a destra | ✅ |
@@ -108,9 +108,9 @@ Ultimo aggiornamento: dopo il collaudo della voce Deepgram e del tool calling.
 
 ## Cosa resta aperto
 
-**Ricerca web** — quarta strada, e stavolta senza chiavi. La risposta è arrivata dal codice di Mark-LIII, l'assistente desktop da cui è nata l'idea di questo progetto: lì la ricerca usa lo stesso identico Gemini che usiamo noi, stesso modello e stessa ricerca Google, ma sotto ha DuckDuckGo come riserva. È per questo che lì "funziona sempre": quando Gemini esaurisce la quota gratuita — e la esaurisce anche lì — DuckDuckGo raccoglie senza che l'utente se ne accorga. Ora l'ordine è DuckDuckGo, Gemini, Groq. DuckDuckGo non chiede registrazione né chiave, restituisce brani di pagine, e la risposta la scrive il modello di chat già in uso.
+**Ricerca web** — DuckDuckGo risponde: la rete funziona e i risultati arrivano. Restava che i riassunti di DuckDuckGo descrivono il sito e non la notizia, e il modello — correttamente — diceva di non poter rispondere senza inventare. Ora oltre ai riassunti vengono aperte e lette le prime due pagine trovate, così il modello ha davanti il testo vero invece di una descrizione generica.
 
-**Catene di azioni** — parzialmente risolte. Due azioni insieme funzionano, tre no, e qualsiasi catena che parta da una sveglia si ferma lì. La causa: impostare una sveglia apre l'orologio, l'app finisce dietro, e Android non lascia che un'app in secondo piano ne apra un'altra — la seconda azione veniva scartata senza un errore. Ora fra un'azione e la successiva l'app si riporta davanti (il permesso di sovrapposizione della bolla è anche l'eccezione che lo consente), e il prompt dice esplicitamente di non considerare chiusa la richiesta finché ogni parte non è stata eseguita.
+**Catene di azioni** — quasi. Due azioni riescono, la terza spesso no, e dopo due passaggi nell'orologio quello che segue si perde. Due cause affrontate: l'app non aspettava davvero di essere tornata in primo piano prima di lanciare l'azione successiva (adesso aspetta, fino a quattro secondi, invece di sperarci dopo un tempo fisso), e il modello considerava chiusa la richiesta appena un'azione riusciva (adesso, quando smette di chiedere strumenti, gli si ricorda una volta di rileggere la richiesta azione per azione).
 
 **Vecchio meccanismo a comandi testuali** — resta nel codice come rete di sicurezza sotto agli strumenti. Una volta confermato il funzionamento delle catene va rimosso, insieme alla duplicazione che si porta dietro.
 

@@ -246,13 +246,13 @@ class JarvisOverlayService : Service() {
                 } catch (e: Exception) {
                     // Vista non più agganciata: il trascinamento finisce qui.
                 }
-                if (trascinata) zonaRimozione?.setAttiva(sopraLaZona(lp, vista))
+                if (trascinata) zonaRimozione?.setAttiva(sopraLaZona(vista))
                 return true
             }
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 if (trascinata) {
-                    val daRimuovere = sopraLaZona(lp, vista)
+                    val daRimuovere = sopraLaZona(vista)
                     nascondiZonaRimozione()
                     if (daRimuovere) {
                         // Lasciata sulla linguetta: la bolla se ne va, e
@@ -347,27 +347,35 @@ class JarvisOverlayService : Service() {
         paramsZona = null
     }
 
-    /** Vero se il centro della bolla si trova sopra la linguetta. */
-    private fun sopraLaZona(lp: WindowManager.LayoutParams, vista: OverlayBubbleView): Boolean {
+    /**
+     * Vero se il centro della bolla si trova sopra la linguetta.
+     *
+     * Le posizioni si chiedono alle viste stesse invece di ricavarle dai
+     * parametri della finestra: la bolla è ancorata in alto a sinistra e la
+     * linguetta in basso al centro, e mettere in relazione due ancoraggi
+     * diversi voleva dire sbagliare di quanto misurano barra di stato e barra
+     * di navigazione — per questo bisognava mirare più in basso del disegno.
+     */
+    private fun sopraLaZona(vista: OverlayBubbleView): Boolean {
         val zona = zonaRimozione ?: return false
-        val zonaLp = paramsZona ?: return false
+        if (zona.width == 0 || zona.height == 0) return false
 
-        val larghezzaSchermo = resources.displayMetrics.widthPixels
-        val altezzaSchermo = resources.displayMetrics.heightPixels
+        val posizioneZona = IntArray(2)
+        val posizioneBolla = IntArray(2)
+        zona.getLocationOnScreen(posizioneZona)
+        vista.getLocationOnScreen(posizioneBolla)
 
-        val zonaSinistra = (larghezzaSchermo - zona.width) / 2f
-        val zonaSopra = altezzaSchermo - zonaLp.y - zona.height
         // Un po' di tolleranza attorno: prendere la mira col dito mentre si
         // trascina è più difficile di quanto sembri.
-        val margine = resources.displayMetrics.density * 24
+        val margine = resources.displayMetrics.density * 28
 
-        val centroX = lp.x + vista.width / 2f
-        val centroY = lp.y + vista.height / 2f
+        val centroX = posizioneBolla[0] + vista.width / 2f
+        val centroY = posizioneBolla[1] + vista.height / 2f
 
-        return centroX >= zonaSinistra - margine &&
-            centroX <= zonaSinistra + zona.width + margine &&
-            centroY >= zonaSopra - margine &&
-            centroY <= zonaSopra + zona.height + margine
+        return centroX >= posizioneZona[0] - margine &&
+            centroX <= posizioneZona[0] + zona.width + margine &&
+            centroY >= posizioneZona[1] - margine &&
+            centroY <= posizioneZona[1] + zona.height + margine
     }
 
     /** Usato anche dal modulo, fra un'azione sul telefono e la successiva. */
