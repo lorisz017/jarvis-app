@@ -53,8 +53,14 @@ class JarvisOverlayService : Service() {
 
         /** Mostra o nasconde il cerchio, lasciando il servizio in piedi. */
         fun applyVisibility(visibile: Boolean) {
-            val bolla = instance?.bolla ?: return
-            bolla.post { bolla.visibility = if (visibile) View.VISIBLE else View.GONE }
+            val servizio = instance ?: return
+            val bolla = servizio.bolla ?: return
+            bolla.post {
+                bolla.visibility = if (visibile) View.VISIBLE else View.GONE
+                // Se si rientra nell'app mentre la bolla è ancora in mano, il
+                // dito non alza più e la linguetta resterebbe lì per sempre.
+                if (!visibile) servizio.nascondiZonaRimozione()
+            }
         }
     }
 

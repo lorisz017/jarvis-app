@@ -12,7 +12,7 @@ import {
     ScrollView,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {useAudioRecorder, useAudioRecorderState, RecordingPresets} from 'expo-audio';
+import {useAudioRecorder, useAudioRecorderState, RecordingPresets, setAudioModeAsync} from 'expo-audio';
 import {Linking} from 'react-native';
 
 import Header from '../components/Header';
@@ -85,6 +85,11 @@ export default function Home() {
     // istante di ritardo, e da fuori dall'app quel ritardo si vede: il secondo
     // tocco spegneva il microfono senza che la frase venisse mai elaborata.
     const staRegistrandoRef = useRef(false);
+    // L'ultimo file audio già elaborato. Fuori dall'app arrivava sempre la
+    // stessa prima frase: il registratore non riusciva a partire di nuovo e
+    // continuava a restituire la registrazione precedente, che veniva
+    // trascritta daccapo come se fosse nuova.
+    const ultimoAudioRef = useRef(null);
 
     useVoiceSetup({
         setAvailableVoices,
@@ -279,6 +284,19 @@ export default function Home() {
         setDisplayedText('');
         setIsLoading(false);
         stopPulsing();
+        // La sessione audio va rimessa in modalità registrazione prima di ogni
+        // ripresa: dopo che J.A.R.V.I.S. ha parlato è impegnata dalla
+        // riproduzione, e il microfono non riparte.
+        try {
+            await setAudioModeAsync({
+                playsInSilentMode: true,
+                allowsRecording: true,
+                shouldPlayInBackground: true,
+            });
+        } catch (error) {
+            console.warn('Sessione audio non riconfigurata:', error);
+        }
+
         await audioRecorder.prepareToRecordAsync();
         await audioRecorder.record();
         staRegistrandoRef.current = true;
@@ -289,7 +307,17 @@ export default function Home() {
         staRegistrandoRef.current = false;
         await audioRecorder.stop();
         stopPulsing();
+
+        // Stesso file dell'ultima volta: il registratore non è ripartito, e
+        // trascriverlo di nuovo farebbe rispondere alla frase precedente.
+        // Meglio dirlo che far finta di aver capito.
+        if (audioRecorder.uri && audioRecorder.uri === ultimoAudioRef.current) {
+            await speak('Signore, non sono riuscito a registrare. Riprovi fra un istante.');
+            return;
+        }
+
         if (audioRecorder.uri) {
+            ultimoAudioRef.current = audioRecorder.uri;
             await processAudioWithOpenAI({
                 audioUri: audioRecorder.uri,
                 chatHistory,

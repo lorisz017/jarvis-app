@@ -184,7 +184,7 @@ async function leggiPagina(url) {
             headers: {'User-Agent': BROWSER_UA, Accept: 'text/html'},
         });
         if (!response.ok) return '';
-        return testoDellaPagina(await response.text()).slice(0, 1800);
+        return testoDellaPagina(await response.text()).slice(0, 2500);
     } catch (error) {
         return '';
     } finally {
@@ -216,7 +216,7 @@ export async function searchWithDuckDuckGo(query) {
     // I riassunti di DuckDuckGo spesso descrivono il sito, non la notizia: al
     // collaudo c'erano i risultati giusti ma nessuno diceva chi avesse vinto.
     // Quindi si aprono davvero le prime pagine e si legge cosa c'è scritto.
-    const daLeggere = risultati.filter((r) => r.url).slice(0, 2);
+    const daLeggere = risultati.filter((r) => r.url).slice(0, 3);
     const pagine = await Promise.all(daLeggere.map((r) => leggiPagina(r.url)));
 
     const pezzi = risultati.slice(0, 6).map((r, i) => {

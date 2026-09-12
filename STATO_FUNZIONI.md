@@ -108,9 +108,9 @@ Ultimo aggiornamento: dopo il collaudo della voce Deepgram e del tool calling.
 
 ## Cosa resta aperto
 
-**Ricerca web** — DuckDuckGo risponde: la rete funziona e i risultati arrivano. Restava che i riassunti di DuckDuckGo descrivono il sito e non la notizia, e il modello — correttamente — diceva di non poter rispondere senza inventare. Ora oltre ai riassunti vengono aperte e lette le prime due pagine trovate, così il modello ha davanti il testo vero invece di una descrizione generica.
+**Ricerca web** — funziona. Alla domanda sull'ultimo modello di ChatGPT ha risposto con data e nome esatti. Restava un eccesso di prudenza: sul Gran Premio aveva trovato Monza e il primato di Antonelli, ma si è fermata a "non indicano il vincitore" invece di dire quello che aveva davanti. Ora l'istruzione dice di ricavare la risposta quando si deduce dai brani, dichiarandolo, e di ammettere di non sapere solo se i brani non c'entrano con la domanda. Legge anche tre pagine invece di due.
 
-**Catene di azioni** — quasi. Due azioni riescono, la terza spesso no, e dopo due passaggi nell'orologio quello che segue si perde. Due cause affrontate: l'app non aspettava davvero di essere tornata in primo piano prima di lanciare l'azione successiva (adesso aspetta, fino a quattro secondi, invece di sperarci dopo un tempo fisso), e il modello considerava chiusa la richiesta appena un'azione riusciva (adesso, quando smette di chiedere strumenti, gli si ricorda una volta di rileggere la richiesta azione per azione).
+**Catene di azioni** — dipendevano da come veniva detta la frase: le stesse azioni, chieste in modo naturale invece che scandito, sparivano. Buona parte era casualità del modello, che a ogni richiesta riformulava il piano in modo diverso: ora le richieste che comportano azioni vengono fatte a temperatura bassa, così la stessa frase dà sempre lo stesso risultato. La combinazione sveglia più messaggio WhatsApp, l'unica che non riusciva mai, è ora scritta come esempio nel prompt.
 
 **Vecchio meccanismo a comandi testuali** — resta nel codice come rete di sicurezza sotto agli strumenti. Una volta confermato il funzionamento delle catene va rimosso, insieme alla duplicazione che si porta dietro.
 

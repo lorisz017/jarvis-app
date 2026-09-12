@@ -125,7 +125,15 @@ async function requestChatCompletion(model, messages, tools) {
             Authorization: `Bearer ${groqApiKey}`,
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(tools ? {model, messages, tools, tool_choice: 'auto'} : {model, messages}),
+        // Temperatura bassa quando ci sono azioni da eseguire: "a volte le fa e
+        // a volte no" era in buona parte questo. Con il valore predefinito il
+        // modello riformula ogni volta la stessa richiesta in modo diverso, e
+        // quale azione sopravvive diventa un sorteggio.
+        body: JSON.stringify(
+            tools
+                ? {model, messages, tools, tool_choice: 'auto', temperature: 0.2}
+                : {model, messages}
+        ),
     });
 
     const responseData = await completion.json().catch(() => ({}));
@@ -307,9 +315,14 @@ async function handleUserMessage(userMessage, {
                                 role: 'system',
                                 content:
                                     'Sei J.A.R.V.I.S. Rispondi in italiano, breve e preciso, ' +
-                                    'rivolgendoti all\'utente come "Signore". Usa solo le ' +
-                                    'informazioni nei brani che ti vengono dati. Se non ' +
-                                    'bastano, dillo invece di inventare.',
+                                    'rivolgendoti all\'utente come "Signore". Rispondi usando i ' +
+                                    'brani che ti vengono dati: se la risposta non è scritta a ' +
+                                    'lettere ma si ricava da quello che c\'è — una classifica, ' +
+                                    'un titolo, un risultato — ricavala e dilla, precisando che ' +
+                                    'lo deduci. Riferisci sempre quello che hai trovato: dire ' +
+                                    'solo "non è indicato" quando i brani parlano proprio di ' +
+                                    'quell\'argomento è inutile. Ammetti di non sapere solo se ' +
+                                    'i brani non c\'entrano niente con la domanda.',
                             },
                             {
                                 role: 'user',
