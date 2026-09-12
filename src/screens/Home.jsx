@@ -315,9 +315,19 @@ export default function Home() {
     });
 
     useEffect(() => {
-        return onOverlayTap(() => {
+        return onOverlayTap(async () => {
             const azione = bubbleActionRef.current;
-            if (azione) azione();
+            if (!azione) return;
+
+            try {
+                await azione();
+            } catch (error) {
+                // Fuori dall'app non c'è uno schermo da guardare: se il tocco
+                // non funziona bisogna sentirlo, altrimenti sembra solo che la
+                // bolla sia morta. È quello che è successo al primo collaudo.
+                console.warn('Tocco sulla bolla:', error);
+                await speak('Signore, non riesco ad ascoltarla da qui.');
+            }
         });
     }, []);
 
