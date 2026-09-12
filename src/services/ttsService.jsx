@@ -1,6 +1,28 @@
 import * as Speech from 'expo-speech';
 import * as FileSystem from 'expo-file-system/legacy';
-import { createAudioPlayer } from 'expo-audio';
+import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
+
+// Nessuna di queste richieste aveva un limite di tempo. Dentro l'app un
+// blocco si vede: la risposta non arriva. Fuori, dalla bolla, non si vede
+// niente e J.A.R.V.I.S. sembra semplicemente morto — che è esattamente come
+// si presentava al collaudo.
+const TIMEOUT_VOCE_MS = 25000;
+
+async function fetchVoce(url, opzioni = {}) {
+    const controller = new AbortController();
+    const scadenza = setTimeout(() => controller.abort(), TIMEOUT_VOCE_MS);
+
+    try {
+        return await fetch(url, {...opzioni, signal: controller.signal});
+    } catch (error) {
+        if (error.name === 'AbortError') {
+            throw new Error(`Voce: nessuna risposta entro ${TIMEOUT_VOCE_MS / 1000} secondi`);
+        }
+        throw error;
+    } finally {
+        clearTimeout(scadenza);
+    }
+}
 
 const geminiApiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
 const deepgramApiKey = process.env.EXPO_PUBLIC_DEEPGRAM_API_KEY;
@@ -257,6 +279,20 @@ let currentFileUri = null;
 async function playAudioFile(fileUri) {
     stopJarvisVoice();
 
+    // Si esce dalla modalità registrazione prima di riprodurre. Finché la
+    // sessione audio è impostata per il microfono, su Android la
+    // riproduzione può restare muta — ed è la spiegazione più probabile del
+    // "fuori nessun segnale, zero".
+    try {
+        await setAudioModeAsync({
+            playsInSilentMode: true,
+            allowsRecording: false,
+            shouldPlayInBackground: true,
+        });
+    } catch (error) {
+        console.warn('Sessione audio per la riproduzione:', error);
+    }
+
     // Il player precedente non serve più: si libera qui, dove al suo posto ne
     // arriva subito uno nuovo.
     try {
@@ -323,7 +359,7 @@ async function resolveDeepgramVoice() {
     if (resolvedVoice !== undefined) return resolvedVoice;
 
     try {
-        const response = await fetch(DEEPGRAM_MODELS_URL, {
+        const response = await fetchVoce(DEEPGRAM_MODELS_URL, {
             headers: { Authorization: `Token ${deepgramApiKey}` },
         });
 
@@ -362,7 +398,7 @@ async function speakWithDeepgram(text) {
     // per poterne alzare il volume, il PCM è già la forma d'onda.
     const parametri = `model=${voce}&encoding=linear16&sample_rate=${SAMPLE_RATE}&container=none`;
 
-    const response = await fetch(`${DEEPGRAM_URL}?${parametri}`, {
+    const response = await fetchVoce(`${DEEPGRAM_URL}?${parametri}`, {
         method: 'POST',
         headers: {
             Authorization: `Token ${deepgramApiKey}`,
@@ -459,7 +495,7 @@ export const speakJarvisResponse = async ({
     }
 
     try {
-        const response = await fetch(
+        const response = await fetchVoce(
             `https://generativelanguage.googleapis.com/v1beta/models/${TTS_MODEL}:generateContent?key=${geminiApiKey}`,
             {
                 method: 'POST',

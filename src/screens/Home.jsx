@@ -349,13 +349,33 @@ export default function Home() {
         bubbleActionRef.current = async () => {
             // Si decide qui, sul flag aggiornato all'istante, non sullo stato
             // di React: è la differenza fra completare la frase e troncarla.
-            if (staRegistrandoRef.current) {
-                setOverlayState(OVERLAY_STATE.THINKING);
-                await stopRecording();
-                setOverlayState(OVERLAY_STATE.IDLE);
-            } else {
+            if (!staRegistrandoRef.current) {
                 setOverlayState(OVERLAY_STATE.LISTENING);
                 await record();
+                return;
+            }
+
+            setOverlayState(OVERLAY_STATE.THINKING);
+            try {
+                // Rete di sicurezza: fuori dall'app non c'è uno schermo su cui
+                // accorgersi che qualcosa si è impuntato, e una bolla che
+                // pensa per sempre è indistinguibile da una bolla rotta.
+                // Qualunque cosa succeda, entro un minuto si sa com'è andata.
+                await Promise.race([
+                    stopRecording(),
+                    new Promise((_, reject) =>
+                        setTimeout(
+                            () => reject(new Error('nessuna risposta entro un minuto')),
+                            60000
+                        )
+                    ),
+                ]);
+            } catch (error) {
+                console.warn('Richiesta dalla bolla:', error);
+                staRegistrandoRef.current = false;
+                await speak(`Signore, la sua richiesta non è andata a buon fine: ${error.message}.`);
+            } finally {
+                setOverlayState(OVERLAY_STATE.IDLE);
             }
         };
     });
