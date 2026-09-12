@@ -41,6 +41,25 @@ jobs:
           HUSKY: 0
         run: npm install --legacy-peer-deps
 
+      - name: Controlla le chiavi
+        env:
+          EXPO_PUBLIC_GROQ_API_KEY: ${{ secrets.EXPO_PUBLIC_GROQ_API_KEY }}
+          EXPO_PUBLIC_GEMINI_API_KEY: ${{ secrets.EXPO_PUBLIC_GEMINI_API_KEY }}
+          EXPO_PUBLIC_DEEPGRAM_API_KEY: ${{ secrets.EXPO_PUBLIC_DEEPGRAM_API_KEY }}
+          EXPO_PUBLIC_GITHUB_TOKEN_KEY: ${{ secrets.EXPO_PUBLIC_GITHUB_TOKEN_KEY }}
+        run: |
+          # Dice soltanto se la chiave c'è, mai quanto vale: il registro della
+          # build è pubblico. Senza questo controllo una chiave mancante non
+          # fa fallire niente, e l'errore salta fuori solo sul telefono.
+          for nome in EXPO_PUBLIC_GROQ_API_KEY EXPO_PUBLIC_GEMINI_API_KEY \
+                      EXPO_PUBLIC_DEEPGRAM_API_KEY EXPO_PUBLIC_GITHUB_TOKEN_KEY; do
+            if [ -n "${!nome}" ]; then
+              echo "$nome: presente"
+            else
+              echo "$nome: ASSENTE"
+            fi
+          done
+
       - name: Compila l'APK
         working-directory: android
         env:
