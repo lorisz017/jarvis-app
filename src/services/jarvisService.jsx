@@ -10,7 +10,7 @@ import {getLatestCommits} from "../core/github/commits";
 import {createGitHubRepo} from "../core/github/createRepo";
 import {deleteGitHubRepo} from "../core/github/deleteRepo";
 import {TOOLS, executeTool} from './tools';
-import {searchWithTavily, searchWithGemini, hasTavilyKey, hasGeminiKey} from './webSearchService';
+import {searchWithDuckDuckGo, searchWithGemini, hasGeminiKey} from './webSearchService';
 import {bringAppToFront} from './overlayService';
 
 // Azioni che aprono la schermata di un'altra app. Dopo una di queste la
@@ -239,11 +239,12 @@ async function handleUserMessage(userMessage, {
         const searchDiagnostics = [];
 
         // === Ricerca sul web ===
-        // Tre provider in fila, dal più affidabile al meno: Tavily cerca e
-        // restituisce i brani delle pagine, Gemini cerca e scrive già la
-        // risposta, Groq Compound è l'ultima spiaggia. Si passa al successivo
-        // solo se il precedente non ha dato niente, e ogni fallimento resta
-        // registrato col nome di chi ha fallito.
+        // Tre strade in fila. DuckDuckGo per primo perché non chiede chiavi e
+        // non ha quote: restituisce i brani delle pagine, e la risposta la
+        // scrive il modello di chat che l'app usa già. Poi Gemini, che
+        // scriverebbe meglio ma ha la quota esaurita. Groq in fondo. Si passa
+        // al successivo solo se il precedente non dà niente, e ogni
+        // fallimento resta registrato col nome di chi ha fallito.
         if (chosenModel === SEARCH_MODEL) {
             const rispondiConTesto = async (testo) => {
                 const pulita = stripMarkdown(testo);
@@ -251,9 +252,9 @@ async function handleUserMessage(userMessage, {
                 await respond(pulita);
             };
 
-            if (hasTavilyKey) {
+            {
                 try {
-                    const brani = await searchWithTavily(userMessage);
+                    const brani = await searchWithDuckDuckGo(userMessage);
                     if (brani) {
                         // I brani li riassume il modello di chat che l'app usa
                         // già: poco testo, nessun rischio di superare limiti.
@@ -277,16 +278,14 @@ async function handleUserMessage(userMessage, {
                             await rispondiConTesto(testo);
                             return;
                         }
-                        searchDiagnostics.push('Tavily: brani trovati ma nessuna risposta composta');
+                        searchDiagnostics.push('DuckDuckGo: risultati trovati ma nessuna risposta composta');
                     } else {
-                        searchDiagnostics.push('Tavily: nessun risultato');
+                        searchDiagnostics.push('DuckDuckGo: nessun risultato');
                     }
                 } catch (error) {
-                    console.warn('Ricerca con Tavily non riuscita:', error.message);
-                    searchDiagnostics.push(`Tavily: ${error.message}`);
+                    console.warn('Ricerca con DuckDuckGo non riuscita:', error.message);
+                    searchDiagnostics.push(`DuckDuckGo: ${error.message}`);
                 }
-            } else {
-                searchDiagnostics.push('Tavily: chiave EXPO_PUBLIC_TAVILY_API_KEY assente');
             }
 
             if (hasGeminiKey) {
