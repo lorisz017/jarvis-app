@@ -33,9 +33,11 @@ The flow of a single request:
 
 You can also type instead of speaking — same actions, same behaviour.
 
+And you do not have to be in the app at all: with the floating bubble on, leaving it puts a circle over whatever is on screen. A tap starts listening, a second tap sends, a long press brings the app back, and dragging it onto the tab at the bottom removes it. The ring turns green while it listens and amber while it thinks, because from out there the colour is all you have to go on.
+
 ## Features
 
-Voice and text input · spoken replies with a natural voice, selectable in the app · several actions from one request · weather · native alarms and timers · calendar events · reminders (create, list, cancel) · phone calls and WhatsApp messages by contact name · navigation · launching ~20 common apps · camera, Telegram, YouTube · GitHub repository management · an opening briefing with the time, weather and your day's appointments · persistent memory across restarts · battery monitor · a settings panel listing every command.
+Voice and text input · a floating bubble that stays over other apps · spoken replies with a natural voice, selectable in the app · several actions from one request · weather · native alarms and timers · calendar events · reminders (create, list, cancel) · phone calls and WhatsApp messages by contact name · navigation · launching ~20 common apps · camera, Telegram, YouTube · GitHub repository management · an opening briefing with the time, weather and your day's appointments · persistent memory across restarts · battery monitor · a settings panel listing every command.
 
 Web search goes through **DuckDuckGo**, which needs no key and has no quota: it returns page excerpts, and the reply is written by the chat model already in use. Gemini's Google search sits behind it — better prose, but grounding is not in the free tier and answers "quota exceeded" — and Groq Compound behind that.
 
@@ -128,6 +130,11 @@ Two more things worth knowing:
 
 - React Native's `Linking.sendIntent` sends every number as a `Double`, so Android intents that read integers (`SET_ALARM`, `SET_TIMER`) silently get their defaults. Use `expo-intent-launcher` instead — it converts them to `Int`.
 - On Groq, HTTP 413 "Request Entity Too Large" is a **tokens-per-minute rate limit**, not a payload size problem. Sending less history won't help if the model itself is consuming the budget.
+- A foreground service is granted the `microphone` type **only if the app is in the foreground when the service starts**. Starting it as the app is being left — the obvious moment for an overlay — is the one moment Android refuses, and the exception escapes `onCreate` and takes the app down with it.
+- An app in the background cannot start another app's screen. Setting an alarm opens the clock, and from then on every further action in the same chain is dropped in silence. Holding `SYSTEM_ALERT_WINDOW` is the documented exemption: bring yourself back to the front first, and wait until you actually are.
+- Give every network call a deadline. Inside the app a stalled request merely looks slow; from a floating bubble there is no screen at all, and it is indistinguishable from a dead app.
+- Leave recording mode before playing audio back. While the session is held for the microphone, Android can play to nowhere.
+- Tool calling gets its own temperature. At the default the model re-plans the same sentence differently each time, and which action survives a chain becomes a draw.
 
 ## Credits
 
@@ -171,9 +178,11 @@ Il percorso di una singola richiesta:
 
 Si può anche scrivere invece di parlare — stesse azioni, stesso comportamento.
 
+E non serve nemmeno essere dentro l'app: con la bolla flottante accesa, uscendo resta un cerchio sopra qualunque cosa ci sia sullo schermo. Un tocco comincia ad ascoltare, un secondo tocco manda, una pressione lunga riapre l'app, e trascinandola sulla linguetta in basso si toglie. L'anello diventa verde mentre ascolta e ambra mentre pensa, perché da lì fuori il colore è l'unica cosa su cui regolarsi.
+
 ## Funzioni
 
-Comandi a voce e scritti · risposta parlata con voce naturale, selezionabile dall'app · più azioni con una sola richiesta · meteo · sveglie e timer nativi · eventi in calendario · promemoria (crea, elenca, annulla) · chiamate e messaggi WhatsApp per nome del contatto · navigazione · apertura di una ventina di app · fotocamera, Telegram, YouTube · gestione repository GitHub · riepilogo all'apertura con ora, meteo e impegni del giorno · memoria che sopravvive alla chiusura · monitor della batteria · pannello impostazioni con l'elenco di tutti i comandi.
+Comandi a voce e scritti · bolla flottante che resta sopra le altre app · risposta parlata con voce naturale, selezionabile dall'app · più azioni con una sola richiesta · meteo · sveglie e timer nativi · eventi in calendario · promemoria (crea, elenca, annulla) · chiamate e messaggi WhatsApp per nome del contatto · navigazione · apertura di una ventina di app · fotocamera, Telegram, YouTube · gestione repository GitHub · riepilogo all'apertura con ora, meteo e impegni del giorno · memoria che sopravvive alla chiusura · monitor della batteria · pannello impostazioni con l'elenco di tutti i comandi.
 
 La ricerca sul web passa da **DuckDuckGo**, che non chiede chiavi e non ha quote: restituisce brani di pagine, e la risposta la scrive il modello di chat già in uso. Dietro c'è la ricerca Google di Gemini — scriverebbe meglio, ma non rientra nel piano gratuito e risponde che la quota è esaurita — e più indietro ancora Groq Compound.
 
@@ -267,6 +276,11 @@ Altre due cose che vale la pena sapere:
 
 - `Linking.sendIntent` di React Native manda ogni numero come `Double`, quindi gli intent Android che leggono interi (`SET_ALARM`, `SET_TIMER`) si ritrovano con i valori di default senza dare errore. Conviene usare `expo-intent-launcher`, che li converte in `Int`.
 - Su Groq, l'errore HTTP 413 "Request Entity Too Large" è un **limite di token al minuto**, non un problema di dimensione della richiesta. Mandare meno cronologia non aiuta se è il modello stesso a consumare il budget.
+- Il tipo `microphone` viene concesso a un servizio in primo piano **solo se l'app è in primo piano nel momento in cui il servizio parte**. Farlo partire mentre si esce dall'app — il momento ovvio per una bolla — è l'unico che Android rifiuta, e l'eccezione esce da `onCreate` portandosi giù l'applicazione.
+- Un'app in secondo piano non può aprire la schermata di un'altra app. Impostare una sveglia apre l'orologio, e da lì in poi ogni azione successiva della stessa catena viene scartata in silenzio. Il permesso `SYSTEM_ALERT_WINDOW` è l'eccezione prevista: prima si torna davanti, e si aspetta di esserci davvero.
+- Ogni richiesta di rete vuole un limite di tempo. Dentro l'app una richiesta bloccata sembra solo lenta; da una bolla flottante non c'è nessuno schermo, ed è indistinguibile da un'app morta.
+- Prima di riprodurre audio si esce dalla modalità registrazione: finché la sessione è impegnata dal microfono, Android può riprodurre nel vuoto.
+- Le richieste che comportano azioni vogliono una temperatura propria. Con il valore predefinito il modello ripianifica ogni volta la stessa frase in modo diverso, e quale azione sopravviva a una catena diventa un sorteggio.
 
 ## Crediti
 

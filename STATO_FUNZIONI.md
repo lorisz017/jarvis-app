@@ -7,7 +7,7 @@ Legenda:
 - ❌ **Non funziona** — provata e non funzionante
 - ⏳ **Non testabile** — bloccata da qualcosa di esterno (chiave mancante)
 
-Ultimo aggiornamento: dopo il collaudo della voce Deepgram e del tool calling.
+Ultimo aggiornamento: dopo il collaudo della bolla flottante, della ricerca via DuckDuckGo e delle catene di azioni.
 
 > **Su cosa è stato provato.** Il progetto è nelle sue prime fasi e tutte le
 > spunte qui sotto vengono da **un solo dispositivo: uno Xiaomi 17 con
@@ -28,7 +28,7 @@ Ultimo aggiornamento: dopo il collaudo della voce Deepgram e del tool calling.
 | Risposta parlata (voce Deepgram) | Automatica | ✅ non degrada più: il credito Deepgram regge l'uso quotidiano |
 | Scelta della voce naturale | Impostazioni → Voce naturale | ✅ nove voci italiane, si cambia senza ricompilare |
 | Volume pari fra le voci | Automatico | ✅ confermato: le voci più basse arrivano al livello delle altre |
-| Bolla flottante sopra le altre app | Impostazioni → Bolla flottante | ⏳ non crasha più, il tocco avvia e chiude la registrazione, la linguetta "Rimuovi" c'è. Restava un'attesa senza fine quando la rete non rispondeva: ora tutte le richieste hanno un limite di tempo e l'errore viene detto a voce |
+| Bolla flottante sopra le altre app | Impostazioni → Bolla flottante | ⏳ compare, non crasha, il tocco accende il microfono e la linguetta "Rimuovi" funziona. Da fuori però la risposta non arriva ancora: restava sempre la prima frase, e il resto si sbloccava solo rientrando. Tre cause affrontate in un colpo, da riconfermare |
 | Ripiego su Gemini e voce di sistema | Automatico | ✅ entra solo se Deepgram non è disponibile |
 | Scelta della voce di sistema | Pill "VOCE" | ✅ riguarda solo la voce di riserva del telefono |
 | Spegnere la voce | Pulsante 🔊 in alto a destra | ✅ |
@@ -107,6 +107,8 @@ Ultimo aggiornamento: dopo il collaudo della voce Deepgram e del tool calling.
 ---
 
 ## Cosa resta aperto
+
+**Risposta dalla bolla, da fuori** — è il punto aperto principale. Al collaudo: si tocca, si parla, si ritocca, e la bolla pensa senza fine; nessun suono esce, e la risposta compare solo rientrando nell'app — sempre la stessa, la prima frase detta da fuori. Tre cause distinte sono state affrontate insieme, perché ognuna basta da sola a produrre quel sintomo: il registratore non ripartiva e restituiva il file precedente (ora la sessione audio viene rimessa in modalità registrazione prima di ogni ripresa, e un file identico al precedente viene rifiutato a voce); le richieste della voce non avevano limite di tempo (ora sì); e la riproduzione avveniva con la sessione ancora impegnata dal microfono, cosa che su Android può suonare nel vuoto (ora si esce prima dalla modalità registrazione). In più, qualunque cosa vada storta, entro un minuto la bolla lo dice invece di continuare a girare.
 
 **Ricerca web** — funziona. Alla domanda sull'ultimo modello di ChatGPT ha risposto con data e nome esatti. Restava un eccesso di prudenza: sul Gran Premio aveva trovato Monza e il primato di Antonelli, ma si è fermata a "non indicano il vincitore" invece di dire quello che aveva davanti. Ora l'istruzione dice di ricavare la risposta quando si deduce dai brani, dichiarandolo, e di ammettere di non sapere solo se i brani non c'entrano con la domanda. Legge anche tre pagine invece di due.
 
