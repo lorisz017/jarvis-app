@@ -1,6 +1,7 @@
 import React, {useState, useRef, useEffect} from 'react';
 import {
     Alert,
+    AppState,
     TouchableOpacity,
     Text,
     Animated,
@@ -29,6 +30,16 @@ import {setNativeAlarm, setNativeTimer, getWeatherByCity, createCalendarEvent} f
 import {openApp, startNavigation} from '../services/appLauncher';
 import {callContact, sendWhatsAppToContact} from '../services/contactsService';
 import {loadState, saveState, DEFAULT_STATE} from '../services/storageService';
+import {
+    OVERLAY_STATE,
+    hasOverlayPermission,
+    hideOverlay,
+    isOverlaySupported,
+    onOverlayTap,
+    requestOverlayPermission,
+    setOverlayState,
+    showOverlay,
+} from '../services/overlayService';
 import {buildBriefing} from '../services/briefingService';
 
 import {SYSTEM_MESSAGE} from '../utils/constants';
@@ -58,10 +69,16 @@ export default function Home() {
     const [voiceName, setVoiceName] = useState('');
     const [isSettingsVisible, setIsSettingsVisible] = useState(false);
     const [isStateLoaded, setIsStateLoaded] = useState(false);
+    const [isOverlayEnabled, setIsOverlayEnabled] = useState(false);
 
     const scrollRef = useRef();
     const animatedScale = useRef(new Animated.Value(1)).current;
     const briefingDoneRef = useRef(false);
+    // Cosa deve fare un tocco sulla bolla in questo momento. È un riferimento
+    // e non una funzione presa direttamente: l'ascoltatore nativo si registra
+    // una volta sola, e senza questo si porterebbe dietro per sempre lo stato
+    // del primo render.
+    const bubbleActionRef = useRef(null);
 
     useVoiceSetup({
         setAvailableVoices,
@@ -82,6 +99,9 @@ export default function Home() {
             setVoiceName(saved.voiceName);
             setPreferredVoice(saved.voiceName);
             setHomeCity(saved.homeCity);
+            // La bolla si riattiva solo se il permesso c'è ancora: può essere
+            // stato revocato dalle impostazioni di Android nel frattempo.
+            setIsOverlayEnabled(saved.isOverlayEnabled && (await hasOverlayPermission()));
             setIsStateLoaded(true);
         })();
     }, []);
@@ -90,8 +110,15 @@ export default function Home() {
     // il file con lo stato vuoto di partenza.
     useEffect(() => {
         if (!isStateLoaded) return;
-        saveState({messages: chatHistory, isVoiceEnabled, isBriefingEnabled, homeCity, voiceName});
-    }, [isStateLoaded, chatHistory, isVoiceEnabled, isBriefingEnabled, homeCity, voiceName]);
+        saveState({
+            messages: chatHistory,
+            isVoiceEnabled,
+            isBriefingEnabled,
+            homeCity,
+            voiceName,
+            isOverlayEnabled,
+        });
+    }, [isStateLoaded, chatHistory, isVoiceEnabled, isBriefingEnabled, homeCity, voiceName, isOverlayEnabled]);
 
     const startPulsing = () => {
         Animated.loop(
@@ -279,6 +306,79 @@ export default function Home() {
         }
     };
 
+    // === Bolla flottante ===
+    // Il tocco sulla bolla fa la stessa cosa del microfono nell'app: se sta
+    // registrando ferma e manda, altrimenti comincia ad ascoltare.
+    useEffect(() => {
+        bubbleActionRef.current = recorderState.isRecording ? stopRecording : record;
+    });
+
+    useEffect(() => {
+        return onOverlayTap(() => {
+            const azione = bubbleActionRef.current;
+            if (azione) azione();
+        });
+    }, []);
+
+    // La bolla compare quando si esce dall'app e sparisce quando si rientra:
+    // dentro c'è già il radar, due cerchi sovrapposti non servono a nessuno.
+    useEffect(() => {
+        if (!isStateLoaded) return;
+
+        if (!isOverlayEnabled) {
+            hideOverlay();
+            return;
+        }
+
+        const iscrizione = AppState.addEventListener('change', (stato) => {
+            if (stato === 'background' || stato === 'inactive') showOverlay();
+            else if (stato === 'active') hideOverlay();
+        });
+
+        return () => iscrizione.remove();
+    }, [isStateLoaded, isOverlayEnabled]);
+
+    // Da fuori non si vede lo schermo dell'app: il colore e la velocità della
+    // bolla sono l'unico modo per capire se sta ascoltando o ragionando.
+    useEffect(() => {
+        if (!isOverlayEnabled) return;
+
+        if (recorderState.isRecording) setOverlayState(OVERLAY_STATE.LISTENING);
+        else if (isLoading) setOverlayState(OVERLAY_STATE.THINKING);
+        else setOverlayState(OVERLAY_STATE.IDLE);
+    }, [isOverlayEnabled, recorderState.isRecording, isLoading]);
+
+    const toggleOverlay = async () => {
+        if (isOverlayEnabled) {
+            setIsOverlayEnabled(false);
+            hideOverlay();
+            return;
+        }
+
+        if (!isOverlaySupported()) {
+            Alert.alert('Non disponibile', 'La bolla flottante esiste solo nella versione Android.');
+            return;
+        }
+
+        // Questo permesso Android non lo concede da una finestra di dialogo:
+        // apre una sua schermata, e va attivato lì a mano. Capita su tutti i
+        // telefoni, non è una stranezza dell'app.
+        if (!(await hasOverlayPermission())) {
+            Alert.alert(
+                'Serve un permesso',
+                'Android chiede di autorizzare a mano la sovrapposizione alle altre app. ' +
+                'Le apro la schermata: attivi il permesso, torni qui e riaccenda la bolla.',
+                [
+                    {text: 'Annulla', style: 'cancel'},
+                    {text: 'Apri impostazioni', onPress: requestOverlayPermission},
+                ]
+            );
+            return;
+        }
+
+        setIsOverlayEnabled(true);
+    };
+
     const sendTypedMessage = async () => {
         const message = typedText.trim();
         if (!message) return;
@@ -411,6 +511,8 @@ export default function Home() {
                 isBriefingEnabled={isBriefingEnabled}
                 setIsBriefingEnabled={setIsBriefingEnabled}
                 onSelectVoice={chooseVoice}
+                isOverlayEnabled={isOverlayEnabled}
+                onToggleOverlay={toggleOverlay}
             />
         </SafeAreaView>
     );

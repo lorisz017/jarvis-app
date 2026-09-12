@@ -21,6 +21,9 @@ export const useVoiceSetup = ({
                 await setAudioModeAsync({
                     playsInSilentMode: true,
                     allowsRecording: true,
+                    // Senza questo la voce si zittisce appena si esce
+                    // dall'app, e la bolla flottante non avrebbe senso.
+                    shouldPlayInBackground: true,
                 });
 
                 const voices = await Speech.getAvailableVoicesAsync();

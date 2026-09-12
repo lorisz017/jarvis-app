@@ -39,6 +39,8 @@ export default function SettingsModal({
                                           isBriefingEnabled,
                                           setIsBriefingEnabled,
                                           onSelectVoice,
+                                          isOverlayEnabled,
+                                          onToggleOverlay,
                                       }) {
     const [activeTab, setActiveTab] = useState('settings');
     // La voce viene scelta alla prima frase pronunciata: si rilegge ogni volta
@@ -91,6 +93,19 @@ export default function SettingsModal({
                                     value={isBriefingEnabled}
                                     onToggle={() => setIsBriefingEnabled(!isBriefingEnabled)}
                                 />
+
+                                <Text style={styles.settingsSectionTitle}>BOLLA FLOTTANTE</Text>
+                                <ToggleRow
+                                    label="Resta sopra le altre app"
+                                    value={isOverlayEnabled}
+                                    onToggle={onToggleOverlay}
+                                />
+                                <Text style={styles.settingsHint}>
+                                    Uscendo dall&apos;app resta un cerchio sullo schermo. Un tocco parla
+                                    con J.A.R.V.I.S. senza rientrare, una pressione lunga riapre
+                                    l&apos;app, e si trascina dove serve. Android chiede un permesso a
+                                    parte la prima volta.
+                                </Text>
 
                                 <Text style={styles.settingsSectionTitle}>VOCE</Text>
                                 <ToggleRow

@@ -13,6 +13,14 @@
   <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
   <uses-permission android:name="android.permission.READ_CONTACTS" />
 
+  <!-- Servono alla bolla che resta sopra le altre app: il servizio in primo
+       piano tiene vivo il processo quando si esce, la notifica lo segnala
+       come Android richiede, e il tipo "microfono" permette di parlare a
+       J.A.R.V.I.S. senza riaprire l'applicazione. -->
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
   <queries>
     <intent>
       <action android:name="android.intent.action.VIEW" />
@@ -72,6 +80,11 @@
       </intent-filter>
 
     </activity>
+
+    <service
+            android:name=".overlay.JarvisOverlayService"
+            android:exported="false"
+            android:foregroundServiceType="microphone" />
   </application>
 
 </manifest>

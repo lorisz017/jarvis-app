@@ -12,6 +12,7 @@ export const DEFAULT_STATE = {
     isBriefingEnabled: true,
     homeCity: 'Roma',
     voiceName: '',
+    isOverlayEnabled: false,
 };
 
 export async function loadState() {
@@ -33,6 +34,7 @@ export async function loadState() {
             isVoiceEnabled: typeof saved.isVoiceEnabled === 'boolean' ? saved.isVoiceEnabled : true,
             isBriefingEnabled: typeof saved.isBriefingEnabled === 'boolean' ? saved.isBriefingEnabled : true,
             voiceName: typeof saved.voiceName === 'string' ? saved.voiceName : '',
+            isOverlayEnabled: typeof saved.isOverlayEnabled === 'boolean' ? saved.isOverlayEnabled : false,
             homeCity: typeof saved.homeCity === 'string' && saved.homeCity ? saved.homeCity : DEFAULT_STATE.homeCity,
         };
     } catch (error) {
@@ -41,7 +43,7 @@ export async function loadState() {
     }
 }
 
-export async function saveState({messages, isVoiceEnabled, isBriefingEnabled, homeCity, voiceName}) {
+export async function saveState({messages, isVoiceEnabled, isBriefingEnabled, homeCity, voiceName, isOverlayEnabled}) {
     try {
         const persistable = (messages || [])
             .filter((m) => m?.role === 'user' || m?.role === 'assistant')
@@ -49,7 +51,14 @@ export async function saveState({messages, isVoiceEnabled, isBriefingEnabled, ho
 
         await FileSystem.writeAsStringAsync(
             STATE_FILE,
-            JSON.stringify({messages: persistable, isVoiceEnabled, isBriefingEnabled, homeCity, voiceName})
+            JSON.stringify({
+                messages: persistable,
+                isVoiceEnabled,
+                isBriefingEnabled,
+                homeCity,
+                voiceName,
+                isOverlayEnabled,
+            })
         );
     } catch (error) {
         console.warn('Salvataggio stato:', error);
