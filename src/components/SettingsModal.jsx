@@ -101,10 +101,11 @@ export default function SettingsModal({
                                     onToggle={onToggleOverlay}
                                 />
                                 <Text style={styles.settingsHint}>
-                                    Uscendo dall&apos;app resta un cerchio sullo schermo. Un tocco parla
-                                    con J.A.R.V.I.S. senza rientrare, una pressione lunga riapre
-                                    l&apos;app, e si trascina dove serve. Android chiede un permesso a
-                                    parte la prima volta.
+                                    Uscendo dall&apos;app resta un cerchio sullo schermo. Un tocco
+                                    comincia ad ascoltare, un secondo tocco chiude la frase e la manda,
+                                    una pressione lunga riapre l&apos;app. Si trascina dove serve, e
+                                    trascinandola sulla linguetta in basso si toglie. Android chiede un
+                                    permesso a parte la prima volta.
                                 </Text>
 
                                 <Text style={styles.settingsSectionTitle}>VOCE</Text>

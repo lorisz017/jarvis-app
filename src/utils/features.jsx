@@ -9,7 +9,7 @@ export const FEATURE_SECTIONS = [
             {name: 'Risposta parlata', example: 'Voce naturale, con ripiego su quella di sistema'},
             {name: 'Voce disattivabile', example: 'Il pulsante in alto a destra'},
             {name: 'Interruzione immediata', example: 'Il pulsante FERMA, o tocchi il radar'},
-            {name: 'Bolla flottante', example: 'Resta sopra le altre app: un tocco per parlare'},
+            {name: 'Bolla flottante', example: 'Sopra le altre app: tocco per parlare, trascina in basso per toglierla'},
         ],
     },
     {

@@ -92,41 +92,78 @@ export function parseDuckDuckGo(html) {
     return risultati;
 }
 
-async function scarica(url, query) {
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-            'User-Agent': BROWSER_UA,
-            'Content-Type': 'application/x-www-form-urlencoded',
-            Accept: 'text/html',
-        },
-        body: `q=${encodeURIComponent(query)}`,
-    });
+// Al primo collaudo la richiesta è tornata con "Network request failed": non
+// una risposta sbagliata, proprio una richiesta mai partita. Dato che da qui
+// non si può provare — il proxy di sviluppo blocca DuckDuckGo — invece di
+// indovinare quale sia la forma giusta si provano tutte quelle plausibili, e
+// l'errore riporta cosa ha risposto ciascuna.
+const TENTATIVI = [
+    {nome: 'lite GET', url: DDG_LITE_URL, metodo: 'GET'},
+    {nome: 'html GET', url: DDG_HTML_URL, metodo: 'GET'},
+    {nome: 'html POST', url: DDG_HTML_URL, metodo: 'POST'},
+];
 
-    if (!response.ok) {
-        const error = new Error(`HTTP ${response.status}`);
-        error.status = response.status;
-        throw error;
+const TIMEOUT_MS = 12000;
+
+async function scarica(tentativo, query) {
+    const {url, metodo} = tentativo;
+
+    // Senza un limite di tempo una richiesta che non risponde lascia
+    // J.A.R.V.I.S. muto a tempo indeterminato.
+    const controller = new AbortController();
+    const scadenza = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+    try {
+        const opzioni = {
+            method: metodo,
+            signal: controller.signal,
+            headers: {
+                'User-Agent': BROWSER_UA,
+                Accept: 'text/html,application/xhtml+xml',
+                'Accept-Language': 'it-IT,it;q=0.9',
+            },
+        };
+
+        let indirizzo = url;
+        if (metodo === 'POST') {
+            opzioni.headers['Content-Type'] = 'application/x-www-form-urlencoded';
+            opzioni.body = `q=${encodeURIComponent(query)}`;
+        } else {
+            indirizzo = `${url}?q=${encodeURIComponent(query)}`;
+        }
+
+        const response = await fetch(indirizzo, opzioni);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        return await response.text();
+    } finally {
+        clearTimeout(scadenza);
     }
-
-    return response.text();
 }
 
 /** Restituisce i brani trovati pronti da riassumere, o null. */
 export async function searchWithDuckDuckGo(query) {
-    let risultati = parseDuckDuckGo(await scarica(DDG_HTML_URL, query));
+    const problemi = [];
 
-    // La pagina completa a volte risponde senza risultati: la versione
-    // leggera è più spoglia e tende a passare comunque.
-    if (!risultati.length) {
-        risultati = parseDuckDuckGo(await scarica(DDG_LITE_URL, query));
+    for (const tentativo of TENTATIVI) {
+        try {
+            const risultati = parseDuckDuckGo(await scarica(tentativo, query));
+            if (risultati.length) {
+                return risultati
+                    .map((r, i) => `[${i + 1}] ${r.titolo}\n${r.brano}`)
+                    .join('\n\n');
+            }
+            problemi.push(`${tentativo.nome}: nessun risultato`);
+        } catch (error) {
+            problemi.push(`${tentativo.nome}: ${error.message}`);
+        }
     }
 
-    if (!risultati.length) return null;
-
-    return risultati
-        .map((r, i) => `[${i + 1}] ${r.titolo}\n${r.brano}`)
-        .join('\n\n');
+    // Nessuna delle strade ha portato niente: si dice quali si sono provate
+    // e come è andata ciascuna, invece di un generico "non ha funzionato".
+    const error = new Error(problemi.join('; '));
+    error.tutteFallite = true;
+    throw error;
 }
 
 const GEMINI_MODEL = 'gemini-flash-latest';

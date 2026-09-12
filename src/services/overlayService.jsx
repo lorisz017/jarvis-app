@@ -95,3 +95,6 @@ export const onOverlayTap = (callback) => ascolta('jarvisOverlayTap', callback);
 
 /** Pressione lunga: l'app è tornata in primo piano. */
 export const onOverlayOpenApp = (callback) => ascolta('jarvisOverlayOpenApp', callback);
+
+/** Trascinata sulla linguetta "Rimuovi": la bolla è stata tolta. */
+export const onOverlayRemoved = (callback) => ascolta('jarvisOverlayRemoved', callback);

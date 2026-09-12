@@ -61,6 +61,8 @@ class JarvisOverlayService : Service() {
     private var windowManager: WindowManager? = null
     private var bolla: OverlayBubbleView? = null
     private var params: WindowManager.LayoutParams? = null
+    private var zonaRimozione: RemoveZoneView? = null
+    private var paramsZona: WindowManager.LayoutParams? = null
 
     private var partenzaX = 0f
     private var partenzaY = 0f
@@ -87,6 +89,7 @@ class JarvisOverlayService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_NOT_STICKY
 
     override fun onDestroy() {
+        nascondiZonaRimozione()
         val vista = bolla
         if (vista != null) {
             try {
@@ -232,7 +235,10 @@ class JarvisOverlayService : Service() {
             MotionEvent.ACTION_MOVE -> {
                 val dx = evento.rawX - partenzaX
                 val dy = evento.rawY - partenzaY
-                if (abs(dx) > soglia || abs(dy) > soglia) trascinata = true
+                if (abs(dx) > soglia || abs(dy) > soglia) {
+                    if (!trascinata) mostraZonaRimozione()
+                    trascinata = true
+                }
                 lp.x = originaleX + dx.toInt()
                 lp.y = originaleY + dy.toInt()
                 try {
@@ -240,11 +246,22 @@ class JarvisOverlayService : Service() {
                 } catch (e: Exception) {
                     // Vista non più agganciata: il trascinamento finisce qui.
                 }
+                if (trascinata) zonaRimozione?.setAttiva(sopraLaZona(lp, vista))
                 return true
             }
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 if (trascinata) {
+                    val daRimuovere = sopraLaZona(lp, vista)
+                    nascondiZonaRimozione()
+                    if (daRimuovere) {
+                        // Lasciata sulla linguetta: la bolla se ne va, e
+                        // l'interruttore nelle impostazioni si spegne da solo
+                        // perché resti in pari con quello che si vede.
+                        listener?.onBubbleRemoved()
+                        stopSelf()
+                        return true
+                    }
                     accostaAlBordo(vista, lp)
                 } else if (SystemClock.uptimeMillis() - premutoDa >= DURATA_PRESSIONE_LUNGA) {
                     apriApp()
@@ -276,6 +293,81 @@ class JarvisOverlayService : Service() {
         } catch (e: Exception) {
             // Come sopra: se la vista non c'è più non serve riposizionarla.
         }
+    }
+
+    /** Compare in basso quando il trascinamento comincia davvero. */
+    private fun mostraZonaRimozione() {
+        if (zonaRimozione != null) return
+        val wm = windowManager ?: return
+
+        val densita = resources.displayMetrics.density
+        val larghezza = (densita * 200).toInt()
+        val altezza = (densita * 64).toInt()
+
+        val tipo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+        } else {
+            @Suppress("DEPRECATION")
+            WindowManager.LayoutParams.TYPE_PHONE
+        }
+
+        val lp = WindowManager.LayoutParams(
+            larghezza,
+            altezza,
+            tipo,
+            // Non intercetta i tocchi: il dito sta trascinando la bolla, e la
+            // linguetta deve solo farsi vedere.
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+            PixelFormat.TRANSLUCENT
+        )
+        lp.gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+        lp.y = (densita * 48).toInt()
+        paramsZona = lp
+
+        val vista = RemoveZoneView(this)
+        zonaRimozione = vista
+
+        try {
+            wm.addView(vista, lp)
+        } catch (e: Exception) {
+            zonaRimozione = null
+            paramsZona = null
+        }
+    }
+
+    private fun nascondiZonaRimozione() {
+        val vista = zonaRimozione ?: return
+        try {
+            windowManager?.removeView(vista)
+        } catch (e: Exception) {
+            // Già tolta.
+        }
+        zonaRimozione = null
+        paramsZona = null
+    }
+
+    /** Vero se il centro della bolla si trova sopra la linguetta. */
+    private fun sopraLaZona(lp: WindowManager.LayoutParams, vista: OverlayBubbleView): Boolean {
+        val zona = zonaRimozione ?: return false
+        val zonaLp = paramsZona ?: return false
+
+        val larghezzaSchermo = resources.displayMetrics.widthPixels
+        val altezzaSchermo = resources.displayMetrics.heightPixels
+
+        val zonaSinistra = (larghezzaSchermo - zona.width) / 2f
+        val zonaSopra = altezzaSchermo - zonaLp.y - zona.height
+        // Un po' di tolleranza attorno: prendere la mira col dito mentre si
+        // trascina è più difficile di quanto sembri.
+        val margine = resources.displayMetrics.density * 24
+
+        val centroX = lp.x + vista.width / 2f
+        val centroY = lp.y + vista.height / 2f
+
+        return centroX >= zonaSinistra - margine &&
+            centroX <= zonaSinistra + zona.width + margine &&
+            centroY >= zonaSopra - margine &&
+            centroY <= zonaSopra + zona.height + margine
     }
 
     /** Usato anche dal modulo, fra un'azione sul telefono e la successiva. */

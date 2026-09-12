@@ -35,6 +35,7 @@ import {
     hasOverlayPermission,
     hideOverlay,
     isOverlaySupported,
+    onOverlayRemoved,
     onOverlayTap,
     requestOverlayPermission,
     setOverlayState,
@@ -80,6 +81,10 @@ export default function Home() {
     // una volta sola, e senza questo si porterebbe dietro per sempre lo stato
     // del primo render.
     const bubbleActionRef = useRef(null);
+    // Se in questo momento si sta registrando. Lo stato di React lo sa con un
+    // istante di ritardo, e da fuori dall'app quel ritardo si vede: il secondo
+    // tocco spegneva il microfono senza che la frase venisse mai elaborata.
+    const staRegistrandoRef = useRef(false);
 
     useVoiceSetup({
         setAvailableVoices,
@@ -276,10 +281,12 @@ export default function Home() {
         stopPulsing();
         await audioRecorder.prepareToRecordAsync();
         await audioRecorder.record();
+        staRegistrandoRef.current = true;
         startPulsing();
     };
 
     const stopRecording = async () => {
+        staRegistrandoRef.current = false;
         await audioRecorder.stop();
         stopPulsing();
         if (audioRecorder.uri) {
@@ -311,7 +318,18 @@ export default function Home() {
     // Il tocco sulla bolla fa la stessa cosa del microfono nell'app: se sta
     // registrando ferma e manda, altrimenti comincia ad ascoltare.
     useEffect(() => {
-        bubbleActionRef.current = recorderState.isRecording ? stopRecording : record;
+        bubbleActionRef.current = async () => {
+            // Si decide qui, sul flag aggiornato all'istante, non sullo stato
+            // di React: è la differenza fra completare la frase e troncarla.
+            if (staRegistrandoRef.current) {
+                setOverlayState(OVERLAY_STATE.THINKING);
+                await stopRecording();
+                setOverlayState(OVERLAY_STATE.IDLE);
+            } else {
+                setOverlayState(OVERLAY_STATE.LISTENING);
+                await record();
+            }
+        };
     });
 
     useEffect(() => {
@@ -329,6 +347,13 @@ export default function Home() {
                 await speak('Signore, non riesco ad ascoltarla da qui.');
             }
         });
+    }, []);
+
+    // Trascinata sulla linguetta "Rimuovi": l'interruttore si spegne da solo,
+    // altrimenti le impostazioni direbbero che la bolla è accesa mentre non
+    // c'è più, e riaccenderla richiederebbe due passaggi invece di uno.
+    useEffect(() => {
+        return onOverlayRemoved(() => setIsOverlayEnabled(false));
     }, []);
 
     // Il servizio parte qui, con l'app ancora aperta: Android concede il

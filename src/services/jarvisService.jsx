@@ -375,7 +375,7 @@ async function handleUserMessage(userMessage, {
                     // non essere riportato dentro J.A.R.V.I.S. a forza.
                     if (davantiCeUnAltraApp) {
                         bringAppToFront();
-                        await new Promise((resolve) => setTimeout(resolve, 700));
+                        await new Promise((resolve) => setTimeout(resolve, 1200));
                     }
 
                     let esito;

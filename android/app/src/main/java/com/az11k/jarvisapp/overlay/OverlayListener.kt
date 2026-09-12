@@ -7,4 +7,7 @@ interface OverlayListener {
 
     /** Pressione lunga: l'app torna in primo piano. */
     fun onBubbleOpenApp()
+
+    /** Trascinata sulla linguetta "Rimuovi": va spenta anche nelle impostazioni. */
+    fun onBubbleRemoved()
 }

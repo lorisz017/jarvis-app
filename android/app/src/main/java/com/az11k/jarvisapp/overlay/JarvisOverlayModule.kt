@@ -127,6 +127,10 @@ class JarvisOverlayModule(private val contesto: ReactApplicationContext) :
         emetti("jarvisOverlayOpenApp")
     }
 
+    override fun onBubbleRemoved() {
+        emetti("jarvisOverlayRemoved")
+    }
+
     private fun emetti(evento: String) {
         if (!contesto.hasActiveReactInstance()) return
         try {

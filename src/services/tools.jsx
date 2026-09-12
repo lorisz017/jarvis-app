@@ -14,12 +14,21 @@ export const TOOLS = [
         type: 'function',
         function: {
             name: 'set_alarm',
-            description: 'Imposta una sveglia vera nell\'app Orologio del telefono, a un orario preciso.',
+            description:
+                'Imposta una sveglia vera nell\'app Orologio del telefono, a un orario preciso. ' +
+                'Una richiesta contiene una sola sveglia a meno che l\'utente non ne chieda ' +
+                'esplicitamente due: "alle 10 e 17" è un unico orario, le 10:17, non le 10:00 e le 17:00.',
             parameters: {
                 type: 'object',
                 properties: {
                     hour: {type: 'integer', description: 'Ora, da 0 a 23'},
-                    minute: {type: 'integer', description: 'Minuti, da 0 a 59'},
+                    minute: {
+                        type: 'integer',
+                        description:
+                            'Minuti, da 0 a 59. In "alle 10 e 17" i minuti sono 17; in ' +
+                            '"alle 10 e un quarto" sono 15, "e mezza" 30, "meno un quarto" 45 ' +
+                            'dell\'ora precedente.',
+                    },
                     label: {type: 'string', description: 'Etichetta della sveglia, ad esempio "palestra"'},
                 },
                 required: ['hour', 'minute'],
