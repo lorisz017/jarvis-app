@@ -55,6 +55,27 @@ export function hideOverlay() {
     }
 }
 
+// Mostra o nasconde il cerchio senza spegnere il servizio. Sono due cose
+// separate apposta: il servizio deve partire mentre l'app è ancora in primo
+// piano, perché è l'unico momento in cui Android concede il microfono, mentre
+// il cerchio deve comparire solo quando si esce.
+export function setOverlayVisible(visibile) {
+    try {
+        modulo?.setVisible(visibile);
+    } catch (error) {
+        console.warn('Visibilità bolla:', error);
+    }
+}
+
+// Riporta davanti l'app dopo un'azione che ha aperto un'altra schermata.
+export function bringAppToFront() {
+    try {
+        modulo?.bringAppToFront();
+    } catch (error) {
+        console.warn('Rientro in primo piano:', error);
+    }
+}
+
 export function setOverlayState(stato) {
     try {
         modulo?.setState(stato);

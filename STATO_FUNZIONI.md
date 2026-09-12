@@ -27,8 +27,8 @@ Ultimo aggiornamento: dopo il collaudo della voce Deepgram e del tool calling.
 | Comando scritto | Campo di testo in fondo | ✅ |
 | Risposta parlata (voce Deepgram) | Automatica | ✅ non degrada più: il credito Deepgram regge l'uso quotidiano |
 | Scelta della voce naturale | Impostazioni → Voce naturale | ✅ nove voci italiane, si cambia senza ricompilare |
-| Volume pari fra le voci | Automatico | ⏳ alcune voci sono incise molto più basse delle altre: ora l'audio viene portato a un livello di riferimento comune prima di essere riprodotto, da confermare |
-| Bolla flottante sopra le altre app | Impostazioni → Bolla flottante | ⏳ nuova: cerchio trascinabile fuori dall'app, tocco per parlare, pressione lunga per rientrare — da confermare |
+| Volume pari fra le voci | Automatico | ✅ confermato: le voci più basse arrivano al livello delle altre |
+| Bolla flottante sopra le altre app | Impostazioni → Bolla flottante | ⏳ compare, ma al primo collaudo mandava in crash l'app: il servizio partiva nel momento sbagliato. Corretta, da riconfermare |
 | Ripiego su Gemini e voce di sistema | Automatico | ✅ entra solo se Deepgram non è disponibile |
 | Scelta della voce di sistema | Pill "VOCE" | ✅ riguarda solo la voce di riserva del telefono |
 | Spegnere la voce | Pulsante 🔊 in alto a destra | ✅ |
@@ -108,9 +108,9 @@ Ultimo aggiornamento: dopo il collaudo della voce Deepgram e del tool calling.
 
 ## Cosa resta aperto
 
-**Ricerca web** — ancora ferma, ma ora si sa perché. La strada nuova passa da Gemini, che cerca su Google per conto suo; la diagnostica del collaudo però ha restituito l'errore di Groq, il provider di riserva, senza alcun errore di Gemini prima. Vuol dire che Gemini non ha nemmeno provato: la sua chiave non è arrivata nella build. Da qui in avanti l'avviso lo dice esplicitamente invece di lasciarlo dedurre.
+**Ricerca web** — terza strada. Groq Compound risponde sempre con un limite superato. Gemini con la ricerca Google funziona, ma la ricerca non rientra nel piano gratuito: dice che la quota è esaurita già al primo tentativo, e la fatturazione non è un'opzione. Ora la prima scelta è Tavily, un motore pensato per essere letto da un modello, con un piano gratuito senza carta di credito: restituisce i brani delle pagine e la risposta la scrive il modello di chat già in uso. Serve la chiave `EXPO_PUBLIC_TAVILY_API_KEY` nei secret.
 
-**Catene di azioni** — corrette. Gli strumenti funzionavano (i nomi dei comandi non compaiono più nella risposta), ma partiva solo la prima azione: il modello ne chiede una per volta, aspettando di sapere com'è andata prima di chiedere la successiva, e il codice eseguiva il primo gruppo e si fermava. Ora l'esito di ogni azione torna al modello finché non smette di chiederne, fino a quattro giri.
+**Catene di azioni** — parzialmente risolte. Due azioni insieme funzionano, tre no, e qualsiasi catena che parta da una sveglia si ferma lì. La causa: impostare una sveglia apre l'orologio, l'app finisce dietro, e Android non lascia che un'app in secondo piano ne apra un'altra — la seconda azione veniva scartata senza un errore. Ora fra un'azione e la successiva l'app si riporta davanti (il permesso di sovrapposizione della bolla è anche l'eccezione che lo consente), e il prompt dice esplicitamente di non considerare chiusa la richiesta finché ogni parte non è stata eseguita.
 
 **Vecchio meccanismo a comandi testuali** — resta nel codice come rete di sicurezza sotto agli strumenti. Una volta confermato il funzionamento delle catene va rimosso, insieme alla duplicazione che si porta dietro.
 

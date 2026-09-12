@@ -38,6 +38,7 @@ import {
     onOverlayTap,
     requestOverlayPermission,
     setOverlayState,
+    setOverlayVisible,
     showOverlay,
 } from '../services/overlayService';
 import {buildBriefing} from '../services/briefingService';
@@ -320,8 +321,11 @@ export default function Home() {
         });
     }, []);
 
-    // La bolla compare quando si esce dall'app e sparisce quando si rientra:
-    // dentro c'è già il radar, due cerchi sovrapposti non servono a nessuno.
+    // Il servizio parte qui, con l'app ancora aperta: Android concede il
+    // microfono a un servizio in primo piano solo se a chiederlo è un'app che
+    // in quel momento è in primo piano. Farlo partire nel momento in cui si
+    // esce, come faceva la versione precedente, era proprio la richiesta che
+    // Android rifiutava — ed era il motivo dei blocchi.
     useEffect(() => {
         if (!isStateLoaded) return;
 
@@ -330,9 +334,13 @@ export default function Home() {
             return;
         }
 
+        showOverlay();
+        setOverlayVisible(false);
+
+        // Il cerchio compare solo quando si esce: dentro c'è già il radar, due
+        // cerchi sovrapposti non servono a nessuno.
         const iscrizione = AppState.addEventListener('change', (stato) => {
-            if (stato === 'background' || stato === 'inactive') showOverlay();
-            else if (stato === 'active') hideOverlay();
+            setOverlayVisible(stato !== 'active');
         });
 
         return () => iscrizione.remove();

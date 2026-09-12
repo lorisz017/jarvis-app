@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import com.az11k.jarvisapp.MainActivity
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
@@ -75,6 +76,33 @@ class JarvisOverlayModule(private val contesto: ReactApplicationContext) :
     @ReactMethod
     fun isVisible(promise: Promise) {
         promise.resolve(JarvisOverlayService.isRunning())
+    }
+
+    @ReactMethod
+    fun setVisible(visible: Boolean) {
+        JarvisOverlayService.applyVisibility(visible)
+    }
+
+    /**
+     * Riporta davanti l'app.
+     *
+     * Serve fra un'azione sul telefono e la successiva: impostare una sveglia
+     * apre l'orologio, e da lì in poi l'app è dietro. Android impedisce a
+     * un'app in secondo piano di aprire altre schermate, quindi la seconda
+     * azione della catena veniva scartata senza dire niente. Il permesso di
+     * sovrapposizione, quello della bolla, è anche l'eccezione che permette
+     * questo rientro.
+     */
+    @ReactMethod
+    fun bringAppToFront() {
+        try {
+            val intent = Intent(contesto, MainActivity::class.java)
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            contesto.startActivity(intent)
+        } catch (e: Exception) {
+            // Senza il permesso di sovrapposizione Android può rifiutare:
+            // la catena si interrompe, ma non succede niente di peggio.
+        }
     }
 
     @ReactMethod

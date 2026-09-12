@@ -19,6 +19,7 @@
        J.A.R.V.I.S. senza riaprire l'applicazione. -->
   <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
   <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
   <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
   <queries>
@@ -84,7 +85,11 @@
     <service
             android:name=".overlay.JarvisOverlayService"
             android:exported="false"
-            android:foregroundServiceType="microphone" />
+            android:foregroundServiceType="microphone|specialUse">
+      <property
+              android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+              android:value="Mantiene sullo schermo la bolla dell'assistente quando si esce dall'app" />
+    </service>
   </application>
 
 </manifest>

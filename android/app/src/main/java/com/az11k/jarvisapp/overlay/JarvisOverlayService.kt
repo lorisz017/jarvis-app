@@ -13,6 +13,7 @@ import android.os.IBinder
 import android.os.SystemClock
 import android.view.Gravity
 import android.view.MotionEvent
+import android.view.View
 import android.view.WindowManager
 import androidx.core.app.NotificationCompat
 import com.az11k.jarvisapp.MainActivity
@@ -49,6 +50,12 @@ class JarvisOverlayService : Service() {
         }
 
         fun isRunning(): Boolean = instance != null
+
+        /** Mostra o nasconde il cerchio, lasciando il servizio in piedi. */
+        fun applyVisibility(visibile: Boolean) {
+            val bolla = instance?.bolla ?: return
+            bolla.post { bolla.visibility = if (visibile) View.VISIBLE else View.GONE }
+        }
     }
 
     private var windowManager: WindowManager? = null
@@ -67,7 +74,13 @@ class JarvisOverlayService : Service() {
     override fun onCreate() {
         super.onCreate()
         instance = this
-        vaiInPrimoPiano()
+        if (!vaiInPrimoPiano()) {
+            // Non si è riusciti a diventare servizio in primo piano: si chiude
+            // qui. Prima l'eccezione usciva da onCreate e portava giù l'app —
+            // una bolla che non parte è un fastidio, un'app che crolla no.
+            stopSelf()
+            return
+        }
         mostraBolla()
     }
 
@@ -89,7 +102,8 @@ class JarvisOverlayService : Service() {
         super.onDestroy()
     }
 
-    private fun vaiInPrimoPiano() {
+    /** Restituisce false se Android non ha accettato il servizio. */
+    private fun vaiInPrimoPiano(): Boolean {
         val gestore = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -118,14 +132,38 @@ class JarvisOverlayService : Service() {
             .setContentIntent(tocco)
             .build()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            return try {
+                startForeground(NOTIFICATION_ID, notifica)
+                true
+            } catch (e: Exception) {
+                false
+            }
+        }
+
+        // Il tipo "microfono" è quello che serve per poter parlare alla bolla
+        // da fuori, ma Android lo concede solo se l'app è ancora in primo
+        // piano nel momento in cui il servizio parte. Se lo rifiuta si ripiega
+        // su un tipo generico: la bolla resta, si perde solo il microfono da
+        // fuori, e nessuno se ne va per terra.
+        return try {
             startForeground(
                 NOTIFICATION_ID,
                 notifica,
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
             )
-        } else {
-            startForeground(NOTIFICATION_ID, notifica)
+            true
+        } catch (primo: Exception) {
+            try {
+                startForeground(
+                    NOTIFICATION_ID,
+                    notifica,
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+                )
+                true
+            } catch (secondo: Exception) {
+                false
+            }
         }
     }
 
@@ -159,6 +197,10 @@ class JarvisOverlayService : Service() {
 
         val vista = OverlayBubbleView(this)
         vista.setOnTouchListener { _, evento -> gestisciTocco(evento) }
+        // Nasce nascosta: il servizio parte mentre l'app è ancora aperta (è
+        // l'unico momento in cui Android lo lascia partire col microfono), ma
+        // il cerchio deve comparire solo quando si esce.
+        vista.visibility = View.GONE
         bolla = vista
 
         try {
@@ -236,7 +278,8 @@ class JarvisOverlayService : Service() {
         }
     }
 
-    private fun apriApp() {
+    /** Usato anche dal modulo, fra un'azione sul telefono e la successiva. */
+    fun apriApp() {
         val intent = Intent(this, MainActivity::class.java)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         startActivity(intent)

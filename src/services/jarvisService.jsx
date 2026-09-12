@@ -10,7 +10,24 @@ import {getLatestCommits} from "../core/github/commits";
 import {createGitHubRepo} from "../core/github/createRepo";
 import {deleteGitHubRepo} from "../core/github/deleteRepo";
 import {TOOLS, executeTool} from './tools';
-import {searchWeb, hasSearchKey} from './webSearchService';
+import {searchWithTavily, searchWithGemini, hasTavilyKey, hasGeminiKey} from './webSearchService';
+import {bringAppToFront} from './overlayService';
+
+// Azioni che aprono la schermata di un'altra app. Dopo una di queste la
+// nostra app è dietro, e Android non lascia che un'app in secondo piano ne
+// apra un'altra: la seconda azione di una catena veniva scartata in silenzio.
+// È il motivo per cui "sveglia e chiama Marco" impostava la sveglia e basta.
+const AZIONI_CHE_APRONO_SCHERMATE = new Set([
+    'set_alarm',
+    'set_timer',
+    'call_contact',
+    'send_whatsapp',
+    'start_navigation',
+    'open_app',
+    'open_camera',
+    'open_telegram',
+    'open_youtube',
+]);
 
 const groqApiKey = process.env.EXPO_PUBLIC_GROQ_API_KEY;
 
@@ -222,26 +239,70 @@ async function handleUserMessage(userMessage, {
         const searchDiagnostics = [];
 
         // === Ricerca sul web ===
-        // Si tenta prima con Gemini, che cerca su Google per conto suo. Se
-        // non è disponibile si prosegue con Groq Compound più sotto, che però
-        // finora ha sempre risposto con un limite superato.
+        // Tre provider in fila, dal più affidabile al meno: Tavily cerca e
+        // restituisce i brani delle pagine, Gemini cerca e scrive già la
+        // risposta, Groq Compound è l'ultima spiaggia. Si passa al successivo
+        // solo se il precedente non ha dato niente, e ogni fallimento resta
+        // registrato col nome di chi ha fallito.
         if (chosenModel === SEARCH_MODEL) {
-            try {
-                const risposta = await searchWeb(userMessage);
-                if (risposta) {
-                    const pulita = stripMarkdown(risposta);
-                    setChatHistory([...updatedHistory, {role: 'assistant', content: pulita}]);
-                    await respond(pulita);
-                    return;
+            const rispondiConTesto = async (testo) => {
+                const pulita = stripMarkdown(testo);
+                setChatHistory([...updatedHistory, {role: 'assistant', content: pulita}]);
+                await respond(pulita);
+            };
+
+            if (hasTavilyKey) {
+                try {
+                    const brani = await searchWithTavily(userMessage);
+                    if (brani) {
+                        // I brani li riassume il modello di chat che l'app usa
+                        // già: poco testo, nessun rischio di superare limiti.
+                        const composta = await requestChatCompletion(CHAT_MODEL, [
+                            {
+                                role: 'system',
+                                content:
+                                    'Sei J.A.R.V.I.S. Rispondi in italiano, breve e preciso, ' +
+                                    'rivolgendoti all\'utente come "Signore". Usa solo le ' +
+                                    'informazioni nei brani che ti vengono dati. Se non ' +
+                                    'bastano, dillo invece di inventare.',
+                            },
+                            {
+                                role: 'user',
+                                content: `Domanda: ${userMessage}\n\nBrani trovati sul web:\n${brani}`,
+                            },
+                        ]);
+
+                        const testo = composta.choices?.[0]?.message?.content;
+                        if (testo) {
+                            await rispondiConTesto(testo);
+                            return;
+                        }
+                        searchDiagnostics.push('Tavily: brani trovati ma nessuna risposta composta');
+                    } else {
+                        searchDiagnostics.push('Tavily: nessun risultato');
+                    }
+                } catch (error) {
+                    console.warn('Ricerca con Tavily non riuscita:', error.message);
+                    searchDiagnostics.push(`Tavily: ${error.message}`);
                 }
-                searchDiagnostics.push(
-                    hasSearchKey
-                        ? 'Gemini: ha risposto senza testo'
-                        : 'Gemini: chiave EXPO_PUBLIC_GEMINI_API_KEY assente nella build'
-                );
-            } catch (error) {
-                console.warn('Ricerca web con Gemini non riuscita:', error.message);
-                searchDiagnostics.push(`Gemini: ${error.message}`);
+            } else {
+                searchDiagnostics.push('Tavily: chiave EXPO_PUBLIC_TAVILY_API_KEY assente');
+            }
+
+            if (hasGeminiKey) {
+                try {
+                    const risposta = await searchWithGemini(userMessage);
+                    if (risposta) {
+                        await rispondiConTesto(risposta);
+                        return;
+                    }
+                    searchDiagnostics.push('Gemini: ha risposto senza testo');
+                } catch (error) {
+                    console.warn('Ricerca web con Gemini non riuscita:', error.message);
+                    searchDiagnostics.push(`Gemini: ${error.message}`);
+                }
+            } else {
+                searchDiagnostics.push('Gemini: chiave EXPO_PUBLIC_GEMINI_API_KEY assente');
             }
         }
 
@@ -301,6 +362,7 @@ async function handleUserMessage(userMessage, {
             const conversazione = [...messages];
             let ultimaRisposta = responseData;
             let giro = 0;
+            let davantiCeUnAltraApp = false;
 
             while (toolCalls?.length && giro < MAX_TOOL_ROUNDS) {
                 giro += 1;
@@ -308,6 +370,15 @@ async function handleUserMessage(userMessage, {
 
                 for (const call of toolCalls) {
                     const nome = call.function?.name;
+
+                    // Si torna davanti solo se resta qualcosa da fare: alla
+                    // fine della catena l'utente deve restare dov'è finito,
+                    // non essere riportato dentro J.A.R.V.I.S. a forza.
+                    if (davantiCeUnAltraApp) {
+                        bringAppToFront();
+                        await new Promise((resolve) => setTimeout(resolve, 700));
+                    }
+
                     let esito;
                     try {
                         const args = JSON.parse(call.function?.arguments || '{}');
@@ -317,6 +388,7 @@ async function handleUserMessage(userMessage, {
                         esito = `Non sono riuscito a completare "${nome}": ${error.message}`;
                     }
                     esiti.push(esito);
+                    davantiCeUnAltraApp = AZIONI_CHE_APRONO_SCHERMATE.has(nome);
                     // L'esito torna al modello con l'id della chiamata a cui
                     // risponde: senza, l'API rifiuta il messaggio.
                     conversazione.push({role: 'tool', tool_call_id: call.id, content: esito});
