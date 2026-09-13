@@ -340,39 +340,17 @@ export default function Home() {
     // === Bolla flottante ===
     // Il tocco sulla bolla fa la stessa cosa del microfono nell'app: se sta
     // registrando ferma e manda, altrimenti comincia ad ascoltare.
+    // Un tocco sulla bolla apre la conversazione continua, non più il giro a
+    // registrazione.
+    //
+    // Quel giro — registra un file, trascrivi, ragiona, sintetizza, riproduci
+    // — ha cinque passaggi, e fuori dall'app ognuno può fallire in silenzio.
+    // Dopo quattro correzioni era ancora rotto, e il problema non erano le
+    // correzioni: era la strada. La conversazione continua non fa niente di
+    // tutto questo, e fuori dall'app funziona per lo stesso motivo per cui
+    // funziona dentro.
     useEffect(() => {
-        bubbleActionRef.current = async () => {
-            // Si decide qui, sul flag aggiornato all'istante, non sullo stato
-            // di React: è la differenza fra completare la frase e troncarla.
-            if (!staRegistrandoRef.current) {
-                setOverlayState(OVERLAY_STATE.LISTENING);
-                await record();
-                return;
-            }
-
-            setOverlayState(OVERLAY_STATE.THINKING);
-            try {
-                // Rete di sicurezza: fuori dall'app non c'è uno schermo su cui
-                // accorgersi che qualcosa si è impuntato, e una bolla che
-                // pensa per sempre è indistinguibile da una bolla rotta.
-                // Qualunque cosa succeda, entro un minuto si sa com'è andata.
-                await Promise.race([
-                    stopRecording(),
-                    new Promise((_, reject) =>
-                        setTimeout(
-                            () => reject(new Error('nessuna risposta entro un minuto')),
-                            60000
-                        )
-                    ),
-                ]);
-            } catch (error) {
-                console.warn('Richiesta dalla bolla:', error);
-                staRegistrandoRef.current = false;
-                await speak(`Signore, la sua richiesta non è andata a buon fine: ${error.message}.`);
-            } finally {
-                setOverlayState(OVERLAY_STATE.IDLE);
-            }
-        };
+        bubbleActionRef.current = () => toggleLive();
     });
 
     useEffect(() => {
@@ -396,7 +374,13 @@ export default function Home() {
     // altrimenti le impostazioni direbbero che la bolla è accesa mentre non
     // c'è più, e riaccenderla richiederebbe due passaggi invece di uno.
     useEffect(() => {
-        return onOverlayRemoved(() => setIsOverlayEnabled(false));
+        return onOverlayRemoved(() => {
+            setIsOverlayEnabled(false);
+            // Senza il servizio in primo piano Android non concede più il
+            // microfono da fuori: lasciare la conversazione aperta vorrebbe
+            // dire lasciarla muta senza dirlo.
+            fermaLive();
+        });
     }, []);
 
     // Il servizio parte qui, con l'app ancora aperta: Android concede il
@@ -424,15 +408,18 @@ export default function Home() {
         return () => iscrizione.remove();
     }, [isStateLoaded, isOverlayEnabled]);
 
-    // Da fuori non si vede lo schermo dell'app: il colore e la velocità della
-    // bolla sono l'unico modo per capire se sta ascoltando o ragionando.
+    // Da fuori non si vede lo schermo dell'app: il colore della bolla è
+    // l'unico modo per capire cosa sta succedendo. Verde quando la
+    // conversazione è aperta e ti sta ascoltando, ambra mentre si collega o
+    // mentre l'app sta elaborando, ciano quando è ferma.
     useEffect(() => {
         if (!isOverlayEnabled) return;
 
-        if (recorderState.isRecording) setOverlayState(OVERLAY_STATE.LISTENING);
-        else if (isLoading) setOverlayState(OVERLAY_STATE.THINKING);
+        if (statoLive === 'attiva') setOverlayState(OVERLAY_STATE.LISTENING);
+        else if (statoLive === 'connessione' || isLoading) setOverlayState(OVERLAY_STATE.THINKING);
+        else if (recorderState.isRecording) setOverlayState(OVERLAY_STATE.LISTENING);
         else setOverlayState(OVERLAY_STATE.IDLE);
-    }, [isOverlayEnabled, recorderState.isRecording, isLoading]);
+    }, [isOverlayEnabled, statoLive, recorderState.isRecording, isLoading]);
 
     const toggleOverlay = async () => {
         if (isOverlayEnabled) {

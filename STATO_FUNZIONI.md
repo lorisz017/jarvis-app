@@ -26,10 +26,10 @@ Ultimo aggiornamento: dopo il collaudo della bolla flottante, della ricerca via 
 | Comando vocale | Tocchi il radar e parli | ✅ |
 | Comando scritto | Campo di testo in fondo | ✅ |
 | Risposta parlata (voce Edge) | Automatica | ⏳ nuova: voci neurali Microsoft, senza chiave e senza quota. Deepgram resta come riserva |
-| Conversazione continua (pulsante PARLA) | Schermata principale | ⏳ nuova: un solo modello ascolta e risponde in voce, interrompibile a metà frase, con le stesse azioni. Mai provata su un telefono |
+| Conversazione continua (pulsante PARLA) | Schermata principale | ✅ **funziona**. Si attiva, si parla e resta aperta. Le azioni partono in un istante, più rapide che dal giro normale, e la voce è quella del modello stesso |
 | Scelta della voce naturale | Impostazioni → Voce naturale | ⏳ quattro voci italiane Edge: Diego, Giuseppe, Isabella, Elsa |
 | Volume pari fra le voci | Automatico | ✅ confermato: le voci più basse arrivano al livello delle altre |
-| Bolla flottante sopra le altre app | Impostazioni → Bolla flottante | ⏳ compare, non crasha, il tocco accende il microfono e la linguetta "Rimuovi" funziona. Da fuori però la risposta non arriva ancora: restava sempre la prima frase, e il resto si sbloccava solo rientrando. Tre cause affrontate in un colpo, da riconfermare |
+| Bolla flottante sopra le altre app | Impostazioni → Bolla flottante | ⏳ ora un tocco apre la conversazione continua invece del giro a registrazione. Da provare |
 | Ripiego su Gemini e voce di sistema | Automatico | ✅ entra solo se Deepgram non è disponibile |
 | Scelta della voce di sistema | Pill "VOCE" | ✅ riguarda solo la voce di riserva del telefono |
 | Spegnere la voce | Pulsante 🔊 in alto a destra | ✅ |
@@ -109,7 +109,7 @@ Ultimo aggiornamento: dopo il collaudo della bolla flottante, della ricerca via 
 
 ## Cosa resta aperto
 
-**Conversazione continua** — la sessione moriva dopo un secondo e il motivo è arrivato appena si è cominciato a leggere il codice di chiusura: `realtime_input.media_chunks is deprecated. Use audio, video, or text instead`. L'audio andava messo direttamente in `audio`, non dentro un elenco di pezzi. Corretto, da provare.
+**Conversazione continua** — risolta. La sessione moriva dopo un secondo perché l'audio veniva mandato in `realtime_input.media_chunks`, che è deprecato: va messo in `audio`. Il messaggio di chiusura del server lo diceva a lettere, ma nessuno lo leggeva. Al collaudo: si attiva, resta aperta, risponde in un istante, e le azioni partono più in fretta che dal giro normale.
 
 **Voce di Edge** — non parla ancora: si sente la riserva. Da qui non è verificabile, i WebSocket non escono da questo ambiente nemmeno verso un server di prova. Quindi la prossima build riporta il motivo del rifiuto nelle impostazioni, sotto VOCE NATURALE, invece di lasciarlo indovinare. Nel frattempo due sospetti sono stati tolti di mezzo: la versione di Edge dichiarata era vecchia di dieci versioni, e la scelta della voce finiva nella preferenza sbagliata — per questo cambiare voce non cambiava niente.
 

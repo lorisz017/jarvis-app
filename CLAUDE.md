@@ -278,19 +278,20 @@ Le regole che lo rendono utile invece che decorativo:
 
 Lo stato dettagliato sta in `STATO_FUNZIONI.md`; qui la sostanza:
 
-- **La bolla flottante** non dà segni di vita fuori dall'app. Ci sono state
-  quattro correzioni, e dopo ognuna era "meno rotta ma rotta". La conclusione
-  è che la strada è sbagliata, non la toppa: la bolla passa dal giro
-  registra → trascrivi → ragiona → sintetizza → riproduci, cinque passaggi
-  che fuori dall'app possono fallire in silenzio. **Il piano è spostarla
-  sulla conversazione continua** appena quella funziona, e smettere di
-  rattoppare il giro vecchio.
-- **La conversazione continua** moriva dopo un secondo. Causa trovata e
-  corretta: l'audio andava mandato in `realtimeInput.audio`, non dentro
-  `mediaChunks`, che è deprecato. Da confermare sul telefono.
-- **La voce di Edge** non parla ancora: si sente la riserva. Da qui non è
-  verificabile — i WebSocket non escono da questo ambiente — quindi l'app
-  adesso riporta il motivo del rifiuto nelle impostazioni.
+- **La conversazione continua funziona**, ed è la parte migliore del
+  progetto: si attiva, si parla, resta aperta, risponde in un istante, e le
+  azioni partono più in fretta che dal giro normale. La voce è quella che
+  lorisz017 voleva fin dall'inizio — **non va cambiata**.
+- **La bolla** è stata spostata su quella modalità. Il giro precedente aveva
+  cinque passaggi che fuori dall'app potevano fallire in silenzio, e quattro
+  correzioni non erano bastate: il problema era la strada.
+- **La voce di Edge** resta da verificare per la modalità normale. È meno
+  urgente di prima: nella conversazione continua la voce non è una sintesi,
+  è il modello che parla.
+
+Una tentazione da tenere a bada: la conversazione continua è così buona che
+verrebbe da renderla l'unica modalità. **Lui ha detto esplicitamente di non
+togliere niente e di lasciare l'interfaccia com'è.**
 
 ## Una cosa imparata a caro prezzo
 

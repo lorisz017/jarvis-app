@@ -104,9 +104,9 @@ export default function SettingsModal({
                                     onToggle={onToggleOverlay}
                                 />
                                 <Text style={styles.settingsHint}>
-                                    Uscendo dall&apos;app resta un cerchio sullo schermo. Un tocco
-                                    comincia ad ascoltare, un secondo tocco chiude la frase e la manda,
-                                    una pressione lunga riapre l&apos;app. Si trascina dove serve, e
+                                    Uscendo dall&apos;app resta un cerchio sullo schermo. Un tocco apre
+                                    lì la conversazione continua: si parla e basta, senza rientrare. Una
+                                    pressione lunga riapre l&apos;app. Si trascina dove serve, e
                                     trascinandola sulla linguetta in basso si toglie. Android chiede un
                                     permesso a parte la prima volta.
                                 </Text>
