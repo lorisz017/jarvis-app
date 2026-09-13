@@ -35,7 +35,7 @@ The reasoning runs on **Gemini**, with Groq kept behind it. Groq's free tier all
 
 You can also type instead of speaking — same actions, same behaviour.
 
-There is a second way to talk to it, and it works differently. The **PARLA** button opens a continuous conversation: one model listens to your voice and answers in its own, while you speak — no recording, no transcription, no synthetic voice reading out a text written by someone else. You can interrupt it mid-sentence and it stops, the way a person would. It runs on Gemini's Live API, over a connection held open for as long as the conversation lasts, with the same actions available as everywhere else.
+There is a second way to talk to it, and it works differently. A switch at the top of the screen moves between the two, and turning it to **CONVERSAZIONE** opens a continuous conversation: one model listens to your voice and answers in its own, while you speak — no recording, no transcription, no synthetic voice reading out a text written by someone else. You can interrupt it mid-sentence and it stops, the way a person would. It runs on Gemini's Live API, over a connection held open for as long as the conversation lasts, with the same actions available as everywhere else.
 
 And you do not have to be in the app at all: with the floating bubble on, leaving it puts a circle over whatever is on screen. A tap opens the continuous conversation right there, a long press brings the app back, and dragging it onto the tab at the bottom removes it. The ring turns green while it listens and amber while it thinks, because from out there the colour is all you have to go on.
 
@@ -185,7 +185,7 @@ Il ragionamento passa da **Gemini**, con Groq dietro come riserva. Il piano grat
 
 Si può anche scrivere invece di parlare — stesse azioni, stesso comportamento.
 
-C'è un secondo modo di parlargli, e funziona in un altro modo. Il pulsante **PARLA** apre una conversazione continua: un solo modello ascolta la voce e risponde con la propria, mentre si parla — niente registrazione, niente trascrizione, nessuna voce sintetica che legge un testo scritto da qualcun altro. Lo si può interrompere a metà frase e si ferma, come farebbe una persona. Passa dall'API Live di Gemini, su una connessione che resta aperta per tutta la conversazione, con le stesse azioni disponibili ovunque.
+C'è un secondo modo di parlargli, e funziona in un altro modo. Una leva in cima alla schermata passa dall'una all'altra, e spostandola su **CONVERSAZIONE** si apre una conversazione continua: un solo modello ascolta la voce e risponde con la propria, mentre si parla — niente registrazione, niente trascrizione, nessuna voce sintetica che legge un testo scritto da qualcun altro. Lo si può interrompere a metà frase e si ferma, come farebbe una persona. Passa dall'API Live di Gemini, su una connessione che resta aperta per tutta la conversazione, con le stesse azioni disponibili ovunque.
 
 E non serve nemmeno essere dentro l'app: con la bolla flottante accesa, uscendo resta un cerchio sopra qualunque cosa ci sia sullo schermo. Un tocco apre lì la conversazione continua, una pressione lunga riapre l'app, e trascinandola sulla linguetta in basso si toglie. L'anello diventa verde mentre ascolta e ambra mentre pensa, perché da lì fuori il colore è l'unica cosa su cui regolarsi.
 

@@ -573,6 +573,66 @@ export const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'rgba(0, 217, 255, 0.30)',
     },
+    // === La leva che cambia modalità ===
+    // Sta in alto perché è la scelta più importante della schermata, non una
+    // fra tante. Il vetro è quello vero di sistema: sotto ci passa
+    // l'interfaccia e si vede.
+    modeSwitch: {
+        width: '100%',
+        marginBottom: 18,
+        borderRadius: 22,
+        // Il taglio serve: senza, gli angoli del vetro escono dal bordo
+        // arrotondato e si vedono quadrati.
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(0, 217, 255, 0.22)',
+    },
+    modeSwitchBlur: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        height: 44,
+        backgroundColor: 'rgba(8, 20, 32, 0.35)',
+    },
+    // Il cursore sta sotto alle scritte: è posizionato in assoluto e non
+    // intercetta i tocchi, che devono arrivare alle due metà.
+    modeSwitchCursore: {
+        position: 'absolute',
+        left: 0,
+        top: 3,
+        bottom: 3,
+        borderRadius: 19,
+        borderWidth: 1,
+        backgroundColor: 'rgba(0, 217, 255, 0.10)',
+    },
+    modeSwitchMetà: {
+        flex: 1,
+        height: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    modeSwitchTesto: {
+        fontFamily: MONO,
+        fontSize: 11,
+        letterSpacing: 1.6,
+        color: 'rgba(200, 244, 255, 0.45)',
+    },
+    modeSwitchTestoScelto: {
+        color: TEXT,
+    },
+    modeSwitchTestoAttivo: {
+        color: GREEN,
+    },
+    // Riga che spiega cosa sta succedendo in conversazione, al posto del
+    // campo di testo che lì non serve.
+    conversazioneNota: {
+        fontFamily: MONO,
+        fontSize: 12,
+        lineHeight: 18,
+        color: 'rgba(200, 244, 255, 0.6)',
+        textAlign: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 14,
+    },
     // Pulsante acceso: la conversazione continua è in corso.
     pillButtonActive: {
         borderColor: GREEN,

@@ -22,6 +22,7 @@ import ActivityLog from '../components/ActivityLog';
 import ResponseBox from '../components/ResponseBox';
 import VoicePickerModal from '../components/VoicePickerModal';
 import SettingsModal from '../components/SettingsModal';
+import ModeSwitch from '../components/ModeSwitch';
 
 import {useVoiceSetup} from '../hooks/useVoiceSetup';
 import {speakJarvisResponse, stopJarvisVoice, setPreferredVoice} from '../services/ttsService';
@@ -75,6 +76,8 @@ export default function Home() {
     const [isOverlayEnabled, setIsOverlayEnabled] = useState(false);
     // 'spenta' | 'connessione' | 'attiva'
     const [statoLive, setStatoLive] = useState('spenta');
+    // 'comandi' | 'conversazione'
+    const [modalita, setModalita] = useState('comandi');
 
     const scrollRef = useRef();
     const animatedScale = useRef(new Animated.Value(1)).current;
@@ -526,7 +529,13 @@ export default function Home() {
             contesto: contestoAzioni(),
             onStato: (stato) => {
                 setStatoLive(stato === 'chiusa' ? 'spenta' : stato);
-                if (stato === 'chiusa') sessioneLiveRef.current = null;
+                if (stato === 'chiusa') {
+                    sessioneLiveRef.current = null;
+                    // Chiusa dal server o da un errore: la leva deve tornare
+                    // indietro da sola, altrimenti resta a indicare una
+                    // conversazione che non c'è più.
+                    setModalita('comandi');
+                }
             },
             onTesto: ({chi, testo}) => {
                 if (!testo?.trim()) return;
@@ -565,6 +574,22 @@ export default function Home() {
     // Se si chiude l'app la sessione va chiusa: resterebbe il microfono
     // acceso e la connessione aperta.
     useEffect(() => () => sessioneLiveRef.current?.stop(), []);
+
+    // La leva non è una preferenza da ricordare: cambiarla accende o spegne
+    // davvero la conversazione, così quello che si vede e quello che succede
+    // restano la stessa cosa.
+    const cambiaModalita = async (nuova) => {
+        if (nuova === modalita) return;
+
+        if (nuova === 'conversazione') {
+            setModalita('conversazione');
+            if (statoLive === 'spenta') await toggleLive();
+            return;
+        }
+
+        setModalita('comandi');
+        if (statoLive !== 'spenta') fermaLive();
+    };
 
     const sendTypedMessage = async () => {
         const message = typedText.trim();
@@ -613,12 +638,31 @@ export default function Home() {
             <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
                 <Header/>
 
+                <ModeSwitch
+                    valore={modalita}
+                    onChange={cambiaModalita}
+                    attiva={statoLive === 'attiva'}
+                    inAttesa={statoLive === 'connessione'}
+                />
+
                 <SystemStatus/>
 
                 <MicrophoneButton
-                    onPress={recorderState.isRecording ? stopRecording : record}
-                    isRecording={recorderState.isRecording}
-                    isLoading={isLoading}
+                    onPress={
+                        modalita === 'conversazione'
+                            ? toggleLive
+                            : recorderState.isRecording ? stopRecording : record
+                    }
+                    isRecording={
+                        modalita === 'conversazione'
+                            ? statoLive === 'attiva'
+                            : recorderState.isRecording
+                    }
+                    isLoading={
+                        modalita === 'conversazione'
+                            ? statoLive === 'connessione'
+                            : isLoading
+                    }
                     animatedScale={animatedScale}
                 />
 
@@ -631,6 +675,15 @@ export default function Home() {
                 />
 
                 <View style={styles.controlsContainer}>
+                    {modalita === 'conversazione' ? (
+                        <Text style={styles.conversazioneNota}>
+                            {statoLive === 'attiva'
+                                ? 'La conversazione è aperta, signore. Parli pure: la interrompo quando ricomincia a parlare.'
+                                : statoLive === 'connessione'
+                                    ? 'Mi sto collegando, signore...'
+                                    : 'Conversazione chiusa.'}
+                        </Text>
+                    ) : (
                     <KeyboardAvoidingView
                         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                         style={styles.textInputRow}
@@ -648,20 +701,9 @@ export default function Home() {
                             <Text style={styles.sendButtonText}>➤</Text>
                         </TouchableOpacity>
                     </KeyboardAvoidingView>
+                    )}
 
                     <View style={styles.actionRow}>
-                        <TouchableOpacity
-                            style={[styles.pillButton, statoLive !== 'spenta' && styles.pillButtonActive]}
-                            onPress={toggleLive}
-                        >
-                            <Text style={styles.pillButtonIcon}>
-                                {statoLive === 'attiva' ? '🟢' : statoLive === 'connessione' ? '◌' : '💬'}
-                            </Text>
-                            <Text style={styles.pillButtonText}>
-                                {statoLive === 'spenta' ? 'PARLA' : 'CHIUDI'}
-                            </Text>
-                        </TouchableOpacity>
-
                         <TouchableOpacity style={styles.pillButton} onPress={() => setIsVoicePickerVisible(true)}>
                             <Text style={styles.pillButtonIcon}>🎙</Text>
                             <Text style={styles.pillButtonText}>VOCE</Text>
