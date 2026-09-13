@@ -1,4 +1,4 @@
-# Stato delle funzioni — J.A.R.V.I.S. 2.0.0
+# Stato delle funzioni — J.A.R.V.I.S. 3.0.0
 
 Legenda:
 
@@ -7,7 +7,9 @@ Legenda:
 - ❌ **Non funziona** — provata e non funzionante
 - ⏳ **Non testabile** — bloccata da qualcosa di esterno (chiave mancante)
 
-Ultimo aggiornamento: versione 3.0.0, dopo il passaggio alla conversazione continua come modalità normale.
+Ultimo aggiornamento: versione 3.0.0 — conversazione continua come modalità normale, memoria personale, icona nuova.
+
+L'ultima versione provata sul telefono e funzionante è sul ramo `funzionante`.
 
 > **Su cosa è stato provato.** Il progetto è nelle sue prime fasi e tutte le
 > spunte qui sotto vengono da **un solo dispositivo: uno Xiaomi 17 con
@@ -24,25 +26,25 @@ Ultimo aggiornamento: versione 3.0.0, dopo il passaggio alla conversazione conti
 | Funzione | Come si usa | Stato |
 |---|---|---|
 | Comando vocale | Tocchi il radar e parli | ✅ |
-| Comando scritto | Campo di testo in fondo | ✅ |
-| Risposta parlata (voce Edge) | Automatica | ⏳ nuova: voci neurali Microsoft, senza chiave e senza quota. Deepgram resta come riserva |
-| Memoria personale | Impostazioni → Memoria | ⏳ nuova: una nota scritta a mano più i fatti che si annota da solo parlando. Entra nel prompt all'inizio di ogni conversazione |
+| Comando scritto | Campo di testo in fondo | ✅ vale in tutte e due le modalità: in conversazione la frase scritta entra nella sessione aperta |
+| Risposta parlata (voce Edge) | Automatica | ⚠️ non parte, si sente Deepgram. Riguarda solo la modalità a comandi: in conversazione la voce è il modello stesso |
+| Memoria personale | Impostazioni → Memoria | ⚠️ la nota si scrive e si conserva, ma al collaudo non arrivava al modello. Una causa è corretta, il resto ora si racconta da solo: vedi "Cosa resta aperto" |
 | Conversazione continua (modalità normale) | Si apre da sola all'avvio | ✅ **funziona**. Si attiva, si parla e resta aperta. Le azioni partono in un istante, più rapide che dal giro normale, e la voce è quella del modello stesso |
 | Scelta della voce naturale | Impostazioni → Voce naturale | ⏳ quattro voci italiane Edge: Diego, Giuseppe, Isabella, Elsa |
 | Volume pari fra le voci | Automatico | ✅ confermato: le voci più basse arrivano al livello delle altre |
-| Bolla flottante sopra le altre app | Impostazioni → Bolla flottante | ⏳ ora un tocco apre la conversazione continua invece del giro a registrazione. Da provare |
+| Bolla flottante sopra le altre app | Impostazioni → Bolla flottante | ✅ un tocco apre la conversazione continua invece del vecchio giro a registrazione |
 | Ripiego su Gemini e voce di sistema | Automatico | ✅ entra solo se Deepgram non è disponibile |
 | Scelta della voce di sistema | Pill "VOCE" | ✅ riguarda solo la voce di riserva del telefono |
 | Spegnere la voce | Pulsante 🔊 in alto a destra | ✅ |
 | Interrompere la voce mentre parla | 🔊, FERMA, o il microfono | ✅ |
 | Riattivare la voce | Pulsante 🔊 | ✅ riprende dal messaggio successivo: un audio interrotto non è recuperabile a metà, andrebbe rigenerato |
-| Registro attività scorrevole | Sotto il radar | ✅ |
+| Registro attività scorrevole | Sotto il radar | ✅ ingrandito: si legge senza sforzo |
 
 ## Azioni
 
 | Funzione | Come si usa | Stato |
 |---|---|---|
-| Più azioni in una richiesta | "Sveglia alle 8, timer di 10 minuti e chiama Marco" | ⚠️ da riverificare: al primo tentativo partiva solo la prima azione, il prompt è stato corretto |
+| Più azioni in una richiesta | "Sveglia alle 8, timer di 10 minuti e chiama Marco" | ✅ in conversazione partono tutte insieme e in un istante |
 | Azione singola | Qualunque comando da solo | ✅ |
 
 ## Informazioni
@@ -51,7 +53,7 @@ Ultimo aggiornamento: versione 3.0.0, dopo il passaggio alla conversazione conti
 |---|---|---|
 | Riepilogo all'apertura | Automatico all'avvio | ✅ |
 | Meteo | "Che tempo fa a Milano?" | ✅ |
-| Ricerca sul web | "Chi ha vinto...", "Prezzo di..." | ❌ Groq risponde sempre con un limite superato; l'assistente risponde dalle conoscenze del modello, dicendolo |
+| Ricerca sul web | "Chi ha vinto...", "Prezzo di..." | ✅ via DuckDuckGo, leggendo le pagine. È una vera azione anche dentro la conversazione |
 
 ## Tempo e promemoria
 
@@ -96,7 +98,10 @@ Ultimo aggiornamento: versione 3.0.0, dopo il passaggio alla conversazione conti
 | Riepilogo all'avvio on/off | Impostazioni | ✅ |
 | Scheda Funzioni | Impostazioni | ✅ |
 | Scheda Info e crediti | Impostazioni | ✅ |
-| Memoria persistente | Automatica | ✅ |
+| Conversazione salvata fra un avvio e l'altro | Automatica | ✅ da non confondere con la memoria personale, che è un'altra cosa |
+| Leva fra conversazione e comandi | In cima, se la modalità a comandi è accesa | ✅ spostarla apre o chiude davvero la sessione |
+| Icona dell'app | Schermata iniziale | ✅ il radar dell'app, generata da `strumenti/icona.py` |
+| Riconoscimento del creatore | "Chi ti ha creato?" | ✅ risponde Loris, col profilo GitHub se la conversazione lo consente |
 | Pulisci chat | Pill "PULISCI" | ✅ |
 
 ## Compilazione
@@ -130,7 +135,7 @@ Resta una cosa per costruzione: il prompt di sistema si manda all'apertura della
 
 **Perché l'assistente desktop sembra più sveglio** — Mark-LIII non fa quello che fa questa app. Non trascrive, non ragiona e poi sintetizza: parla con `gemini-3.1-flash-live-preview`, cioè l'API Live di Gemini, un modello che ascolta la voce e risponde in voce direttamente. Niente tre passaggi, niente attese in mezzo, e un timbro che nessuna sintesi di testo può eguagliare. Portarla qui è possibile ma è un lavoro a sé: vuol dire una connessione continua e audio trasmesso a flusso invece che a file.
 
-**Risposta dalla bolla, da fuori** — è il punto aperto principale. Al collaudo: si tocca, si parla, si ritocca, e la bolla pensa senza fine; nessun suono esce, e la risposta compare solo rientrando nell'app — sempre la stessa, la prima frase detta da fuori. Tre cause distinte sono state affrontate insieme, perché ognuna basta da sola a produrre quel sintomo: il registratore non ripartiva e restituiva il file precedente (ora la sessione audio viene rimessa in modalità registrazione prima di ogni ripresa, e un file identico al precedente viene rifiutato a voce); le richieste della voce non avevano limite di tempo (ora sì); e la riproduzione avveniva con la sessione ancora impegnata dal microfono, cosa che su Android può suonare nel vuoto (ora si esce prima dalla modalità registrazione). In più, qualunque cosa vada storta, entro un minuto la bolla lo dice invece di continuare a girare.
+**Risposta dalla bolla, da fuori** — chiusa. È stata poi spostata sulla conversazione continua, ed è lì che ha cominciato a funzionare: la strada vecchia aveva cinque passaggi che fuori dall'app potevano fallire in silenzio. Quello che segue è come si presentava e cosa era stato corretto prima di cambiare strada. Al collaudo: si tocca, si parla, si ritocca, e la bolla pensa senza fine; nessun suono esce, e la risposta compare solo rientrando nell'app — sempre la stessa, la prima frase detta da fuori. Tre cause distinte sono state affrontate insieme, perché ognuna basta da sola a produrre quel sintomo: il registratore non ripartiva e restituiva il file precedente (ora la sessione audio viene rimessa in modalità registrazione prima di ogni ripresa, e un file identico al precedente viene rifiutato a voce); le richieste della voce non avevano limite di tempo (ora sì); e la riproduzione avveniva con la sessione ancora impegnata dal microfono, cosa che su Android può suonare nel vuoto (ora si esce prima dalla modalità registrazione). In più, qualunque cosa vada storta, entro un minuto la bolla lo dice invece di continuare a girare.
 
 **Ricerca web** — funziona. Alla domanda sull'ultimo modello di ChatGPT ha risposto con data e nome esatti. Restava un eccesso di prudenza: sul Gran Premio aveva trovato Monza e il primato di Antonelli, ma si è fermata a "non indicano il vincitore" invece di dire quello che aveva davanti. Ora l'istruzione dice di ricavare la risposta quando si deduce dai brani, dichiarandolo, e di ammettere di non sapere solo se i brani non c'entrano con la domanda. Legge anche tre pagine invece di due.
 
