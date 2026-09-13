@@ -3,6 +3,7 @@ import {Modal, View, Text, ScrollView, TouchableOpacity, TextInput, Linking} fro
 import {styles} from '../styles/mainStyles';
 import {FEATURE_SECTIONS} from '../utils/features';
 import {getVoiceInfo, getUltimoErroreEdge} from '../services/ttsService';
+import {statoMemoria} from '../services/memoryService';
 
 const APP_VERSION = '3.0.0';
 const GITHUB_PROFILE = 'https://github.com/lorisz017';
@@ -58,13 +59,17 @@ export default function SettingsModal({
     // La nota si modifica qui e si salva quando si smette di scriverla: farlo
     // a ogni lettera vorrebbe dire scrivere su disco a ogni tasto.
     const [nota, setNotaLocale] = useState(memoria?.nota || '');
+    // Com'è andata al file, non cosa c'è dentro: senza questo, una scrittura
+    // fallita si scopre solo riaprendo l'app e trovando il vuoto.
+    const [diagnosi, setDiagnosi] = useState(null);
 
     useEffect(() => {
         if (!isVisible) return;
         setVoiceInfo(getVoiceInfo());
         setErroreVoce(getUltimoErroreEdge());
         onRileggiMemoria?.();
-    }, [isVisible]);
+        setDiagnosi(statoMemoria());
+    }, [isVisible, memoria]);
 
     // Se la memoria cambia da fuori — perché se l'è annotata lui mentre si
     // parlava — la casella deve rifletterlo invece di restare indietro.
@@ -155,6 +160,21 @@ export default function SettingsModal({
                                         dire qualcosa che resterà vero anche fra un mese.
                                     </Text>
                                 )}
+
+                                {diagnosi ? (
+                                    <Text style={styles.settingsHint}>
+                                        {diagnosi.erroreScrittura
+                                            ? `⚠ L'ultimo salvataggio non è riuscito: ${diagnosi.erroreScrittura}`
+                                            : diagnosi.erroreLettura
+                                                ? `⚠ La memoria non si è potuta rileggere: ${diagnosi.erroreLettura}`
+                                                : diagnosi.nelPrompt
+                                                    ? `Nel prompt: ${diagnosi.nota} caratteri di nota e ${diagnosi.ricordi} ricordi, ${diagnosi.nelPrompt} caratteri in tutto. Salvataggi riusciti: ${diagnosi.scritture}.`
+                                                    : 'Nel prompt non va niente: la memoria è vuota. Se ha appena scritto qualcosa qui sopra, tocchi fuori dalla casella per salvarla.'}
+                                        {diagnosi.fileEsisteva === false && !diagnosi.scritture
+                                            ? ' Il file non esiste ancora.'
+                                            : ''}
+                                    </Text>
+                                ) : null}
 
                                 <Text style={styles.settingsSectionTitle}>CONVERSAZIONE</Text>
                                 <ToggleRow

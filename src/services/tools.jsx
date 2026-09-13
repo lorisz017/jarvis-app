@@ -288,10 +288,17 @@ const two = (n) => String(n).padStart(2, '0');
 export async function executeTool(name, args, ctx) {
     switch (name) {
         case 'remember': {
-            const nuovo = await ctx.rememberFact(args.fact);
-            // Se era già noto non si dice niente di diverso: al modello non
-            // serve saperlo, e all'utente nemmeno.
-            return nuovo ? 'Me ne ricorderò.' : 'Lo sapevo già.';
+            const esito = await ctx.rememberFact(args.fact);
+            // L'esito finisce nel registro attività, dove lo legge lui: deve
+            // dire **cosa** è stato annotato, non solo che qualcosa è successo.
+            // Se il modello non chiama mai questo strumento non compare niente,
+            // ed è già un'informazione; se invece la scrittura fallisce si vede
+            // il motivo invece di un "me ne ricorderò" che non è vero.
+            if (esito?.esito === 'fallito') {
+                return `Non sono riuscito ad annotare "${esito.fatto}": ${esito.errore}`;
+            }
+            if (esito?.esito === 'noto') return `Già annotato: "${esito.fatto}"`;
+            return `Annotato in memoria: "${esito?.fatto || args.fact}"`;
         }
         case 'search_web': {
             const trovato = await ctx.searchWeb(args.query);

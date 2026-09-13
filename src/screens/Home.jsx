@@ -52,7 +52,7 @@ import {
 } from '../services/overlayService';
 import {buildBriefing} from '../services/briefingService';
 
-import {SYSTEM_MESSAGE} from '../utils/constants';
+import {buildSystemMessage} from '../utils/constants';
 import {styles} from '../styles/mainStyles';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -66,7 +66,7 @@ export default function Home() {
     const [englishVoiceId, setEnglishVoiceId] = useState();
     const [russianVoiceId, setRussianVoiceId] = useState();
     const [isVoicePickerVisible, setIsVoicePickerVisible] = useState(false);
-    const [chatHistory, setChatHistory] = useState([SYSTEM_MESSAGE]);
+    const [chatHistory, setChatHistory] = useState([buildSystemMessage()]);
 
     // Testo digitato dall'utente nel campo di input
     const [typedText, setTypedText] = useState('');
@@ -129,7 +129,10 @@ export default function Home() {
             setMemoria(await caricaMemoria());
 
             const saved = await loadState();
-            setChatHistory([SYSTEM_MESSAGE, ...saved.messages]);
+            // Il messaggio di sistema si costruisce **qui**, dopo la memoria:
+            // quello preparato all'importazione del modulo è nato prima che il
+            // file fosse letto, e portava dentro una memoria vuota.
+            setChatHistory([buildSystemMessage(), ...saved.messages]);
             setIsVoiceEnabled(saved.isVoiceEnabled);
             setIsBriefingEnabled(saved.isBriefingEnabled);
             setVoiceName(saved.voiceName);
@@ -595,6 +598,10 @@ export default function Home() {
                     return [...prev, {role: ruolo, content: testo, live: true}];
                 });
                 if (chi !== 'utente') setDisplayedText(testo);
+                // Se l'azione era un'annotazione, la sezione Memoria deve
+                // mostrarla adesso: è l'unico modo per vedere subito se la
+                // scrittura è arrivata a destinazione.
+                if (chi === 'azione') setMemoria({...getMemoria()});
             },
             onErrore: (errore) => {
                 console.warn('Conversazione continua:', errore);
@@ -768,7 +775,7 @@ export default function Home() {
                         <TouchableOpacity
                             style={[styles.pillButton, styles.pillButtonDanger]}
                             onPress={() => {
-                                setChatHistory([SYSTEM_MESSAGE]);
+                                setChatHistory([buildSystemMessage()]);
                                 setDisplayedText('In attesa dei suoi comandi, signore.');
                                 Alert.alert('Chat cancellata', 'La cronologia della conversazione è stata azzerata.');
                             }}
@@ -830,8 +837,24 @@ export default function Home() {
                 onToggleApriAllAvvio={() => setApriConversazioneAllAvvio((p) => !p)}
                 memoria={memoria}
                 onSalvaNota={async (nota) => {
-                    await setNota(nota);
+                    const errore = await setNota(nota);
                     setMemoria({...getMemoria()});
+                    if (errore) {
+                        Alert.alert('Memoria non salvata', errore);
+                        return;
+                    }
+                    // Una conversazione già aperta ha ricevuto il prompt di
+                    // sistema quando è partita: quello che si scrive adesso lo
+                    // saprà solo la prossima. Meglio dirlo che lasciarlo
+                    // scoprire chiedendoglielo e sentendosi rispondere di no.
+                    if (sessioneLiveRef.current) {
+                        setChatHistory((prev) => [...prev, {
+                            role: 'assistant',
+                            content: 'Memoria aggiornata. La conversazione in corso non la conosce ' +
+                                'ancora: chiuda e riapra il radar perché la legga.',
+                            live: true,
+                        }]);
+                    }
                 }}
                 onDimentica={async (indice) => {
                     await dimenticaRicordo(indice);
