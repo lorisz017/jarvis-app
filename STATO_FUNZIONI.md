@@ -109,6 +109,10 @@ Ultimo aggiornamento: dopo il collaudo della bolla flottante, della ricerca via 
 
 ## Cosa resta aperto
 
+**Ricerca sul web nella conversazione continua** — chiedendole di cercare qualcosa apriva YouTube. Non era un capriccio del modello: fra le diciotto azioni **non ce n'era una per cercare sul web**, perché nella modalità normale la ricerca è una strada a parte e non uno strumento. Il modello sceglieva la cosa più vicina che aveva. Ora la ricerca è una vera azione: restituisce il testo trovato e lo riassume il modello stesso, senza aprire niente.
+
+**Interruzione e pulsante FERMA** — parlando sopra a J.A.R.V.I.S. i pezzi di voce già affidati alla riproduzione restavano in coda e ripartivano appena si smetteva di parlare, rispondendo a cose vecchie e accavallandosi. Ora ogni interruzione invalida i pezzi del giro superato. Il pulsante FERMA, che conosceva solo la voce sintetizzata, zittisce adesso anche la conversazione — e lo stesso fanno il radar, il campo di testo e lo spegnimento della voce.
+
 **Conversazione continua** — risolta. La sessione moriva dopo un secondo perché l'audio veniva mandato in `realtime_input.media_chunks`, che è deprecato: va messo in `audio`. Il messaggio di chiusura del server lo diceva a lettere, ma nessuno lo leggeva. Al collaudo: si attiva, resta aperta, risponde in un istante, e le azioni partono più in fretta che dal giro normale.
 
 **Voce di Edge** — non parla ancora: si sente la riserva. Da qui non è verificabile, i WebSocket non escono da questo ambiente nemmeno verso un server di prova. Quindi la prossima build riporta il motivo del rifiuto nelle impostazioni, sotto VOCE NATURALE, invece di lasciarlo indovinare. Nel frattempo due sospetti sono stati tolti di mezzo: la versione di Edge dichiarata era vecchia di dieci versioni, e la scelta della voce finiva nella preferenza sbagliata — per questo cambiare voce non cambiava niente.

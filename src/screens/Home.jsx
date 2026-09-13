@@ -30,7 +30,7 @@ import {setNativeAlarm, setNativeTimer, getWeatherByCity, createCalendarEvent} f
 import {openApp, startNavigation} from '../services/appLauncher';
 import {callContact, sendWhatsAppToContact} from '../services/contactsService';
 import {loadState, saveState, DEFAULT_STATE} from '../services/storageService';
-import {LiveSession, isLiveSupported} from '../services/liveService';
+import {LiveSession, isLiveSupported, flushLiveAudio} from '../services/liveService';
 import {
     OVERLAY_STATE,
     hasOverlayPermission,
@@ -165,7 +165,10 @@ export default function Home() {
     const toggleVoice = () => {
         setIsVoiceEnabled((prev) => {
             const next = !prev;
-            if (!next) stopJarvisVoice();
+            if (!next) {
+                stopJarvisVoice();
+                flushLiveAudio();
+            }
             return next;
         });
     };
@@ -277,8 +280,10 @@ export default function Home() {
     const record = async () => {
         // Interrompe subito qualsiasi voce ancora in corso: senza questo,
         // premendo di nuovo il microfono mentre JARVIS sta ancora parlando,
-        // le voci si accavallano invece di fermarsi.
+        // le voci si accavallano invece di fermarsi. Vale per entrambe le
+        // modalità: anche la conversazione continua va zittita.
         stopJarvisVoice();
+        flushLiveAudio();
         setDisplayedText('');
         setIsLoading(false);
         stopPulsing();
@@ -568,6 +573,7 @@ export default function Home() {
         // Stessa logica di interruzione voce usata dal microfono: scrivere
         // un nuovo messaggio mentre JARVIS sta ancora parlando lo interrompe.
         stopJarvisVoice();
+        flushLiveAudio();
         setTypedText('');
 
         await processTextMessage({
@@ -676,7 +682,12 @@ export default function Home() {
                         <TouchableOpacity
                             style={[styles.pillButton, styles.pillButtonDanger]}
                             onPress={() => {
+                                // Due modalità, due sorgenti audio diverse: la voce
+                                // sintetizzata e quella della conversazione continua.
+                                // FERMA deve zittirle tutte e due, altrimenti in
+                                // conversazione non fa niente.
                                 stopJarvisVoice();
+                                flushLiveAudio();
                                 setDisplayedText('');
                             }}
                         >

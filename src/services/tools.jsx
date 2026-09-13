@@ -13,6 +13,24 @@ export const TOOLS = [
     {
         type: 'function',
         function: {
+            name: 'search_web',
+            description:
+                'Cerca sul web e restituisce quello che si trova. Da usare per ' +
+                'qualsiasi domanda su fatti recenti, notizie, risultati, prezzi o ' +
+                'cose che non si sanno con certezza. Non apre nessuna applicazione: ' +
+                'restituisce testo da leggere e riassumere.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    query: {type: 'string', description: 'Cosa cercare'},
+                },
+                required: ['query'],
+            },
+        },
+    },
+    {
+        type: 'function',
+        function: {
             name: 'set_alarm',
             description:
                 'Imposta una sveglia vera nell\'app Orologio del telefono, a un orario preciso. ' +
@@ -247,6 +265,13 @@ const two = (n) => String(n).padStart(2, '0');
 // raccontarli.
 export async function executeTool(name, args, ctx) {
     switch (name) {
+        case 'search_web': {
+            const trovato = await ctx.searchWeb(args.query);
+            if (!trovato) return `Non ho trovato niente su "${args.query}".`;
+            // Il testo torna al modello, che lo riassume: qui non si riscrive
+            // niente, altrimenti si riassumerebbe due volte.
+            return trovato;
+        }
         case 'set_alarm': {
             await ctx.setNativeAlarm(args.hour, args.minute ?? 0, (args.label || 'JARVIS').trim());
             return `Sveglia impostata per le ${two(args.hour)}:${two(args.minute ?? 0)}.`;

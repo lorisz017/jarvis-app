@@ -41,6 +41,22 @@ const VOCE = 'Charon';
 
 export const isLiveSupported = () => Boolean(audio && geminiApiKey);
 
+/**
+ * Zittisce subito la voce della conversazione, lasciando la sessione aperta.
+ *
+ * Serve al pulsante FERMA, che finora conosceva solo la voce sintetizzata:
+ * nella conversazione continua l'audio non passa da lì, quindi premerlo non
+ * faceva niente. Qui la sessione resta in piedi e si può continuare a
+ * parlare: si zittisce quello che stava dicendo, non la conversazione.
+ */
+export function flushLiveAudio() {
+    try {
+        audio?.flushPlayback();
+    } catch (error) {
+        console.warn('Interruzione della voce continua:', error);
+    }
+}
+
 // Gli stessi strumenti della modalità normale, nella forma che vuole Gemini.
 function dichiarazioniStrumenti() {
     return TOOLS.map(({function: f}) => {

@@ -10,7 +10,7 @@ import {getLatestCommits} from "../core/github/commits";
 import {createGitHubRepo} from "../core/github/createRepo";
 import {deleteGitHubRepo} from "../core/github/deleteRepo";
 import {TOOLS, executeTool} from './tools';
-import {searchWithDuckDuckGo, searchWithGemini, hasGeminiKey} from './webSearchService';
+import {searchWithDuckDuckGo, searchWithGemini, searchWebForTool, hasGeminiKey} from './webSearchService';
 import {bringAppToFront} from './overlayService';
 import {requestGeminiCompletion, hasGeminiChat} from './geminiChatService';
 
@@ -54,10 +54,25 @@ const MAX_HISTORY_MESSAGES = 20;
 // tetto se il modello dovesse insistere a vuoto.
 const MAX_TOOL_ROUNDS = 6;
 
+// I messaggi mostrati a schermo possono portarsi dietro campi che servono
+// solo all'interfaccia — per esempio il segno che una riga viene dalla
+// conversazione continua. Le API li rifiutano: "property 'live' is
+// unsupported" ha spento del tutto la modalità normale. Qui si tiene solo
+// quello che il modello deve vedere, così un campo aggiunto domani per
+// comodità dello schermo non rompe di nuovo tutto.
+function perApi(messaggio) {
+    const pulito = {role: messaggio.role, content: messaggio.content ?? ''};
+    if (messaggio.tool_calls) pulito.tool_calls = messaggio.tool_calls;
+    if (messaggio.tool_call_id) pulito.tool_call_id = messaggio.tool_call_id;
+    return pulito;
+}
+
 function trimHistoryForApi(history, limit) {
-    if (history.length <= limit) return history;
-    const [systemMessage, ...rest] = history;
-    return [systemMessage, ...rest.slice(-(limit - 1))];
+    const ridotta = history.length <= limit
+        ? history
+        : [history[0], ...history.slice(1).slice(-(limit - 1))];
+
+    return ridotta.map(perApi);
 }
 
 // Alla ricerca web si manda solo la domanda, con un prompt minimo.
@@ -199,6 +214,7 @@ function confirmRepoDeletion(repoName) {
 export function buildToolContext(dallaSchermata) {
     return {
         ...dallaSchermata,
+        searchWeb: searchWebForTool,
         scheduleReminder,
         listReminders,
         cancelAllReminders,

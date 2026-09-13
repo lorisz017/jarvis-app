@@ -45,6 +45,14 @@ class JarvisAudioModule(private val contesto: ReactApplicationContext) :
     private var altoparlante: AudioTrack? = null
     private val codaRiproduzione = Executors.newSingleThreadExecutor()
 
+    // Quando si interrompe J.A.R.V.I.S. a metà frase non basta svuotare la
+    // traccia audio: i pezzi già affidati alla coda continuerebbero a essere
+    // scritti dopo, e la voce riprenderebbe da sola qualche istante dopo.
+    // Ogni interruzione alza questo numero, e i pezzi che appartengono a un
+    // giro ormai superato vengono buttati invece che suonati.
+    @Volatile
+    private var generazione = 0
+
     // ===== Microfono =====
 
     @ReactMethod
@@ -177,9 +185,12 @@ class JarvisAudioModule(private val contesto: ReactApplicationContext) :
     @ReactMethod
     fun playChunk(base64: String) {
         val track = altoparlante ?: return
+        val mio = generazione
+
         // La scrittura blocca finché c'è posto nel buffer: va fatta fuori dal
         // thread di JavaScript, altrimenti l'interfaccia si impunta.
         codaRiproduzione.execute {
+            if (mio != generazione) return@execute
             try {
                 val dati = Base64.decode(base64, Base64.NO_WRAP)
                 track.write(dati, 0, dati.size)
@@ -192,6 +203,10 @@ class JarvisAudioModule(private val contesto: ReactApplicationContext) :
     /** Zittisce subito quello che sta uscendo: serve quando lo si interrompe. */
     @ReactMethod
     fun flushPlayback() {
+        // Prima si invalidano i pezzi in attesa, poi si svuota la traccia:
+        // nell'ordine inverso quelli in coda rientrerebbero subito dopo.
+        generazione++
+
         val track = altoparlante ?: return
         try {
             track.pause()
@@ -204,6 +219,7 @@ class JarvisAudioModule(private val contesto: ReactApplicationContext) :
 
     @ReactMethod
     fun stopPlayback() {
+        generazione++
         val track = altoparlante ?: return
         altoparlante = null
         try {

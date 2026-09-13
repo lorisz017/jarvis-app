@@ -228,6 +228,20 @@ export async function searchWithDuckDuckGo(query) {
     return pezzi.join('\n\n');
 }
 
+// Versione pensata per essere usata come azione dal modello: restituisce il
+// testo trovato senza riassumerlo, perché a riassumerlo sarà il modello
+// stesso, e accorciato perché in una conversazione a voce un muro di testo
+// costa tempo senza aggiungere niente.
+export async function searchWebForTool(query) {
+    try {
+        const trovato = await searchWithDuckDuckGo(query);
+        return trovato ? trovato.slice(0, 4000) : null;
+    } catch (error) {
+        console.warn('Ricerca come azione non riuscita:', error.message);
+        return null;
+    }
+}
+
 const GEMINI_MODEL = 'gemini-flash-latest';
 const GEMINI_URL =
     `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
