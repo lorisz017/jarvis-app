@@ -168,6 +168,18 @@ export const TOOLS = [
     {
         type: 'function',
         function: {
+            name: 'go_to_sleep',
+            description:
+                'Chiude l\'applicazione e torna alla schermata iniziale del telefono. ' +
+                'Da usare quando l\'utente congeda: "vai a dormire", "chiudi l\'app", ' +
+                '"ci sentiamo dopo", "a domani", "puoi andare". Prima di chiamarlo ' +
+                'saluta con una frase breve: verrà pronunciata, e solo dopo l\'app si chiude.',
+            parameters: {type: 'object', properties: {}},
+        },
+    },
+    {
+        type: 'function',
+        function: {
             name: 'open_camera',
             description: 'Apre la fotocamera per scattare una foto.',
             parameters: {type: 'object', properties: {}},
@@ -349,6 +361,11 @@ export async function executeTool(name, args, ctx) {
         case 'open_app':
             await ctx.openApp(args.name);
             return `Apro ${args.name}.`;
+        case 'go_to_sleep':
+            // L'esito torna al modello, che può ancora dire la sua ultima
+            // frase: la chiusura vera arriva dopo, quando ha finito di parlare.
+            await ctx.goToSleep();
+            return 'Vado a riposare, signore. A presto.';
         case 'open_camera':
             await ctx.openCamera();
             return 'Apro la fotocamera.';

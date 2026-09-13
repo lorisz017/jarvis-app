@@ -2,6 +2,7 @@ import React, {useState, useRef, useEffect} from 'react';
 import {
     Alert,
     AppState,
+    BackHandler,
     TouchableOpacity,
     Text,
     Animated,
@@ -519,7 +520,47 @@ export default function Home() {
     // Non passa dal giro normale (registra, trascrivi, ragiona, sintetizza):
     // è un modello solo che ascolta e risponde con la propria voce, mentre
     // parli. Per questo va gestita a parte.
+    // "Vai a dormire", "chiudi l'app", "ci sentiamo dopo". Congedarsi non è
+    // chiudere e basta: la frase di saluto è già in viaggio quando l'azione
+    // parte, e troncarla a metà sarebbe il modo peggiore di salutarsi. Quindi
+    // si aspetta che abbia finito di parlare — non un tempo fisso, che sarebbe
+    // un tiro a indovinare, ma la fine vera, con un limite oltre il quale non
+    // si aspetta comunque.
+    const congedo = async () => {
+        const sessione = sessioneLiveRef.current;
+        const scadenza = Date.now() + 12000;
+
+        // Un istante perché la risposta all'azione arrivi e cominci a parlare.
+        await new Promise((r) => setTimeout(r, 900));
+
+        while (sessione && sessione.staParlando && Date.now() < scadenza) {
+            await new Promise((r) => setTimeout(r, 250));
+        }
+        // Anche a voce spenta o in modalità a comandi, un momento perché
+        // l'ultima frase si veda a schermo prima che sparisca tutto.
+        if (!sessione) await new Promise((r) => setTimeout(r, 1200));
+
+        // Andare a dormire vuol dire smettere di ascoltare: la conversazione
+        // si chiude anche se la bolla è accesa, e la bolla resta lì come il
+        // modo per risvegliarlo.
+        fermaLive();
+        stopJarvisVoice();
+
+        // Torna alla schermata iniziale del telefono, come il tasto Home.
+        BackHandler.exitApp();
+    };
+
+    // L'azione risponde **subito**: la conversazione aspetta l'esito di ogni
+    // strumento prima di far parlare il modello, quindi restare qui ad
+    // aspettare vorrebbe dire impedirgli proprio il saluto che stiamo
+    // aspettando. Il congedo va per conto suo.
+    const vaiADormire = () => {
+        congedo();
+        return true;
+    };
+
     const contestoAzioni = () => buildToolContext({
+        goToSleep: vaiADormire,
         openCamera,
         openTelegram,
         openYoutube,

@@ -98,7 +98,7 @@ parla sopra, abbassata.**
 | `src/services/geminiChatService.jsx` | Traduce fra il formato di Groq e quello di Gemini, nei due sensi |
 | `src/services/liveService.jsx` | La conversazione continua e l'interruzione |
 | `src/components/ModeSwitch.jsx` | La leva fra le due modalità |
-| `src/services/tools.jsx` | Le 18 azioni: schema per il modello ed esecuzione |
+| `src/services/tools.jsx` | Le 21 azioni: schema per il modello ed esecuzione |
 | `src/services/ttsService.jsx` | La catena della voce e il pareggiamento del volume |
 | `src/services/edgeTtsService.jsx` | La voce di Edge |
 | `src/services/webSearchService.jsx` | Ricerca via DuckDuckGo, con lettura delle pagine |
@@ -336,9 +336,15 @@ Lo stato dettagliato sta in `STATO_FUNZIONI.md`; qui la sostanza.
 **Funziona e va lasciato stare:** la conversazione continua, la sua voce, le
 azioni concatenate, la ricerca, l'interruzione immediata, la bolla.
 
-**Da confermare sul telefono** (versione 3.0.0): la memoria personale, il
-campo di testo dentro la conversazione, la voce spegnibile anche lì, il
-registro più grande, il riconoscimento del creatore, l'icona nuova.
+**Confermato sul telefono** (versione 3.0.0): la memoria personale in tutte e
+due le metà, il campo di testo dentro la conversazione, la voce spegnibile, il
+registro che segue la conversazione senza rubare lo scorrimento, il
+riconoscimento del creatore, l'icona nuova, la riservatezza delle istruzioni —
+che ha retto anche alle richieste di traverso — e i sei difetti della serata
+del collaudo.
+
+**Da confermare**: il congedo a voce, che chiude l'app e torna alla schermata
+iniziale dopo aver finito di salutare.
 
 **Ancora aperto davvero:**
 

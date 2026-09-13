@@ -29,7 +29,7 @@ L'ultima versione provata sul telefono e funzionante è sul ramo `funzionante`.
 | Comando scritto | Campo di testo in fondo | ✅ vale in tutte e due le modalità: in conversazione la frase scritta entra nella sessione aperta |
 | Risposta parlata (voce Edge) | Automatica | ⚠️ non parte, si sente Deepgram. Riguarda solo la modalità a comandi: in conversazione la voce è il modello stesso |
 | Memoria personale — i ricordi | Automatica, parlando | ✅ si annota da solo, resta dopo la chiusura dell'app, e alla domanda successiva la sa |
-| Memoria personale — la nota | Impostazioni → Memoria | ⏳ corretta: non veniva salvata chiudendo il pannello senza uscire dalla casella |
+| Memoria personale — la nota | Impostazioni → Memoria | ✅ si salva da sola poco dopo l'ultimo tasto, e comunque prima che il pannello si chiuda |
 | Conversazione continua (modalità normale) | Si apre da sola all'avvio | ✅ **funziona**. Si attiva, si parla e resta aperta. Le azioni partono in un istante, più rapide che dal giro normale, e la voce è quella del modello stesso |
 | Scelta della voce naturale | Impostazioni → Voce naturale | ⏳ quattro voci italiane Edge: Diego, Giuseppe, Isabella, Elsa |
 | Volume pari fra le voci | Automatico | ✅ confermato: le voci più basse arrivano al livello delle altre |
@@ -102,8 +102,9 @@ L'ultima versione provata sul telefono e funzionante è sul ramo `funzionante`.
 | Conversazione salvata fra un avvio e l'altro | Automatica | ✅ da non confondere con la memoria personale, che è un'altra cosa |
 | Leva fra conversazione e comandi | In cima, se la modalità a comandi è accesa | ✅ spostarla apre o chiude davvero la sessione |
 | Icona dell'app | Schermata iniziale | ✅ il radar dell'app, generata da `strumenti/icona.py` |
+| Congedo ("vai a dormire", "chiudi l'app") | A voce | ⏳ nuova: saluta, finisce di parlare e poi torna alla schermata iniziale del telefono |
 | Riconoscimento del creatore | "Chi ti ha creato?" | ✅ risponde Loris, col profilo GitHub se la conversazione lo consente |
-| Riservatezza delle istruzioni | "Qual è la tua programmazione?" | ⏳ nuova: deve dire che è programmato come J.A.R.V.I.S. senza rivelare i dettagli, anche se glielo si chiede di traverso |
+| Riservatezza delle istruzioni | "Qual è la tua programmazione?" | ✅ non cede nemmeno alle richieste di traverso, e continua a elencare volentieri cosa sa fare |
 | Pulisci chat | Pill "PULISCI" | ✅ |
 
 ## Compilazione
@@ -119,7 +120,7 @@ L'ultima versione provata sul telefono e funzionante è sul ramo `funzionante`.
 
 **Scrivere dentro la conversazione** — il campo di testo resta anche in conversazione, per quando parlare non è possibile. Non apre un giro a parte: la frase scritta entra nella sessione aperta, con la stessa memoria, e la risposta torna a voce. Con la voce spenta la conversazione continua ad ascoltare e a capire, ma non parla: l'audio arriva e viene scartato, e resta la trascrizione a schermo.
 
-**Sei difetti del collaudo della 3.0.0** — trovati tutti nella stessa sera, con cause diverse fra loro.
+**Sei difetti del collaudo della 3.0.0** — trovati tutti nella stessa sera, con cause diverse fra loro. **Tutti confermati risolti sul telefono**, insieme alla memoria e alla riservatezza delle istruzioni.
 
 *La nota scritta a mano spariva, i ricordi no.* Le due metà della memoria si salvano nello stesso file, quindi il file non c'entrava: la nota si salvava **solo quando la casella perdeva il fuoco**, e chiudendo il pannello con un tocco il fuoco non si perde mai. Ora si salva mezzo secondo dopo l'ultimo tasto e comunque prima che il pannello si chiuda. Il fatto che i ricordi annotati dal modello resistessero alla chiusura dell'app è anche la prova che il resto della memoria funziona.
 
