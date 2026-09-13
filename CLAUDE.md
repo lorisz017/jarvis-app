@@ -39,13 +39,17 @@ costa una giornata a scoprirla da soli:
   `android/app/build.gradle`, non `version` in `app.config.js`. Vanno tenuti
   allineati lo stesso — insieme a `package.json` e a `APP_VERSION` in
   `SettingsModal.jsx`, che è quella mostrata nella scheda Info.
-- **L'icona è generata da codice.** Non c'è nessuna libreria di immagini in
-  questo ambiente, quindi i PNG sono scritti a mano con `zlib`: il disegno è
-  il radar dell'app, con quattro campioni per lato contro i bordi a scaletta.
-  Lo script sta nello scratchpad della sessione in cui è stata fatta; se
-  serve rifarla, si riscrive — sono sessanta righe. L'area sicura di
-  un'icona adattiva è il cerchio centrale, circa il 60% del lato: fuori di
-  lì ogni telefono taglia in modo diverso.
+- **L'icona è generata da codice**, da `strumenti/icona.py`. Non c'è nessuna
+  libreria di immagini in questo ambiente, quindi i PNG sono scritti a mano
+  con `zlib`. Il disegno è il radar dell'app: ogni elemento è una funzione
+  che dice quanta luce accende un punto, i bordi si calcolano invece che
+  campionarli — così restano netti anche a 48 pixel — e la luce si somma,
+  che è quello che fa sembrare l'icona accesa invece che disegnata.
+  `python3 strumenti/icona.py` rifà tutte le densità, `anteprima 512 file.png`
+  ne fa una sola grande da guardare. L'area sicura di un'icona adattiva è il
+  cerchio centrale, un terzo del raggio del lato: fuori di lì ogni telefono
+  taglia in modo diverso, e sotto una certa misura i dettagli fini (tacche,
+  reticolo) vanno tolti o diventano sporcizia.
 
 ### Il percorso di una richiesta (modalità a comandi)
 

@@ -19,7 +19,7 @@ export default {
       permissions: ["RECORD_AUDIO", "READ_CALENDAR", "WRITE_CALENDAR"],
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
-        backgroundColor: "#ffffff"
+        backgroundColor: "#02050C"
       },
       package: "com.az11k.jarvisapp",
 
