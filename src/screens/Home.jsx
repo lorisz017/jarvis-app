@@ -94,6 +94,9 @@ export default function Home() {
     // trascritta daccapo come se fosse nuova.
     const ultimoAudioRef = useRef(null);
     const sessioneLiveRef = useRef(null);
+    // Vero se il servizio in primo piano è stato avviato apposta per la
+    // conversazione, e va quindi spento quando finisce.
+    const servizioPerLiveRef = useRef(false);
 
     useVoiceSetup({
         setAvailableVoices,
@@ -475,6 +478,13 @@ export default function Home() {
         sessioneLiveRef.current?.stop();
         sessioneLiveRef.current = null;
         setStatoLive('spenta');
+
+        // Il servizio si spegne solo se era stato acceso per la
+        // conversazione: se la bolla è attiva, deve restare.
+        if (servizioPerLiveRef.current) {
+            servizioPerLiveRef.current = false;
+            if (!isOverlayEnabled) hideOverlay();
+        }
     };
 
     const toggleLive = async () => {
@@ -494,6 +504,18 @@ export default function Home() {
         // Le due modalità non possono usare il microfono insieme.
         stopJarvisVoice();
         if (staRegistrandoRef.current) await stopRecording();
+
+        // Il servizio in primo piano va acceso prima di cominciare, se non lo
+        // è già. È quello che tiene vivo il processo quando si esce dall'app e
+        // che mantiene il permesso del microfono: senza, la conversazione
+        // funziona finché l'app è aperta e poi resta appesa. Il cerchio non si
+        // mostra — quello dipende dall'interruttore delle impostazioni.
+        if (!isOverlayEnabled && isOverlaySupported() && (await hasOverlayPermission())) {
+            if (await showOverlay()) {
+                setOverlayVisible(false);
+                servizioPerLiveRef.current = true;
+            }
+        }
 
         const sessione = new LiveSession({
             contesto: contestoAzioni(),

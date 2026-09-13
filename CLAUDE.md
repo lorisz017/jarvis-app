@@ -119,6 +119,11 @@ Ognuna di queste è costata almeno una build, alcune parecchie:
   Impostare una sveglia apre l'orologio, e da lì ogni azione successiva della
   catena viene scartata in silenzio. Il permesso di sovrapposizione è
   l'eccezione prevista: si torna davanti, e si **aspetta di esserci davvero**.
+- La conversazione continua sopravvive all'uscita dall'app **solo se c'è un
+  servizio in primo piano**: è quello che tiene vivo il processo e mantiene il
+  permesso del microfono. Al primo collaudo funzionava per caso, perché la
+  bolla era accesa; ora la conversazione accende da sé il servizio che le
+  serve, invece di dipendere da un interruttore che non la riguarda.
 - Ogni richiesta di rete vuole un limite di tempo. Dentro l'app una richiesta
   bloccata sembra lenta; da una bolla non c'è schermo, ed è indistinguibile
   da un'app morta.
