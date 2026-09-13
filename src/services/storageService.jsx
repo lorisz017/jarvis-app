@@ -13,6 +13,10 @@ export const DEFAULT_STATE = {
     homeCity: 'Roma',
     voiceName: '',
     isOverlayEnabled: false,
+    // La conversazione è la modalità normale. Quella a comandi resta, ma
+    // va chiesta: si accende dalle impostazioni.
+    isCommandModeEnabled: false,
+    apriConversazioneAllAvvio: true,
 };
 
 export async function loadState() {
@@ -35,6 +39,12 @@ export async function loadState() {
             isBriefingEnabled: typeof saved.isBriefingEnabled === 'boolean' ? saved.isBriefingEnabled : true,
             voiceName: typeof saved.voiceName === 'string' ? saved.voiceName : '',
             isOverlayEnabled: typeof saved.isOverlayEnabled === 'boolean' ? saved.isOverlayEnabled : false,
+            isCommandModeEnabled:
+                typeof saved.isCommandModeEnabled === 'boolean' ? saved.isCommandModeEnabled : false,
+            apriConversazioneAllAvvio:
+                typeof saved.apriConversazioneAllAvvio === 'boolean'
+                    ? saved.apriConversazioneAllAvvio
+                    : true,
             homeCity: typeof saved.homeCity === 'string' && saved.homeCity ? saved.homeCity : DEFAULT_STATE.homeCity,
         };
     } catch (error) {
@@ -43,7 +53,16 @@ export async function loadState() {
     }
 }
 
-export async function saveState({messages, isVoiceEnabled, isBriefingEnabled, homeCity, voiceName, isOverlayEnabled}) {
+export async function saveState({
+    messages,
+    isVoiceEnabled,
+    isBriefingEnabled,
+    homeCity,
+    voiceName,
+    isOverlayEnabled,
+    isCommandModeEnabled,
+    apriConversazioneAllAvvio,
+}) {
     try {
         const persistable = (messages || [])
             .filter((m) => m?.role === 'user' || m?.role === 'assistant')
@@ -58,6 +77,8 @@ export async function saveState({messages, isVoiceEnabled, isBriefingEnabled, ho
                 homeCity,
                 voiceName,
                 isOverlayEnabled,
+                isCommandModeEnabled,
+                apriConversazioneAllAvvio,
             })
         );
     } catch (error) {

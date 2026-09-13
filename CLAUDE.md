@@ -52,13 +52,22 @@ La **conversazione continua** non fa niente di tutto questo: una connessione
 aperta con Gemini Live, audio che entra ed esce a flusso, un modello solo che
 ascolta e risponde con la propria voce.
 
-Le due modalità si scelgono con una **leva in cima alla schermata**, non con
-un pulsante fra gli altri: sono due cose diverse, non varianti l'una
-dell'altra. La leva non è una preferenza da ricordare — spostarla apre o
-chiude davvero la sessione, e una sessione che si chiude da sola la riporta
-indietro, così quello che si vede e quello che succede restano la stessa
-cosa. Ogni modalità mostra la sua parte: il campo di testo appartiene ai
-comandi, e in conversazione il radar apre e chiude la sessione.
+**La conversazione è la modalità normale.** Quella a comandi esiste ancora ma
+va chiesta: si accende da Impostazioni → Modalità comandi, e solo allora
+compare in cima alla schermata la leva per passare dall'una all'altra.
+
+La scelta è sua, presa dopo averle confrontate sullo stesso compito: quattro
+azioni insieme (due sveglie, un timer, una chiamata) la conversazione le ha
+fatte in un istante, la modalità a comandi ci ha messo qualche secondo e ne ha
+completate due. E si sente anche da come parla: in conversazione il modello
+riceve la voce, con tono e pause, mentre a comandi riceve un testo trascritto
+e ripulito di tutto.
+
+La leva non è una preferenza da ricordare — spostarla apre o chiude davvero la
+sessione, e una sessione che si chiude da sola la riporta indietro, così
+quello che si vede e quello che succede restano la stessa cosa. Ogni modalità
+mostra la sua parte: il campo di testo appartiene ai comandi, e in
+conversazione il radar apre e chiude la sessione.
 
 Interrompere J.A.R.V.I.S. mentre parla non aspetta che se ne accorga il
 server: l'app misura quanto entra dal microfono e si zittisce da sola. La
@@ -313,12 +322,20 @@ Lo stato dettagliato sta in `STATO_FUNZIONI.md`; qui la sostanza:
 - **Da confermare sul telefono**: la leva, l'interruzione immediata, la
   ricerca come azione e la bolla sulla strada nuova.
 
-Due tentazioni da tenere a bada, tutte e due già dette da lui:
+Cose decise, da non rimettere in discussione:
 
-- La conversazione continua è così buona che verrebbe da renderla l'unica
-  modalità. **Ha detto esplicitamente di non togliere niente.**
-- La voce della conversazione gli piace e **non va cambiata**, nemmeno per
-  proporre di meglio.
+- **La voce della conversazione non va cambiata**, nemmeno per proporre di
+  meglio. È quella che voleva dall'inizio.
+- **La modalità a comandi non si cancella.** Ha detto che si potrebbe
+  togliere del tutto, ma la conclusione è stata un'altra: sparisce
+  dall'interfaccia, resta nel codice e si riaccende da un interruttore. Il
+  motivo è che è l'unica strada che non passa da Gemini: il giorno che il
+  modello Live non risponde — è in anteprima — quella è la differenza fra
+  un'app più lenta e un'app morta.
+- Per lo stesso motivo **Groq e Deepgram restano**. Ha detto che potrebbero
+  andarsene e ha ragione sul fatto che non servono a niente finché tutto
+  funziona: sono lì proprio per quando qualcosa non funzionerà. Non costano
+  nulla e non si vedono.
 
 ## Una cosa imparata a caro prezzo
 

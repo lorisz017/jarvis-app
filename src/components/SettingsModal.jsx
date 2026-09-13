@@ -41,6 +41,10 @@ export default function SettingsModal({
                                           onSelectVoice,
                                           isOverlayEnabled,
                                           onToggleOverlay,
+                                          isCommandModeEnabled,
+                                          onToggleCommandMode,
+                                          apriConversazioneAllAvvio,
+                                          onToggleApriAllAvvio,
                                       }) {
     const [activeTab, setActiveTab] = useState('settings');
     // La voce viene scelta alla prima frase pronunciata: si rilegge ogni volta
@@ -96,6 +100,31 @@ export default function SettingsModal({
                                     value={isBriefingEnabled}
                                     onToggle={() => setIsBriefingEnabled(!isBriefingEnabled)}
                                 />
+
+                                <Text style={styles.settingsSectionTitle}>CONVERSAZIONE</Text>
+                                <ToggleRow
+                                    label="Aprila all'avvio"
+                                    value={apriConversazioneAllAvvio}
+                                    onToggle={onToggleApriAllAvvio}
+                                />
+                                <Text style={styles.settingsHint}>
+                                    Con questa accesa si apre l&apos;app e si parla, senza toccare
+                                    niente. Spenta, la conversazione si apre toccando il cerchio.
+                                </Text>
+
+                                <Text style={styles.settingsSectionTitle}>MODALITÀ COMANDI</Text>
+                                <ToggleRow
+                                    label="Mostra la modalità a comandi"
+                                    value={isCommandModeEnabled}
+                                    onToggle={onToggleCommandMode}
+                                />
+                                <Text style={styles.settingsHint}>
+                                    È il modo precedente: si registra una frase, viene trascritta e il
+                                    modello risponde a comandi. Funziona, ma è più lento e capisce
+                                    meno — la conversazione sente la voce, non un testo ripulito.
+                                    Accendendola compare una leva in cima alla schermata per passare
+                                    dall&apos;una all&apos;altra.
+                                </Text>
 
                                 <Text style={styles.settingsSectionTitle}>BOLLA FLOTTANTE</Text>
                                 <ToggleRow

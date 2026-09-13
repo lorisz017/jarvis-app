@@ -76,8 +76,11 @@ export default function Home() {
     const [isOverlayEnabled, setIsOverlayEnabled] = useState(false);
     // 'spenta' | 'connessione' | 'attiva'
     const [statoLive, setStatoLive] = useState('spenta');
-    // 'comandi' | 'conversazione'
-    const [modalita, setModalita] = useState('comandi');
+    // 'comandi' | 'conversazione'. La conversazione è la modalità normale:
+    // l'altra c'è ancora, ma va chiesta dalle impostazioni.
+    const [modalita, setModalita] = useState('conversazione');
+    const [isCommandModeEnabled, setIsCommandModeEnabled] = useState(false);
+    const [apriConversazioneAllAvvio, setApriConversazioneAllAvvio] = useState(true);
 
     const scrollRef = useRef();
     const animatedScale = useRef(new Animated.Value(1)).current;
@@ -123,6 +126,9 @@ export default function Home() {
             // La bolla si riattiva solo se il permesso c'è ancora: può essere
             // stato revocato dalle impostazioni di Android nel frattempo.
             setIsOverlayEnabled(saved.isOverlayEnabled && (await hasOverlayPermission()));
+            setIsCommandModeEnabled(saved.isCommandModeEnabled);
+            setApriConversazioneAllAvvio(saved.apriConversazioneAllAvvio);
+            if (!saved.isCommandModeEnabled) setModalita('conversazione');
             setIsStateLoaded(true);
         })();
     }, []);
@@ -138,8 +144,20 @@ export default function Home() {
             homeCity,
             voiceName,
             isOverlayEnabled,
+            isCommandModeEnabled,
+            apriConversazioneAllAvvio,
         });
-    }, [isStateLoaded, chatHistory, isVoiceEnabled, isBriefingEnabled, homeCity, voiceName, isOverlayEnabled]);
+    }, [
+        isStateLoaded,
+        chatHistory,
+        isVoiceEnabled,
+        isBriefingEnabled,
+        homeCity,
+        voiceName,
+        isOverlayEnabled,
+        isCommandModeEnabled,
+        apriConversazioneAllAvvio,
+    ]);
 
     const startPulsing = () => {
         Animated.loop(
@@ -380,6 +398,18 @@ export default function Home() {
             }
         });
     }, []);
+
+    // Conversazione aperta appena l'app è pronta, se la preferenza lo chiede.
+    // Si aspetta il ripristino delle impostazioni, altrimenti si partirebbe
+    // prima di sapere se è quello che vuole.
+    const avvioLiveFattoRef = useRef(false);
+    useEffect(() => {
+        if (!isStateLoaded || avvioLiveFattoRef.current) return;
+        if (!apriConversazioneAllAvvio || modalita !== 'conversazione') return;
+
+        avvioLiveFattoRef.current = true;
+        toggleLive();
+    }, [isStateLoaded, apriConversazioneAllAvvio, modalita]);
 
     // Trascinata sulla linguetta "Rimuovi": l'interruttore si spegne da solo,
     // altrimenti le impostazioni direbbero che la bolla è accesa mentre non
@@ -638,12 +668,14 @@ export default function Home() {
             <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
                 <Header/>
 
-                <ModeSwitch
-                    valore={modalita}
-                    onChange={cambiaModalita}
-                    attiva={statoLive === 'attiva'}
-                    inAttesa={statoLive === 'connessione'}
-                />
+                {isCommandModeEnabled ? (
+                    <ModeSwitch
+                        valore={modalita}
+                        onChange={cambiaModalita}
+                        attiva={statoLive === 'attiva'}
+                        inAttesa={statoLive === 'connessione'}
+                    />
+                ) : null}
 
                 <SystemStatus/>
 
@@ -760,6 +792,18 @@ export default function Home() {
                 onSelectVoice={chooseVoice}
                 isOverlayEnabled={isOverlayEnabled}
                 onToggleOverlay={toggleOverlay}
+                isCommandModeEnabled={isCommandModeEnabled}
+                onToggleCommandMode={() => {
+                    setIsCommandModeEnabled((prima) => {
+                        // Spegnendola mentre la si sta usando si tornerebbe a
+                        // una schermata senza leva e bloccata sui comandi: si
+                        // riporta in conversazione insieme all'interruttore.
+                        if (prima && modalita === 'comandi') cambiaModalita('conversazione');
+                        return !prima;
+                    });
+                }}
+                apriConversazioneAllAvvio={apriConversazioneAllAvvio}
+                onToggleApriAllAvvio={() => setApriConversazioneAllAvvio((p) => !p)}
             />
         </SafeAreaView>
     );
