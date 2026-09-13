@@ -91,7 +91,8 @@ parla sopra, abbassata.**
 | `src/services/webSearchService.jsx` | Ricerca via DuckDuckGo, con lettura delle pagine |
 | `src/services/deviceActions.jsx` | Sveglie, timer, meteo, calendario |
 | `src/services/overlayService.jsx` | Il ponte con la bolla nativa |
-| `src/utils/constants.jsx` | Il prompt di sistema |
+| `src/services/memoryService.jsx` | La memoria personale: la nota e i ricordi |
+| `src/utils/constants.jsx` | Il prompt di sistema, costruito con la memoria dentro |
 | `src/utils/sha256.jsx`, `base64.jsx` | Funzioni pure, verificate contro Node |
 | `android/.../overlay/` | Il codice nativo: bolla, servizio, audio a flusso |
 

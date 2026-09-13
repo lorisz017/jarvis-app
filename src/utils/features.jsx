@@ -4,7 +4,8 @@ export const FEATURE_SECTIONS = [
     {
         title: 'VOCE E TESTO',
         items: [
-            {name: 'Conversazione continua', example: 'La leva in alto: si parla e basta, senza toccare nulla'},
+            {name: 'Conversazione continua', example: 'Si apre da sola: si parla e basta, senza toccare nulla'},
+            {name: 'Memoria personale', example: 'Impostazioni → Memoria, e si annota da solo quello che conta'},
             {name: 'Comando vocale', example: 'Tocchi il radar e parli'},
             {name: 'Comando scritto', example: 'Scriva nel campo in fondo alla schermata'},
             {name: 'Risposta parlata', example: 'Voce naturale, con ripiego su quella di sistema'},

@@ -13,6 +13,28 @@ export const TOOLS = [
     {
         type: 'function',
         function: {
+            name: 'remember',
+            description:
+                'Annota un fatto duraturo sull\'utente, perché resti disponibile nelle ' +
+                'conversazioni future: il suo nome, cosa fa, che dispositivi possiede, ' +
+                'come preferisce essere trattato. Da usare con parsimonia e solo per ' +
+                'cose che saranno ancora vere fra un mese, mai per richieste appena ' +
+                'fatte o informazioni che scadono.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    fact: {
+                        type: 'string',
+                        description: 'Il fatto da ricordare, in una frase breve e in terza persona',
+                    },
+                },
+                required: ['fact'],
+            },
+        },
+    },
+    {
+        type: 'function',
+        function: {
             name: 'search_web',
             description:
                 'Cerca sul web e restituisce quello che si trova. Da usare per ' +
@@ -265,6 +287,12 @@ const two = (n) => String(n).padStart(2, '0');
 // raccontarli.
 export async function executeTool(name, args, ctx) {
     switch (name) {
+        case 'remember': {
+            const nuovo = await ctx.rememberFact(args.fact);
+            // Se era già noto non si dice niente di diverso: al modello non
+            // serve saperlo, e all'utente nemmeno.
+            return nuovo ? 'Me ne ricorderò.' : 'Lo sapevo già.';
+        }
         case 'search_web': {
             const trovato = await ctx.searchWeb(args.query);
             if (!trovato) return `Non ho trovato niente su "${args.query}".`;

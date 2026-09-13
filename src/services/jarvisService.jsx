@@ -13,6 +13,7 @@ import {TOOLS, executeTool} from './tools';
 import {searchWithDuckDuckGo, searchWithGemini, searchWebForTool, hasGeminiKey} from './webSearchService';
 import {bringAppToFront} from './overlayService';
 import {requestGeminiCompletion, hasGeminiChat} from './geminiChatService';
+import {aggiungiRicordo} from './memoryService';
 
 // Azioni che aprono la schermata di un'altra app. Dopo una di queste la
 // nostra app è dietro, e Android non lascia che un'app in secondo piano ne
@@ -215,6 +216,7 @@ export function buildToolContext(dallaSchermata) {
     return {
         ...dallaSchermata,
         searchWeb: searchWebForTool,
+        rememberFact: aggiungiRicordo,
         scheduleReminder,
         listReminders,
         cancelAllReminders,

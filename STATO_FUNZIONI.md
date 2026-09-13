@@ -26,6 +26,7 @@ Ultimo aggiornamento: dopo il collaudo della bolla flottante, della ricerca via 
 | Comando vocale | Tocchi il radar e parli | ✅ |
 | Comando scritto | Campo di testo in fondo | ✅ |
 | Risposta parlata (voce Edge) | Automatica | ⏳ nuova: voci neurali Microsoft, senza chiave e senza quota. Deepgram resta come riserva |
+| Memoria personale | Impostazioni → Memoria | ⏳ nuova: una nota scritta a mano più i fatti che si annota da solo parlando. Entra nel prompt all'inizio di ogni conversazione |
 | Conversazione continua (modalità normale) | Si apre da sola all'avvio | ✅ **funziona**. Si attiva, si parla e resta aperta. Le azioni partono in un istante, più rapide che dal giro normale, e la voce è quella del modello stesso |
 | Scelta della voce naturale | Impostazioni → Voce naturale | ⏳ quattro voci italiane Edge: Diego, Giuseppe, Isabella, Elsa |
 | Volume pari fra le voci | Automatico | ✅ confermato: le voci più basse arrivano al livello delle altre |

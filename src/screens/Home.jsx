@@ -33,6 +33,12 @@ import {callContact, sendWhatsAppToContact} from '../services/contactsService';
 import {loadState, saveState, DEFAULT_STATE} from '../services/storageService';
 import {LiveSession, isLiveSupported, flushLiveAudio} from '../services/liveService';
 import {
+    caricaMemoria,
+    dimenticaRicordo,
+    getMemoria,
+    setNota,
+} from '../services/memoryService';
+import {
     OVERLAY_STATE,
     hasOverlayPermission,
     hideOverlay,
@@ -81,6 +87,7 @@ export default function Home() {
     const [modalita, setModalita] = useState('conversazione');
     const [isCommandModeEnabled, setIsCommandModeEnabled] = useState(false);
     const [apriConversazioneAllAvvio, setApriConversazioneAllAvvio] = useState(true);
+    const [memoria, setMemoria] = useState({nota: '', ricordi: []});
 
     const scrollRef = useRef();
     const animatedScale = useRef(new Animated.Value(1)).current;
@@ -116,6 +123,11 @@ export default function Home() {
     // aggiunti nel frattempo restano validi anche su una chat vecchia.
     useEffect(() => {
         (async () => {
+            // La memoria va letta prima della conversazione: il messaggio di
+            // sistema la incorpora, e leggerla dopo vorrebbe dire partire
+            // senza sapere niente di lui.
+            setMemoria(await caricaMemoria());
+
             const saved = await loadState();
             setChatHistory([SYSTEM_MESSAGE, ...saved.messages]);
             setIsVoiceEnabled(saved.isVoiceEnabled);
@@ -816,6 +828,16 @@ export default function Home() {
                 }}
                 apriConversazioneAllAvvio={apriConversazioneAllAvvio}
                 onToggleApriAllAvvio={() => setApriConversazioneAllAvvio((p) => !p)}
+                memoria={memoria}
+                onSalvaNota={async (nota) => {
+                    await setNota(nota);
+                    setMemoria({...getMemoria()});
+                }}
+                onDimentica={async (indice) => {
+                    await dimenticaRicordo(indice);
+                    setMemoria({...getMemoria()});
+                }}
+                onRileggiMemoria={() => setMemoria({...getMemoria()})}
             />
         </SafeAreaView>
     );

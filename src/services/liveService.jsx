@@ -1,6 +1,6 @@
 import {NativeModules, NativeEventEmitter, Platform} from 'react-native';
 import {TOOLS, executeTool} from './tools';
-import {SYSTEM_MESSAGE} from '../utils/constants';
+import {buildSystemMessage} from '../utils/constants';
 import {base64ToBytes} from '../utils/base64';
 
 // Conversazione a voce con Gemini, in tempo reale.
@@ -240,7 +240,10 @@ export class LiveSession {
                         voiceConfig: {prebuiltVoiceConfig: {voiceName: VOCE}},
                     },
                 },
-                systemInstruction: {parts: [{text: SYSTEM_MESSAGE.content}]},
+                // Si costruisce adesso e non all'avvio dell'app: se durante la
+                // conversazione precedente ha annotato qualcosa, questa deve
+                // saperlo già.
+                systemInstruction: {parts: [{text: buildSystemMessage().content}]},
                 tools: [{functionDeclarations: dichiarazioniStrumenti()}],
                 // Le trascrizioni delle due voci servono a riempire il
                 // registro attività: senza, a schermo non resterebbe traccia

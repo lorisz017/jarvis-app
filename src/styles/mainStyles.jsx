@@ -575,6 +575,45 @@ export const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'rgba(0, 217, 255, 0.30)',
     },
+    // La casella della memoria: alta abbastanza da scriverci qualche riga
+    // senza sentirsi in un campo di ricerca.
+    memoriaInput: {
+        fontFamily: MONO,
+        fontSize: 13,
+        lineHeight: 19,
+        color: TEXT,
+        backgroundColor: 'rgba(0, 217, 255, 0.06)',
+        borderWidth: 1,
+        borderColor: 'rgba(0, 217, 255, 0.22)',
+        borderRadius: 14,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        minHeight: 110,
+        marginBottom: 14,
+    },
+    ricordoRiga: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: 'rgba(0, 217, 255, 0.05)',
+        borderRadius: 12,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        marginBottom: 6,
+    },
+    ricordoTesto: {
+        flex: 1,
+        fontFamily: MONO,
+        fontSize: 12,
+        lineHeight: 17,
+        color: TEXT,
+        paddingRight: 10,
+    },
+    ricordoScarta: {
+        fontFamily: MONO,
+        fontSize: 13,
+        color: RED,
+    },
     // === La leva che cambia modalità ===
     // Sta in alto perché è la scelta più importante della schermata, non una
     // fra tante. Il vetro è quello vero di sistema: sotto ci passa

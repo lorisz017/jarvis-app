@@ -45,18 +45,32 @@ export default function SettingsModal({
                                           onToggleCommandMode,
                                           apriConversazioneAllAvvio,
                                           onToggleApriAllAvvio,
+                                          memoria,
+                                          onSalvaNota,
+                                          onDimentica,
+                                          onRileggiMemoria,
                                       }) {
     const [activeTab, setActiveTab] = useState('settings');
     // La voce viene scelta alla prima frase pronunciata: si rilegge ogni volta
     // che il pannello si apre, così mostra sempre lo stato aggiornato.
     const [voiceInfo, setVoiceInfo] = useState(getVoiceInfo);
     const [erroreVoce, setErroreVoce] = useState(null);
+    // La nota si modifica qui e si salva quando si smette di scriverla: farlo
+    // a ogni lettera vorrebbe dire scrivere su disco a ogni tasto.
+    const [nota, setNotaLocale] = useState(memoria?.nota || '');
 
     useEffect(() => {
         if (!isVisible) return;
         setVoiceInfo(getVoiceInfo());
         setErroreVoce(getUltimoErroreEdge());
+        onRileggiMemoria?.();
     }, [isVisible]);
+
+    // Se la memoria cambia da fuori — perché se l'è annotata lui mentre si
+    // parlava — la casella deve rifletterlo invece di restare indietro.
+    useEffect(() => {
+        setNotaLocale(memoria?.nota || '');
+    }, [memoria?.nota]);
 
     return (
         <Modal animationType="slide" transparent visible={isVisible} onRequestClose={onClose}>
@@ -100,6 +114,47 @@ export default function SettingsModal({
                                     value={isBriefingEnabled}
                                     onToggle={() => setIsBriefingEnabled(!isBriefingEnabled)}
                                 />
+
+                                <Text style={styles.settingsSectionTitle}>MEMORIA</Text>
+                                <Text style={styles.settingsHint}>
+                                    Quello che scrive qui J.A.R.V.I.S. lo sa sempre: chi è, di cosa si
+                                    occupa, che dispositivi possiede. Serve a rispondere senza doverglielo
+                                    ripetere ogni volta.
+                                </Text>
+                                <TextInput
+                                    style={styles.memoriaInput}
+                                    value={nota}
+                                    onChangeText={setNotaLocale}
+                                    onBlur={() => onSalvaNota?.(nota)}
+                                    placeholder="Mi chiamo... lavoro come... ho un..."
+                                    placeholderTextColor="rgba(200, 244, 255, 0.35)"
+                                    multiline
+                                    textAlignVertical="top"
+                                />
+
+                                {memoria?.ricordi?.length ? (
+                                    <>
+                                        <Text style={styles.settingsHint}>
+                                            Cose che si è annotato da solo parlando con lei. Tocchi una
+                                            voce per farla dimenticare.
+                                        </Text>
+                                        {memoria.ricordi.map((ricordo, indice) => (
+                                            <TouchableOpacity
+                                                key={`${indice}-${ricordo}`}
+                                                style={styles.ricordoRiga}
+                                                onPress={() => onDimentica?.(indice)}
+                                            >
+                                                <Text style={styles.ricordoTesto}>{ricordo}</Text>
+                                                <Text style={styles.ricordoScarta}>✕</Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </>
+                                ) : (
+                                    <Text style={styles.settingsHint}>
+                                        Non si è ancora annotato niente da solo: lo fa quando le sente
+                                        dire qualcosa che resterà vero anche fra un mese.
+                                    </Text>
+                                )}
 
                                 <Text style={styles.settingsSectionTitle}>CONVERSAZIONE</Text>
                                 <ToggleRow
