@@ -12,6 +12,7 @@ import {deleteGitHubRepo} from "../core/github/deleteRepo";
 import {TOOLS, executeTool} from './tools';
 import {searchWithDuckDuckGo, searchWithGemini, hasGeminiKey} from './webSearchService';
 import {bringAppToFront} from './overlayService';
+import {requestGeminiCompletion, hasGeminiChat} from './geminiChatService';
 
 // Azioni che aprono la schermata di un'altra app. Dopo una di queste la
 // nostra app è dietro, e Android non lascia che un'app in secondo piano ne
@@ -118,7 +119,28 @@ async function tornaInPrimoPiano() {
     return false;
 }
 
+// Prima Gemini, poi Groq.
+//
+// Non è una preferenza estetica: il piano gratuito di Groq concede 8000 token
+// al minuto, e una sola richiesta di questa app ne consuma tremila fra prompt
+// di sistema e descrizioni degli strumenti. Bastano due giri di una catena
+// per finirli, e da lì in poi il modello non risponde più — è il motivo per
+// cui le azioni sparivano a metà e la ricerca tornava indietro con "Request
+// Entity Too Large". Groq resta sotto come riserva, e continua a occuparsi
+// della trascrizione, dove quel limite non si avvicina nemmeno.
 async function requestChatCompletion(model, messages, tools) {
+    if (hasGeminiChat) {
+        try {
+            return await requestGeminiCompletion(messages, tools);
+        } catch (error) {
+            console.warn('Gemini non disponibile, passo a Groq:', error.message);
+        }
+    }
+
+    return requestGroqCompletion(model, messages, tools);
+}
+
+async function requestGroqCompletion(model, messages, tools) {
     const completion = await fetchConTimeout(`${GROQ_BASE_URL}/chat/completions`, {
         method: 'POST',
         headers: {
@@ -315,14 +337,17 @@ async function handleUserMessage(userMessage, {
                                 role: 'system',
                                 content:
                                     'Sei J.A.R.V.I.S. Rispondi in italiano, breve e preciso, ' +
-                                    'rivolgendoti all\'utente come "Signore". Rispondi usando i ' +
-                                    'brani che ti vengono dati: se la risposta non è scritta a ' +
-                                    'lettere ma si ricava da quello che c\'è — una classifica, ' +
-                                    'un titolo, un risultato — ricavala e dilla, precisando che ' +
-                                    'lo deduci. Riferisci sempre quello che hai trovato: dire ' +
-                                    'solo "non è indicato" quando i brani parlano proprio di ' +
-                                    'quell\'argomento è inutile. Ammetti di non sapere solo se ' +
-                                    'i brani non c\'entrano niente con la domanda.',
+                                    'rivolgendoti all\'utente come "Signore". Ti vengono dati ' +
+                                    'dei testi presi dal web: rispondi alla domanda usandoli. ' +
+                                    'Se la risposta non è scritta a lettere ma si ricava da quello ' +
+                                    'che c\'è — una classifica, un titolo, un risultato — ricavala ' +
+                                    'e dilla come un fatto.\n\n' +
+                                    'Parla come un maggiordomo che ha già controllato per conto ' +
+                                    'suo: dai la risposta e basta. Non nominare mai i testi, le ' +
+                                    'fonti o i siti, non scrivere numeri di riferimento come [1] ' +
+                                    'o [2], e non dire che deduci, che supponi o che secondo i ' +
+                                    'dati disponibili. Solo se i testi non c\'entrano niente con ' +
+                                    'la domanda, dica semplicemente che non è riuscito a trovarlo.',
                             },
                             {
                                 role: 'user',

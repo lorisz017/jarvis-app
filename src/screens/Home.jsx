@@ -179,16 +179,7 @@ export default function Home() {
             return;
         }
 
-        await speakJarvisResponse({
-            text,
-            selectedVoiceId,
-            availableVoices,
-            scrollRef,
-            setDisplayedText,
-            setSelectedVoiceId,
-            englishVoiceId,
-            russianVoiceId,
-        });
+        await speakJarvisResponse({text, scrollRef, setDisplayedText});
     };
 
     // Briefing di apertura: saluto in base all'ora, meteo della città

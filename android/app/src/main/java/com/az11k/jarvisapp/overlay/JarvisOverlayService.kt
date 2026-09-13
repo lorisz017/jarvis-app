@@ -150,16 +150,20 @@ class JarvisOverlayService : Service() {
             }
         }
 
-        // Il tipo "microfono" è quello che serve per poter parlare alla bolla
-        // da fuori, ma Android lo concede solo se l'app è ancora in primo
-        // piano nel momento in cui il servizio parte. Se lo rifiuta si ripiega
-        // su un tipo generico: la bolla resta, si perde solo il microfono da
-        // fuori, e nessuno se ne va per terra.
+        // Due tipi insieme. "Microfono" serve per poter parlare alla bolla da
+        // fuori; "riproduzione" serve perché la risposta si senta da fuori, ed
+        // è quello che mancava: senza, Android lascia partire l'audio ma non
+        // lo manda da nessuna parte, e la bolla sembrava muta.
+        //
+        // Android li concede solo se l'app è in primo piano quando il servizio
+        // parte. Se li rifiuta si ripiega su un tipo generico: la bolla resta,
+        // e nessuno se ne va per terra.
         return try {
             startForeground(
                 NOTIFICATION_ID,
                 notifica,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE or
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
             )
             true
         } catch (primo: Exception) {
@@ -373,7 +377,7 @@ class JarvisOverlayService : Service() {
 
         // Un po' di tolleranza attorno: prendere la mira col dito mentre si
         // trascina è più difficile di quanto sembri.
-        val margine = resources.displayMetrics.density * 28
+        val margine = resources.displayMetrics.density * 10
 
         val centroX = posizioneBolla[0] + vista.width / 2f
         val centroY = posizioneBolla[1] + vista.height / 2f

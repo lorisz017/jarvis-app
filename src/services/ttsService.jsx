@@ -463,80 +463,71 @@ const speakWithDeviceVoice = (text, { scrollRef, setDisplayedText }) => {
     });
 };
 
+// Voce di Gemini. Restituisce true se ha parlato davvero.
+async function speakWithGemini(text) {
+    if (!geminiApiKey) return false;
+
+    const response = await fetchVoce(
+        `https://generativelanguage.googleapis.com/v1beta/models/${TTS_MODEL}:generateContent?key=${geminiApiKey}`,
+        {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                contents: [{
+                    parts: [{
+                        text: `Leggi con voce calma, sicura e leggermente formale, come un maggiordomo britannico d'élite: ${text}`,
+                    }],
+                }],
+                generationConfig: {
+                    responseModalities: ['AUDIO'],
+                    speechConfig: {
+                        voiceConfig: {prebuiltVoiceConfig: {voiceName: TTS_VOICE}},
+                    },
+                },
+            }),
+        }
+    );
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+        throw new Error(data.error?.message || `Gemini TTS HTTP ${response.status}`);
+    }
+
+    const pcmBase64 = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    if (!pcmBase64) return false;
+
+    // PCM grezzo -> file WAV riproducibile, al volume di riferimento
+    await playAudioFile(await writeWavFile(pcmBase64));
+    return true;
+}
+
 export const speakJarvisResponse = async ({
                                               text,
-                                              selectedVoiceId,
-                                              availableVoices,
                                               scrollRef,
                                               setDisplayedText,
-                                              setSelectedVoiceId,
-                                              englishVoiceId,
-                                              russianVoiceId,
                                           }) => {
     if (!text) return;
 
     // Il testo compare subito: con l'audio generato non esiste l'evento
     // "onBoundary" che faceva scorrere il testo parola per parola.
     setDisplayedText(text);
-    scrollRef?.current?.scrollToEnd({ animated: true });
+    scrollRef?.current?.scrollToEnd({animated: true});
 
-    // Si prova prima la voce migliore e si scende di livello solo se fallisce,
-    // così l'assistente non resta mai muto: Deepgram, poi Gemini, infine la
-    // voce di sistema del telefono.
+    // Gemini per primo: è il timbro che convince. Deepgram sotto, che è
+    // quello che regge quando la quota di Gemini — stretta — si esaurisce.
+    // In fondo la voce di sistema, così l'assistente non resta mai muto.
+    try {
+        if (await speakWithGemini(text)) return;
+    } catch (err) {
+        console.warn('Voce Gemini non disponibile, passo a Deepgram:', err.message);
+    }
+
     try {
         if (await speakWithDeepgram(text)) return;
     } catch (err) {
-        console.warn('Voce Deepgram non disponibile, passo a Gemini:', err.message);
+        console.warn('Voce Deepgram non disponibile, passo a quella di sistema:', err.message);
     }
 
-    if (!geminiApiKey) {
-        speakWithDeviceVoice(text, { scrollRef, setDisplayedText });
-        return;
-    }
-
-    try {
-        const response = await fetchVoce(
-            `https://generativelanguage.googleapis.com/v1beta/models/${TTS_MODEL}:generateContent?key=${geminiApiKey}`,
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [{
-                            text: `Leggi con voce calma, sicura e leggermente formale, come un maggiordomo britannico d'élite: ${text}`,
-                        }],
-                    }],
-                    generationConfig: {
-                        responseModalities: ['AUDIO'],
-                        speechConfig: {
-                            voiceConfig: {
-                                prebuiltVoiceConfig: { voiceName: TTS_VOICE },
-                            },
-                        },
-                    },
-                }),
-            }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.error?.message || 'Gemini TTS Error');
-        }
-
-        const pcmBase64 = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-
-        if (!pcmBase64) {
-            throw new Error('Nessun audio restituito da Gemini TTS');
-        }
-
-        // PCM grezzo -> file WAV riproducibile, al volume di riferimento
-        await playAudioFile(await writeWavFile(pcmBase64));
-    } catch (err) {
-        console.error('Gemini TTS error:', err);
-        // Se la voce di Gemini non funziona (quota esaurita, rete assente,
-        // modello non disponibile) l'assistente parla comunque, con la voce
-        // di sistema.
-        speakWithDeviceVoice(text, { scrollRef, setDisplayedText });
-    }
+    speakWithDeviceVoice(text, {scrollRef, setDisplayedText});
 };
