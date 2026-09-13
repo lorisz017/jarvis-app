@@ -14,7 +14,9 @@ import {bytesToBase64} from '../utils/base64';
 // continua a parlare.
 
 const TOKEN_CLIENT = '6A5AA1D4EAFF4E9FB37E23D68491D6F4';
-const VERSIONE = '1-130.0.2849.68';
+// La versione dichiarata deve somigliare a un Edge in circolazione: una
+// troppo vecchia è uno dei modi in cui il servizio può rifiutare la richiesta.
+const VERSIONE = '1-140.0.3485.14';
 const BASE = 'wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1';
 
 // Voci italiane. Diego è la più adatta a J.A.R.V.I.S.: maschile, pacata,
@@ -77,13 +79,8 @@ export function synthesizeWithEdge(testo, voce = VOCE_PREDEFINITA) {
 
         let socket;
         try {
-            socket = new WebSocket(url, undefined, {
-                headers: {
-                    Origin: 'chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold',
-                    'User-Agent':
-                        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
-                        '(KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0',
-                },
+            socket = new WebSocket(url, [], {
+                headers: {Origin: 'chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold'},
             });
         } catch (error) {
             reject(error);

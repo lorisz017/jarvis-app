@@ -2,7 +2,7 @@ import React, {useState, useEffect} from 'react';
 import {Modal, View, Text, ScrollView, TouchableOpacity, TextInput, Linking} from 'react-native';
 import {styles} from '../styles/mainStyles';
 import {FEATURE_SECTIONS} from '../utils/features';
-import {getVoiceInfo} from '../services/ttsService';
+import {getVoiceInfo, getUltimoErroreEdge} from '../services/ttsService';
 
 const APP_VERSION = '2.0.0';
 const GITHUB_PROFILE = 'https://github.com/lorisz017';
@@ -46,9 +46,12 @@ export default function SettingsModal({
     // La voce viene scelta alla prima frase pronunciata: si rilegge ogni volta
     // che il pannello si apre, così mostra sempre lo stato aggiornato.
     const [voiceInfo, setVoiceInfo] = useState(getVoiceInfo);
+    const [erroreVoce, setErroreVoce] = useState(null);
 
     useEffect(() => {
-        if (isVisible) setVoiceInfo(getVoiceInfo());
+        if (!isVisible) return;
+        setVoiceInfo(getVoiceInfo());
+        setErroreVoce(getUltimoErroreEdge());
     }, [isVisible]);
 
     return (
@@ -119,6 +122,12 @@ export default function SettingsModal({
                                 </Text>
 
                                 <Text style={styles.settingsSectionTitle}>VOCE NATURALE</Text>
+                                {erroreVoce ? (
+                                    <Text style={styles.settingsHint}>
+                                        Ultimo tentativo con la voce principale non riuscito:{' '}
+                                        {erroreVoce}. Sta parlando la voce di riserva.
+                                    </Text>
+                                ) : null}
                                 {voiceInfo.available.length ? (
                                     <>
                                         <Text style={styles.settingsHint}>

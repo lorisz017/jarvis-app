@@ -109,6 +109,10 @@ Ultimo aggiornamento: dopo il collaudo della bolla flottante, della ricerca via 
 
 ## Cosa resta aperto
 
+**Conversazione continua** — la sessione moriva dopo un secondo e il motivo è arrivato appena si è cominciato a leggere il codice di chiusura: `realtime_input.media_chunks is deprecated. Use audio, video, or text instead`. L'audio andava messo direttamente in `audio`, non dentro un elenco di pezzi. Corretto, da provare.
+
+**Voce di Edge** — non parla ancora: si sente la riserva. Da qui non è verificabile, i WebSocket non escono da questo ambiente nemmeno verso un server di prova. Quindi la prossima build riporta il motivo del rifiuto nelle impostazioni, sotto VOCE NATURALE, invece di lasciarlo indovinare. Nel frattempo due sospetti sono stati tolti di mezzo: la versione di Edge dichiarata era vecchia di dieci versioni, e la scelta della voce finiva nella preferenza sbagliata — per questo cambiare voce non cambiava niente.
+
 **Il limite che spiegava quasi tutto** — il piano gratuito di Groq concede 8000 token al minuto per `gpt-oss-120b`. Una sola richiesta di questa app, fra prompt di sistema e descrizioni di una ventina di strumenti, ne consuma circa tremila: bastano due giri di una catena per esaurirli, e da lì in poi il modello non risponde più. Non era il modello a dimenticarsi le azioni: non gli veniva proprio più risposto. È anche l'origine del vecchio "Request Entity Too Large" sulla ricerca. Il ragionamento passa ora da Gemini, che ha un tetto molto più alto, con Groq sotto come riserva; la trascrizione resta su Groq, dove quel limite non si avvicina nemmeno.
 
 **Perché l'assistente desktop sembra più sveglio** — Mark-LIII non fa quello che fa questa app. Non trascrive, non ragiona e poi sintetizza: parla con `gemini-3.1-flash-live-preview`, cioè l'API Live di Gemini, un modello che ascolta la voce e risponde in voce direttamente. Niente tre passaggi, niente attese in mezzo, e un timbro che nessuna sintesi di testo può eguagliare. Portarla qui è possibile ma è un lavoro a sé: vuol dire una connessione continua e audio trasmesso a flusso invece che a file.

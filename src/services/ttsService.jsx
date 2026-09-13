@@ -31,6 +31,19 @@ const DEEPGRAM_URL = 'https://api.deepgram.com/v1/speak';
 const DEEPGRAM_MODELS_URL = 'https://api.deepgram.com/v1/models';
 
 // Voce scelta dall'utente nelle impostazioni. Vuota significa "decidi tu".
+//
+// Ne servono due separate: Edge e Deepgram hanno cataloghi diversi, e
+// tenerne una sola voleva dire passare a Deepgram il nome di una voce Edge,
+// che non lo riconosce e ripiega sulla prima della sua lista. Da fuori
+// l'effetto era che cambiare voce non cambiava niente.
+// L'ultimo motivo per cui la voce di Edge non è riuscita a parlare. Da fuori
+// un fallimento è invisibile — si sente semplicemente la voce di riserva — e
+// senza il motivo non si può fare altro che tirare a indovinare.
+let ultimoErroreEdge = null;
+
+export const getUltimoErroreEdge = () => ultimoErroreEdge;
+
+let preferredEdgeVoice = '';
 let preferredVoice = '';
 
 
@@ -327,7 +340,7 @@ let availableVoiceNames = [];
 // Serve al pannello impostazioni per mostrare quale voce è in uso e quali
 // altre ci sono: sul telefono i messaggi di log non sono consultabili.
 export const getVoiceInfo = () => ({
-    selected: preferredVoice || VOCI_EDGE[0].id,
+    selected: preferredEdgeVoice || VOCI_EDGE[0].id,
     available: VOCI_EDGE.map((v) => v.id),
     hasKey: Boolean(deepgramApiKey),
 });
@@ -341,6 +354,14 @@ function pickVoice() {
 // Cambia voce senza ricompilare: la scelta ha effetto dalla frase successiva.
 // Passando una stringa vuota si torna alla scelta automatica.
 export const setPreferredVoice = (voiceName) => {
+    // I nomi delle voci Edge cominciano con la lingua ("it-IT-..."), quelli
+    // di Deepgram con il modello ("aura-2-..."): si capisce da soli a chi
+    // appartiene la scelta, senza doverlo chiedere a chi chiama.
+    if (String(voiceName || '').startsWith('it-IT-')) {
+        preferredEdgeVoice = voiceName;
+        return;
+    }
+
     preferredVoice = voiceName || '';
     // L'elenco delle voci è già in memoria: si ripesca da lì, senza rifare
     // la chiamata di rete a ogni cambio.
@@ -457,7 +478,7 @@ const speakWithDeviceVoice = (text, { scrollRef, setDisplayedText }) => {
 
 // Voce di Edge: genera l'audio, lo scrive e lo riproduce.
 async function speakWithEdge(text) {
-    const voce = preferredVoice || undefined;
+    const voce = preferredEdgeVoice || undefined;
     const base64 = await synthesizeWithEdge(text, voce);
 
     const fileUri = `${FileSystem.cacheDirectory}jarvis-voce-${Date.now()}.mp3`;
@@ -490,9 +511,14 @@ export const speakJarvisResponse = async ({
     // alla voce di Edge non è ufficiale e il giorno che si chiude nessuno ci
     // avvisa, quindi sotto ci vuole qualcosa che non dipenda da quello.
     try {
-        if (await speakWithEdge(text)) return;
+        if (await speakWithEdge(text)) {
+            ultimoErroreEdge = null;
+            return;
+        }
+        ultimoErroreEdge = 'ha risposto senza audio';
     } catch (err) {
         console.warn('Voce Edge non disponibile, passo a Deepgram:', err.message);
+        ultimoErroreEdge = err.message;
     }
 
     //

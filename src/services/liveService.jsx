@@ -32,6 +32,11 @@ const LIVE_URL =
 // modulo nativo produce e consuma.
 const MIME_INVIO = 'audio/pcm;rate=16000';
 
+// Il primo tentativo mandava l'audio dentro "mediaChunks", e il server
+// chiudeva la sessione dopo un secondo dicendo che quel campo non si usa più:
+// va messo direttamente in "audio". Era l'intero motivo per cui la
+// conversazione moriva appena si cominciava a parlare.
+
 const VOCE = 'Charon';
 
 export const isLiveSupported = () => Boolean(audio && geminiApiKey);
@@ -237,7 +242,7 @@ export class LiveSession {
         this.iscrizioneMicrofono = emettitore.addListener('jarvisAudioChunk', (base64) => {
             if (!this.pronta) return;
             this._invia({
-                realtimeInput: {mediaChunks: [{mimeType: MIME_INVIO, data: base64}]},
+                realtimeInput: {audio: {mimeType: MIME_INVIO, data: base64}},
             });
         });
 
