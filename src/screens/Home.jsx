@@ -25,11 +25,12 @@ import SettingsModal from '../components/SettingsModal';
 
 import {useVoiceSetup} from '../hooks/useVoiceSetup';
 import {speakJarvisResponse, stopJarvisVoice, setPreferredVoice} from '../services/ttsService';
-import {processAudioWithOpenAI, processTextMessage} from '../services/jarvisService';
+import {processAudioWithOpenAI, processTextMessage, buildToolContext} from '../services/jarvisService';
 import {setNativeAlarm, setNativeTimer, getWeatherByCity, createCalendarEvent} from '../services/deviceActions';
 import {openApp, startNavigation} from '../services/appLauncher';
 import {callContact, sendWhatsAppToContact} from '../services/contactsService';
 import {loadState, saveState, DEFAULT_STATE} from '../services/storageService';
+import {LiveSession, isLiveSupported} from '../services/liveService';
 import {
     OVERLAY_STATE,
     hasOverlayPermission,
@@ -72,6 +73,8 @@ export default function Home() {
     const [isSettingsVisible, setIsSettingsVisible] = useState(false);
     const [isStateLoaded, setIsStateLoaded] = useState(false);
     const [isOverlayEnabled, setIsOverlayEnabled] = useState(false);
+    // 'spenta' | 'connessione' | 'attiva'
+    const [statoLive, setStatoLive] = useState('spenta');
 
     const scrollRef = useRef();
     const animatedScale = useRef(new Animated.Value(1)).current;
@@ -90,6 +93,7 @@ export default function Home() {
     // continuava a restituire la registrazione precedente, che veniva
     // trascritta daccapo come se fosse nuova.
     const ultimoAudioRef = useRef(null);
+    const sessioneLiveRef = useRef(null);
 
     useVoiceSetup({
         setAvailableVoices,
@@ -461,6 +465,86 @@ export default function Home() {
         setIsOverlayEnabled(true);
     };
 
+    // === Conversazione continua ===
+    // Non passa dal giro normale (registra, trascrivi, ragiona, sintetizza):
+    // è un modello solo che ascolta e risponde con la propria voce, mentre
+    // parli. Per questo va gestita a parte.
+    const contestoAzioni = () => buildToolContext({
+        openCamera,
+        openTelegram,
+        openYoutube,
+        openApp,
+        startNavigation,
+        callContact,
+        sendWhatsAppToContact,
+        setHomeCity,
+        setNativeAlarm,
+        setNativeTimer,
+        getWeatherByCity,
+        createCalendarEvent,
+    });
+
+    const fermaLive = () => {
+        sessioneLiveRef.current?.stop();
+        sessioneLiveRef.current = null;
+        setStatoLive('spenta');
+    };
+
+    const toggleLive = async () => {
+        if (statoLive !== 'spenta') {
+            fermaLive();
+            return;
+        }
+
+        if (!isLiveSupported()) {
+            Alert.alert(
+                'Non disponibile',
+                'La conversazione continua richiede Android e la chiave Gemini.'
+            );
+            return;
+        }
+
+        // Le due modalità non possono usare il microfono insieme.
+        stopJarvisVoice();
+        if (staRegistrandoRef.current) await stopRecording();
+
+        const sessione = new LiveSession({
+            contesto: contestoAzioni(),
+            onStato: (stato) => {
+                setStatoLive(stato === 'chiusa' ? 'spenta' : stato);
+                if (stato === 'chiusa') sessioneLiveRef.current = null;
+            },
+            onTesto: ({chi, testo}) => {
+                if (!testo?.trim()) return;
+                // Le trascrizioni arrivano a pezzi mentre si parla: si
+                // accodano all'ultima riga se è della stessa voce, invece di
+                // riempire il registro di frammenti.
+                setChatHistory((prev) => {
+                    const ruolo = chi === 'utente' ? 'user' : 'assistant';
+                    const ultimo = prev[prev.length - 1];
+                    if (chi !== 'azione' && ultimo?.role === ruolo && ultimo.live) {
+                        const aggiornato = {...ultimo, content: `${ultimo.content}${testo}`};
+                        return [...prev.slice(0, -1), aggiornato];
+                    }
+                    return [...prev, {role: ruolo, content: testo, live: true}];
+                });
+                if (chi !== 'utente') setDisplayedText(testo);
+            },
+            onErrore: (errore) => {
+                console.warn('Conversazione continua:', errore);
+                Alert.alert('Conversazione continua', errore.message);
+                fermaLive();
+            },
+        });
+
+        sessioneLiveRef.current = sessione;
+        await sessione.start();
+    };
+
+    // Se si chiude l'app la sessione va chiusa: resterebbe il microfono
+    // acceso e la connessione aperta.
+    useEffect(() => () => sessioneLiveRef.current?.stop(), []);
+
     const sendTypedMessage = async () => {
         const message = typedText.trim();
         if (!message) return;
@@ -544,6 +628,18 @@ export default function Home() {
                     </KeyboardAvoidingView>
 
                     <View style={styles.actionRow}>
+                        <TouchableOpacity
+                            style={[styles.pillButton, statoLive !== 'spenta' && styles.pillButtonActive]}
+                            onPress={toggleLive}
+                        >
+                            <Text style={styles.pillButtonIcon}>
+                                {statoLive === 'attiva' ? '🟢' : statoLive === 'connessione' ? '◌' : '💬'}
+                            </Text>
+                            <Text style={styles.pillButtonText}>
+                                {statoLive === 'spenta' ? 'PARLA' : 'CHIUDI'}
+                            </Text>
+                        </TouchableOpacity>
+
                         <TouchableOpacity style={styles.pillButton} onPress={() => setIsVoicePickerVisible(true)}>
                             <Text style={styles.pillButtonIcon}>🎙</Text>
                             <Text style={styles.pillButtonText}>VOCE</Text>

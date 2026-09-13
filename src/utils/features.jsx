@@ -4,6 +4,7 @@ export const FEATURE_SECTIONS = [
     {
         title: 'VOCE E TESTO',
         items: [
+            {name: 'Conversazione continua', example: 'Il pulsante PARLA: si parla e basta, senza toccare nulla'},
             {name: 'Comando vocale', example: 'Tocchi il radar e parli'},
             {name: 'Comando scritto', example: 'Scriva nel campo in fondo alla schermata'},
             {name: 'Risposta parlata', example: 'Voce naturale, con ripiego su quella di sistema'},

@@ -1,0 +1,244 @@
+import {NativeModules, NativeEventEmitter, Platform} from 'react-native';
+import {TOOLS, executeTool} from './tools';
+import {SYSTEM_MESSAGE} from '../utils/constants';
+
+// Conversazione a voce con Gemini, in tempo reale.
+//
+// È una strada diversa da quella normale dell'app. Finora il giro era:
+// registri un file, lo mandi a trascrivere, mandi il testo a un modello,
+// prendi la risposta scritta e la fai leggere da una voce sintetica. Quattro
+// passaggi, quattro attese, e una voce che legge un testo scritto da un
+// altro.
+//
+// Qui c'è un modello solo che ascolta la voce e risponde con la propria,
+// mentre parli. Niente trascrizione, niente sintesi: la voce è sua. È il
+// motivo per cui l'assistente desktop da cui è nato questo progetto suona
+// meglio, e non era una questione di quale servizio scegliere.
+//
+// La conversazione viaggia su una connessione aperta che resta viva per tutta
+// la sessione, con l'audio spedito a pezzi mentre lo dici.
+
+const audio = Platform.OS === 'android' ? NativeModules.JarvisAudio : null;
+const emettitore = audio ? new NativeEventEmitter(audio) : null;
+
+const geminiApiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+
+const LIVE_MODEL = 'models/gemini-3.1-flash-live-preview';
+const LIVE_URL =
+    'wss://generativelanguage.googleapis.com/ws/' +
+    'google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent';
+
+// Gemini ascolta a 16 kHz e risponde a 24 kHz: sono i due formati che il
+// modulo nativo produce e consuma.
+const MIME_INVIO = 'audio/pcm;rate=16000';
+
+const VOCE = 'Charon';
+
+export const isLiveSupported = () => Boolean(audio && geminiApiKey);
+
+// Gli stessi strumenti della modalità normale, nella forma che vuole Gemini.
+function dichiarazioniStrumenti() {
+    return TOOLS.map(({function: f}) => {
+        const dichiarazione = {name: f.name, description: f.description};
+        const proprieta = f.parameters?.properties || {};
+
+        if (Object.keys(proprieta).length) {
+            const properties = {};
+            for (const [nome, campo] of Object.entries(proprieta)) {
+                properties[nome] = {
+                    type: String(campo.type || 'string').toUpperCase(),
+                    description: campo.description || '',
+                };
+            }
+            dichiarazione.parameters = {
+                type: 'OBJECT',
+                properties,
+                required: f.parameters.required || [],
+            };
+        }
+
+        return dichiarazione;
+    });
+}
+
+export class LiveSession {
+    /**
+     * @param {object} opzioni
+     * @param {function} opzioni.onStato   'connessione' | 'attiva' | 'chiusa'
+     * @param {function} opzioni.onTesto   trascrizione di chi parla: {chi, testo}
+     * @param {function} opzioni.onErrore
+     * @param {object}   opzioni.contesto  quello che serve a eseguire le azioni
+     */
+    constructor({onStato, onTesto, onErrore, contesto}) {
+        this.onStato = onStato || (() => {});
+        this.onTesto = onTesto || (() => {});
+        this.onErrore = onErrore || (() => {});
+        this.contesto = contesto || {};
+
+        this.socket = null;
+        this.iscrizioneMicrofono = null;
+        this.pronta = false;
+        this.chiusaVolutamente = false;
+    }
+
+    async start() {
+        if (!isLiveSupported()) {
+            this.onErrore(new Error('La conversazione continua richiede Android e una chiave Gemini'));
+            return false;
+        }
+
+        this.onStato('connessione');
+        this.chiusaVolutamente = false;
+
+        try {
+            await audio.startPlayback();
+        } catch (error) {
+            this.onErrore(error);
+            return false;
+        }
+
+        this.socket = new WebSocket(`${LIVE_URL}?key=${geminiApiKey}`);
+
+        this.socket.onopen = () => this._mandaConfigurazione();
+        this.socket.onmessage = (evento) => this._riceviMessaggio(evento);
+        this.socket.onerror = () => this.onErrore(new Error('Connessione interrotta'));
+        this.socket.onclose = () => {
+            this.pronta = false;
+            this._fermaMicrofono();
+            audio?.stopPlayback();
+            this.onStato('chiusa');
+        };
+
+        return true;
+    }
+
+    _mandaConfigurazione() {
+        this._invia({
+            setup: {
+                model: LIVE_MODEL,
+                generationConfig: {
+                    responseModalities: ['AUDIO'],
+                    speechConfig: {
+                        voiceConfig: {prebuiltVoiceConfig: {voiceName: VOCE}},
+                    },
+                },
+                systemInstruction: {parts: [{text: SYSTEM_MESSAGE.content}]},
+                tools: [{functionDeclarations: dichiarazioniStrumenti()}],
+                // Le trascrizioni delle due voci servono a riempire il
+                // registro attività: senza, a schermo non resterebbe traccia
+                // di quello che ci si è detti.
+                inputAudioTranscription: {},
+                outputAudioTranscription: {},
+                // Finestra scorrevole: la conversazione non muore quando il
+                // contesto si riempie, e si può restare a parlare a lungo.
+                contextWindowCompression: {slidingWindow: {}},
+            },
+        });
+    }
+
+    async _riceviMessaggio(evento) {
+        let messaggio;
+        try {
+            // I messaggi arrivano come testo JSON, ma su alcune connessioni
+            // come dati binari: in quel caso vanno letti prima.
+            const grezzo = typeof evento.data === 'string'
+                ? evento.data
+                : await new Response(evento.data).text();
+            messaggio = JSON.parse(grezzo);
+        } catch (error) {
+            return;
+        }
+
+        if (messaggio.setupComplete) {
+            this.pronta = true;
+            this.onStato('attiva');
+            this._avviaMicrofono();
+            return;
+        }
+
+        const contenuto = messaggio.serverContent;
+
+        if (contenuto?.interrupted) {
+            // Hai ricominciato a parlare sopra: quello che stava uscendo va
+            // buttato subito, altrimenti continua a parlare da solo.
+            audio?.flushPlayback();
+        }
+
+        if (contenuto?.inputTranscription?.text) {
+            this.onTesto({chi: 'utente', testo: contenuto.inputTranscription.text});
+        }
+
+        if (contenuto?.outputTranscription?.text) {
+            this.onTesto({chi: 'jarvis', testo: contenuto.outputTranscription.text});
+        }
+
+        for (const parte of contenuto?.modelTurn?.parts || []) {
+            const suono = parte.inlineData?.data;
+            if (suono) audio?.playChunk(suono);
+        }
+
+        if (messaggio.toolCall?.functionCalls?.length) {
+            await this._eseguiAzioni(messaggio.toolCall.functionCalls);
+        }
+    }
+
+    async _eseguiAzioni(chiamate) {
+        const risposte = [];
+
+        for (const chiamata of chiamate) {
+            let esito;
+            try {
+                esito = await executeTool(chiamata.name, chiamata.args || {}, this.contesto);
+            } catch (error) {
+                esito = `Non sono riuscito a completare "${chiamata.name}": ${error.message}`;
+            }
+
+            this.onTesto({chi: 'azione', testo: esito});
+            risposte.push({
+                id: chiamata.id,
+                name: chiamata.name,
+                response: {risultato: esito},
+            });
+        }
+
+        this._invia({toolResponse: {functionResponses: risposte}});
+    }
+
+    _avviaMicrofono() {
+        if (this.iscrizioneMicrofono) return;
+
+        this.iscrizioneMicrofono = emettitore.addListener('jarvisAudioChunk', (base64) => {
+            if (!this.pronta) return;
+            this._invia({
+                realtimeInput: {mediaChunks: [{mimeType: MIME_INVIO, data: base64}]},
+            });
+        });
+
+        audio.startCapture().catch((error) => this.onErrore(error));
+    }
+
+    _fermaMicrofono() {
+        this.iscrizioneMicrofono?.remove();
+        this.iscrizioneMicrofono = null;
+        audio?.stopCapture();
+    }
+
+    _invia(oggetto) {
+        if (this.socket?.readyState !== WebSocket.OPEN) return;
+        this.socket.send(JSON.stringify(oggetto));
+    }
+
+    stop() {
+        this.chiusaVolutamente = true;
+        this.pronta = false;
+        this._fermaMicrofono();
+        audio?.stopPlayback();
+
+        try {
+            this.socket?.close();
+        } catch (error) {
+            // Già chiusa.
+        }
+        this.socket = null;
+    }
+}

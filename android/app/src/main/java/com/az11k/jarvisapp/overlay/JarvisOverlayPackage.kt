@@ -8,7 +8,10 @@ import com.facebook.react.uimanager.ViewManager
 class JarvisOverlayPackage : ReactPackage {
     override fun createNativeModules(
         reactContext: ReactApplicationContext
-    ): List<NativeModule> = listOf(JarvisOverlayModule(reactContext))
+    ): List<NativeModule> = listOf(
+        JarvisOverlayModule(reactContext),
+        JarvisAudioModule(reactContext),
+    )
 
     override fun createViewManagers(
         reactContext: ReactApplicationContext

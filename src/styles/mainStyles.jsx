@@ -573,6 +573,11 @@ export const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'rgba(0, 217, 255, 0.30)',
     },
+    // Pulsante acceso: la conversazione continua è in corso.
+    pillButtonActive: {
+        borderColor: GREEN,
+        backgroundColor: 'rgba(0, 255, 157, 0.12)',
+    },
     pillButtonDanger: {
         backgroundColor: 'rgba(255, 45, 85, 0.10)',
         borderColor: 'rgba(255, 45, 85, 0.30)',

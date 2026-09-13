@@ -175,6 +175,40 @@ if (!groqApiKey) {
     Alert.alert('Groq API Key Missing', 'Please set your Groq API key in app.json');
 }
 
+// Eliminare un repository è irreversibile: si chiede sempre conferma
+// esplicita, qualunque sia la strada da cui arriva la richiesta.
+function confirmRepoDeletion(repoName) {
+    return new Promise((resolve) => {
+        Alert.alert(
+            'Conferma eliminazione',
+            `È sicuro di voler eliminare il repository: ${repoName}?`,
+            [
+                {text: 'Annulla', style: 'cancel', onPress: () => resolve(false)},
+                {text: 'Elimina', style: 'destructive', onPress: () => resolve(true)},
+            ],
+        );
+    });
+}
+
+// Tutto ciò che le azioni possono usare. Alcune funzioni arrivano dalla
+// schermata, perché hanno bisogno dello stato di React; le altre stanno qui.
+//
+// È esportata perché anche la conversazione continua esegue le stesse azioni:
+// se ognuna si costruisse la propria copia, aggiungere uno strumento vorrebbe
+// dire ricordarsi di due posti, e prima o poi se ne dimentica uno.
+export function buildToolContext(dallaSchermata) {
+    return {
+        ...dallaSchermata,
+        scheduleReminder,
+        listReminders,
+        cancelAllReminders,
+        createGitHubRepo,
+        deleteGitHubRepo,
+        getLatestCommits,
+        confirmRepoDeletion,
+    };
+}
+
 // Toglie la formattazione markdown lasciando intatto il testo.
 //
 // La versione precedente cancellava ogni "-" ovunque si trovasse, non solo
@@ -246,27 +280,9 @@ async function handleUserMessage(userMessage, {
         await speak(message);
     };
 
-    // Eliminare un repository è irreversibile: si chiede sempre conferma
-    // esplicita, qualunque sia la strada da cui arriva la richiesta.
-    const confirmRepoDeletion = (repoName) => new Promise((resolve) => {
-        Alert.alert(
-            'Conferma eliminazione',
-            `È sicuro di voler eliminare il repository: ${repoName}?`,
-            [
-                {text: 'Annulla', style: 'cancel', onPress: () => resolve(false)},
-                {text: 'Elimina', style: 'destructive', onPress: () => resolve(true)},
-            ],
-        );
-    });
-
-    // Tutto ciò che le azioni possono usare: alcune funzioni arrivano dalla
-    // schermata (hanno bisogno dello stato di React), altre da questo modulo.
-    const toolContext = {
+    const toolContext = buildToolContext({
         setNativeAlarm,
         setNativeTimer,
-        scheduleReminder,
-        listReminders,
-        cancelAllReminders,
         getWeatherByCity,
         createCalendarEvent,
         openApp,
@@ -277,11 +293,7 @@ async function handleUserMessage(userMessage, {
         callContact,
         sendWhatsAppToContact,
         setHomeCity,
-        createGitHubRepo,
-        deleteGitHubRepo,
-        getLatestCommits,
-        confirmRepoDeletion,
-    };
+    });
 
     try {
         const parsed = parseReminderDetails(userMessage);

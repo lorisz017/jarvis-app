@@ -29,15 +29,19 @@ The flow of a single request:
 1. **You speak** — the recording is sent to **Whisper** (via Groq) and transcribed.
 2. **It thinks** — the text goes to a language model (**GPT-OSS 120B** via Groq), which is handed the list of actions the app can perform on the phone.
 3. **It acts** — if the model asks for one or more of those actions, the app carries them out in order and reports back on all of them at once, so a single request can set an alarm, start a timer and place a call. Otherwise the answer is simply spoken.
-4. **It speaks** — the reply is read aloud with a natural voice from **Deepgram Aura-2**, stepping down to Gemini and then to the phone's built-in voice if a provider is unavailable, so it never falls silent.
+4. **It speaks** — the reply is read aloud with a natural voice from **Gemini**, stepping down to Deepgram Aura-2 and then to the phone's built-in voice if a provider is unavailable, so it never falls silent.
+
+The reasoning runs on **Gemini**, with Groq kept behind it. Groq's free tier allows 8000 tokens a minute and a single request here spends about three thousand of them, which a chain of actions exhausts in two rounds — after that the model stops answering, and the actions that never happened only looked forgotten.
 
 You can also type instead of speaking — same actions, same behaviour.
+
+There is a second way to talk to it, and it works differently. The **PARLA** button opens a continuous conversation: one model listens to your voice and answers in its own, while you speak — no recording, no transcription, no synthetic voice reading out a text written by someone else. You can interrupt it mid-sentence and it stops, the way a person would. It runs on Gemini's Live API, over a connection held open for as long as the conversation lasts, with the same actions available as everywhere else.
 
 And you do not have to be in the app at all: with the floating bubble on, leaving it puts a circle over whatever is on screen. A tap starts listening, a second tap sends, a long press brings the app back, and dragging it onto the tab at the bottom removes it. The ring turns green while it listens and amber while it thinks, because from out there the colour is all you have to go on.
 
 ## Features
 
-Voice and text input · a floating bubble that stays over other apps · spoken replies with a natural voice, selectable in the app · several actions from one request · weather · native alarms and timers · calendar events · reminders (create, list, cancel) · phone calls and WhatsApp messages by contact name · navigation · launching ~20 common apps · camera, Telegram, YouTube · GitHub repository management · an opening briefing with the time, weather and your day's appointments · persistent memory across restarts · battery monitor · a settings panel listing every command.
+Voice and text input · a continuous spoken conversation · a floating bubble that stays over other apps · spoken replies with a natural voice, selectable in the app · several actions from one request · weather · native alarms and timers · calendar events · reminders (create, list, cancel) · phone calls and WhatsApp messages by contact name · navigation · launching ~20 common apps · camera, Telegram, YouTube · GitHub repository management · an opening briefing with the time, weather and your day's appointments · persistent memory across restarts · battery monitor · a settings panel listing every command.
 
 Web search goes through **DuckDuckGo**, which needs no key and has no quota: it returns page excerpts, and the reply is written by the chat model already in use. Gemini's Google search sits behind it — better prose, but grounding is not in the free tier and answers "quota exceeded" — and Groq Compound behind that.
 
@@ -174,15 +178,19 @@ Il percorso di una singola richiesta:
 1. **Si parla** — la registrazione viene mandata a **Whisper** (tramite Groq) e trascritta.
 2. **Ragiona** — il testo va a un modello linguistico (**GPT-OSS 120B** tramite Groq), a cui viene consegnato l'elenco delle azioni che l'app sa compiere sul telefono.
 3. **Agisce** — se il modello ne richiede una o più, l'app le esegue in ordine e le conferma tutte insieme: una sola richiesta può quindi mettere una sveglia, avviare un timer e fare una chiamata. Altrimenti la risposta viene semplicemente letta.
-4. **Risponde** — la risposta viene letta con una voce naturale di **Deepgram Aura-2**, scendendo su Gemini e poi sulla voce di sistema del telefono se un fornitore non è disponibile, così non resta mai muto.
+4. **Risponde** — la risposta viene letta con una voce naturale di **Gemini**, scendendo su Deepgram Aura-2 e poi sulla voce di sistema del telefono se un fornitore non è disponibile, così non resta mai muto.
+
+Il ragionamento passa da **Gemini**, con Groq dietro come riserva. Il piano gratuito di Groq concede 8000 token al minuto e una sola richiesta di questa app ne consuma circa tremila: una catena di azioni li esaurisce in due giri, e da lì in poi il modello smette di rispondere — le azioni mai eseguite sembravano dimenticate, ma non erano mai state chieste.
 
 Si può anche scrivere invece di parlare — stesse azioni, stesso comportamento.
+
+C'è un secondo modo di parlargli, e funziona in un altro modo. Il pulsante **PARLA** apre una conversazione continua: un solo modello ascolta la voce e risponde con la propria, mentre si parla — niente registrazione, niente trascrizione, nessuna voce sintetica che legge un testo scritto da qualcun altro. Lo si può interrompere a metà frase e si ferma, come farebbe una persona. Passa dall'API Live di Gemini, su una connessione che resta aperta per tutta la conversazione, con le stesse azioni disponibili ovunque.
 
 E non serve nemmeno essere dentro l'app: con la bolla flottante accesa, uscendo resta un cerchio sopra qualunque cosa ci sia sullo schermo. Un tocco comincia ad ascoltare, un secondo tocco manda, una pressione lunga riapre l'app, e trascinandola sulla linguetta in basso si toglie. L'anello diventa verde mentre ascolta e ambra mentre pensa, perché da lì fuori il colore è l'unica cosa su cui regolarsi.
 
 ## Funzioni
 
-Comandi a voce e scritti · bolla flottante che resta sopra le altre app · risposta parlata con voce naturale, selezionabile dall'app · più azioni con una sola richiesta · meteo · sveglie e timer nativi · eventi in calendario · promemoria (crea, elenca, annulla) · chiamate e messaggi WhatsApp per nome del contatto · navigazione · apertura di una ventina di app · fotocamera, Telegram, YouTube · gestione repository GitHub · riepilogo all'apertura con ora, meteo e impegni del giorno · memoria che sopravvive alla chiusura · monitor della batteria · pannello impostazioni con l'elenco di tutti i comandi.
+Comandi a voce e scritti · conversazione continua a voce · bolla flottante che resta sopra le altre app · risposta parlata con voce naturale, selezionabile dall'app · più azioni con una sola richiesta · meteo · sveglie e timer nativi · eventi in calendario · promemoria (crea, elenca, annulla) · chiamate e messaggi WhatsApp per nome del contatto · navigazione · apertura di una ventina di app · fotocamera, Telegram, YouTube · gestione repository GitHub · riepilogo all'apertura con ora, meteo e impegni del giorno · memoria che sopravvive alla chiusura · monitor della batteria · pannello impostazioni con l'elenco di tutti i comandi.
 
 La ricerca sul web passa da **DuckDuckGo**, che non chiede chiavi e non ha quote: restituisce brani di pagine, e la risposta la scrive il modello di chat già in uso. Dietro c'è la ricerca Google di Gemini — scriverebbe meglio, ma non rientra nel piano gratuito e risponde che la quota è esaurita — e più indietro ancora Groq Compound.
 
