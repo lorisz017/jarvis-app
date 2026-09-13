@@ -224,8 +224,12 @@ Due repository, e servono a due cose diverse:
 Il giro è questo:
 
 1. Le modifiche si scrivono su **`main`**.
-2. La build si lancia sul **repository privato**. È l'unica che produce un
-   APK utilizzabile, e l'unica che consuma i suoi minuti.
+2. La build si lancia sul **repository privato**, e **solo dopo che l'ha
+   chiesto lui**. Mai di propria iniziativa, nemmeno quando è ovvio che
+   servirà: consuma i suoi minuti ed è lui a decidere quando gli serve un
+   APK da installare. Quello che si fa senza chiedere è arrivare pronti —
+   codice scritto, controllato e spinto su `main` — e poi dirlo.
+   È l'unica build che produce un APK utilizzabile.
 3. **Prima di toccare il codice, se una build sta girando la si annulla.**
    Altrimenti diventa carta straccia e i minuti sono buttati.
 4. Se una build fallisce, il debug si fa sul **repository pubblico**, che è
@@ -249,6 +253,12 @@ inesistenti.
 `funzionante` è l'unico ramo che contiene un'informazione che git da solo non
 ha: quale versione è stata davvero provata. Serve a tornare indietro con
 certezza invece che a memoria.
+
+**Va spostato appena lui conferma che una build funziona**, senza aspettare
+che lo chieda: è il momento in cui l'informazione esiste, e rimandare vuol
+dire perderla. Ci va il commit **da cui è stata costruita quella build** —
+non l'ultimo di `main`, che nel frattempo si è già mosso. Lo si dice quando
+si fa, così sa dove si è fermato il punto sicuro.
 
 Attenzione: tornare indietro col codice **non riporta indietro il telefono**.
 Conversazione salvata, preferenze e permessi concessi restano come sono.
