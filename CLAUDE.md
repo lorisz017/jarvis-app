@@ -48,9 +48,25 @@ costa una giornata a scoprirla da soli:
 4. **Risponde** → la voce di Edge legge la risposta, con Deepgram sotto e la
    voce di sistema in fondo.
 
-La **conversazione continua** (pulsante PARLA) non fa niente di tutto questo:
-una connessione aperta con Gemini Live, audio che entra ed esce a flusso, un
-modello solo che ascolta e risponde con la propria voce.
+La **conversazione continua** non fa niente di tutto questo: una connessione
+aperta con Gemini Live, audio che entra ed esce a flusso, un modello solo che
+ascolta e risponde con la propria voce.
+
+Le due modalità si scelgono con una **leva in cima alla schermata**, non con
+un pulsante fra gli altri: sono due cose diverse, non varianti l'una
+dell'altra. La leva non è una preferenza da ricordare — spostarla apre o
+chiude davvero la sessione, e una sessione che si chiude da sola la riporta
+indietro, così quello che si vede e quello che succede restano la stessa
+cosa. Ogni modalità mostra la sua parte: il campo di testo appartiene ai
+comandi, e in conversazione il radar apre e chiude la sessione.
+
+Interrompere J.A.R.V.I.S. mentre parla non aspetta che se ne accorga il
+server: l'app misura quanto entra dal microfono e si zittisce da sola. La
+soglia sta a 0,04 perché la voce vera misura molto meno di quanto sembri a
+orecchio, ed è protetta da due pezzi consecutivi sopra soglia più la
+cancellazione dell'eco della sorgente da telefonata. **Se dovesse
+interrompersi da solo, la soglia va alzata; se non si ferma quando gli si
+parla sopra, abbassata.**
 
 ### Dove sta cosa
 
@@ -58,7 +74,8 @@ modello solo che ascolta e risponde con la propria voce.
 |---|---|
 | `src/services/jarvisService.jsx` | Il cuore: trascrizione, ragionamento, ciclo delle azioni, ricerca |
 | `src/services/geminiChatService.jsx` | Traduce fra il formato di Groq e quello di Gemini, nei due sensi |
-| `src/services/liveService.jsx` | La conversazione continua |
+| `src/services/liveService.jsx` | La conversazione continua e l'interruzione |
+| `src/components/ModeSwitch.jsx` | La leva fra le due modalità |
 | `src/services/tools.jsx` | Le 18 azioni: schema per il modello ed esecuzione |
 | `src/services/ttsService.jsx` | La catena della voce e il pareggiamento del volume |
 | `src/services/edgeTtsService.jsx` | La voce di Edge |
@@ -290,13 +307,18 @@ Lo stato dettagliato sta in `STATO_FUNZIONI.md`; qui la sostanza:
 - **La bolla** è stata spostata su quella modalità. Il giro precedente aveva
   cinque passaggi che fuori dall'app potevano fallire in silenzio, e quattro
   correzioni non erano bastate: il problema era la strada.
-- **La voce di Edge** resta da verificare per la modalità normale. È meno
-  urgente di prima: nella conversazione continua la voce non è una sintesi,
-  è il modello che parla.
+- **La voce di Edge** resta da verificare per la modalità a comandi. È meno
+  urgente di prima: in conversazione la voce non è una sintesi, è il modello
+  che parla. Se non si sblocca, il piano B è Speechify o Cartesia.
+- **Da confermare sul telefono**: la leva, l'interruzione immediata, la
+  ricerca come azione e la bolla sulla strada nuova.
 
-Una tentazione da tenere a bada: la conversazione continua è così buona che
-verrebbe da renderla l'unica modalità. **Lui ha detto esplicitamente di non
-togliere niente e di lasciare l'interfaccia com'è.**
+Due tentazioni da tenere a bada, tutte e due già dette da lui:
+
+- La conversazione continua è così buona che verrebbe da renderla l'unica
+  modalità. **Ha detto esplicitamente di non togliere niente.**
+- La voce della conversazione gli piace e **non va cambiata**, nemmeno per
+  proporre di meglio.
 
 ## Una cosa imparata a caro prezzo
 
