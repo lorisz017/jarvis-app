@@ -221,7 +221,9 @@ export const styles = StyleSheet.create({
     activityLogContainer: {
         width: '100%',
         maxWidth: 380,
-        height: 92,
+        // Alto il doppio: a 92 punti ci stavano quattro righe e mezzo, e una
+        // conversazione scorreva via prima di poterla leggere.
+        height: 190,
         backgroundColor: PANEL,
         borderWidth: 1,
         borderColor: 'rgba(0, 217, 255, 0.22)',
@@ -233,7 +235,7 @@ export const styles = StyleSheet.create({
     },
     activityLogTitle: {
         fontFamily: MONO,
-        fontSize: 10,
+        fontSize: 11,
         color: CYAN_DIM,
         letterSpacing: 2,
         marginBottom: 4,
@@ -243,10 +245,10 @@ export const styles = StyleSheet.create({
     },
     activityLogLine: {
         fontFamily: MONO,
-        fontSize: 11,
+        fontSize: 13,
         color: TEXT,
-        lineHeight: 16,
-        marginBottom: 3,
+        lineHeight: 19,
+        marginBottom: 5,
     },
     activityLogLabelUser: {
         color: GREEN,
@@ -258,7 +260,7 @@ export const styles = StyleSheet.create({
     },
     activityLogEmpty: {
         fontFamily: MONO,
-        fontSize: 11,
+        fontSize: 13,
         color: CYAN_DIM,
         fontStyle: 'italic',
     },

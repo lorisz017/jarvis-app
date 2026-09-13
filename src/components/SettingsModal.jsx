@@ -147,9 +147,12 @@ export default function SettingsModal({
                                     onToggle={onToggleVoice}
                                 />
                                 <Text style={styles.settingsHint}>
-                                    Con la voce spenta, J.A.R.V.I.S. risponde solo a schermo.
+                                    Con la voce spenta J.A.R.V.I.S. risponde solo a schermo, anche in
+                                    conversazione: continua ad ascoltare e a capire, ma non parla.
                                 </Text>
 
+                                {isCommandModeEnabled ? (
+                                <>
                                 <Text style={styles.settingsSectionTitle}>VOCE NATURALE</Text>
                                 {erroreVoce ? (
                                     <Text style={styles.settingsHint}>
@@ -188,6 +191,8 @@ export default function SettingsModal({
                                         Nessuna voce disponibile: si usa quella di sistema.
                                     </Text>
                                 )}
+                                </>
+                                ) : null}
                             </View>
                         )}
 
@@ -246,9 +251,9 @@ export default function SettingsModal({
 
                                 <Text style={styles.settingsSectionTitle}>TECNOLOGIE</Text>
                                 <Text style={styles.aboutText}>
-                                    Trascrizione e ragionamento tramite Groq (Whisper, GPT-OSS), ricerca sul
-                                    web tramite Gemini, voce naturale tramite Deepgram, meteo tramite
-                                    Open-Meteo. Applicazione realizzata con React Native ed Expo.
+                                    Conversazione, voce e ragionamento tramite Gemini. Ricerca sul web
+                                    tramite DuckDuckGo, meteo tramite Open-Meteo. Applicazione
+                                    realizzata con React Native ed Expo.
                                 </Text>
                             </View>
                         )}

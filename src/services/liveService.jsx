@@ -141,6 +141,41 @@ export class LiveSession {
         this.chiusaVolutamente = false;
         this.staParlando = false;
         this.pezziSopraSoglia = 0;
+        // Con la voce spenta la conversazione continua a funzionare, ma non
+        // si sente: l'audio arriva e viene scartato invece che suonato, e
+        // resta la trascrizione a schermo.
+        this.muta = false;
+    }
+
+    /** Accende o spegne la voce senza chiudere la conversazione. */
+    setMuta(muta) {
+        this.muta = Boolean(muta);
+        if (this.muta) this._zittisci();
+    }
+
+    /**
+     * Manda una frase scritta dentro la conversazione.
+     *
+     * Serve quando non si può parlare. Non è una modalità a parte: entra
+     * nella stessa sessione, con la stessa memoria, e la risposta torna a
+     * voce come tutte le altre.
+     */
+    sendText(testo) {
+        const pulito = String(testo || '').trim();
+        if (!pulito || !this.pronta) return false;
+
+        // Quello che stava dicendo va zittito: chi scrive mentre l'altro
+        // parla si aspetta di essere ascoltato, esattamente come chi parla.
+        this._zittisci();
+
+        this._invia({
+            clientContent: {
+                turns: [{role: 'user', parts: [{text: pulito}]}],
+                turnComplete: true,
+            },
+        });
+
+        return true;
     }
 
     async start() {
@@ -266,7 +301,7 @@ export class LiveSession {
 
         for (const parte of contenuto?.modelTurn?.parts || []) {
             const suono = parte.inlineData?.data;
-            if (suono) {
+            if (suono && !this.muta) {
                 this.staParlando = true;
                 this.pezziSopraSoglia = 0;
                 audio?.playChunk(suono);

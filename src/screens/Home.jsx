@@ -186,6 +186,7 @@ export default function Home() {
     const toggleVoice = () => {
         setIsVoiceEnabled((prev) => {
             const next = !prev;
+            sessioneLiveRef.current?.setMuta(!next);
             if (!next) {
                 stopJarvisVoice();
                 flushLiveAudio();
@@ -597,6 +598,7 @@ export default function Home() {
             },
         });
 
+        sessione.setMuta(!isVoiceEnabled);
         sessioneLiveRef.current = sessione;
         await sessione.start();
     };
@@ -630,6 +632,13 @@ export default function Home() {
         stopJarvisVoice();
         flushLiveAudio();
         setTypedText('');
+
+        // In conversazione la frase scritta entra nella sessione aperta
+        // invece di aprire un giro a parte: stessa memoria, stessa voce.
+        if (sessioneLiveRef.current?.sendText(message)) {
+            setChatHistory((prev) => [...prev, {role: 'user', content: message, live: true}]);
+            return;
+        }
 
         await processTextMessage({
             text: message,
@@ -682,7 +691,10 @@ export default function Home() {
                 <MicrophoneButton
                     onPress={
                         modalita === 'conversazione'
-                            ? toggleLive
+                            // Mentre si collega il tocco si ignora: premendo
+                            // più volte si apriva e chiudeva la sessione a
+                            // metà collegamento, e il risultato era confusione.
+                            ? (statoLive === 'connessione' ? () => {} : toggleLive)
                             : recorderState.isRecording ? stopRecording : record
                     }
                     isRecording={
@@ -710,12 +722,13 @@ export default function Home() {
                     {modalita === 'conversazione' ? (
                         <Text style={styles.conversazioneNota}>
                             {statoLive === 'attiva'
-                                ? 'La conversazione è aperta, signore. Parli pure: la interrompo quando ricomincia a parlare.'
+                                ? 'La conversazione è aperta, signore. Parli pure, o scriva se preferisce.'
                                 : statoLive === 'connessione'
                                     ? 'Mi sto collegando, signore...'
-                                    : 'Conversazione chiusa.'}
+                                    : 'Conversazione chiusa. Tocchi il cerchio per riaprirla.'}
                         </Text>
-                    ) : (
+                    ) : null}
+
                     <KeyboardAvoidingView
                         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                         style={styles.textInputRow}
@@ -733,7 +746,6 @@ export default function Home() {
                             <Text style={styles.sendButtonText}>➤</Text>
                         </TouchableOpacity>
                     </KeyboardAvoidingView>
-                    )}
 
                     <View style={styles.actionRow}>
                         <TouchableOpacity style={styles.pillButton} onPress={() => setIsVoicePickerVisible(true)}>
