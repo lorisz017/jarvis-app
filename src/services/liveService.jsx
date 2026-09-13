@@ -101,11 +101,32 @@ export class LiveSession {
 
         this.socket.onopen = () => this._mandaConfigurazione();
         this.socket.onmessage = (evento) => this._riceviMessaggio(evento);
-        this.socket.onerror = () => this.onErrore(new Error('Connessione interrotta'));
-        this.socket.onclose = () => {
+        this.socket.onerror = (evento) => {
+            this.onErrore(new Error(evento?.message || 'Connessione interrotta'));
+        };
+
+        this.socket.onclose = (evento) => {
+            const eraPronta = this.pronta;
             this.pronta = false;
             this._fermaMicrofono();
             audio?.stopPlayback();
+
+            // Quando il server rifiuta qualcosa non manda un errore: chiude e
+            // basta, e il motivo sta tutto nel codice di chiusura e nella
+            // riga che lo accompagna. Senza leggerli, una sessione che muore
+            // dopo un secondo è indistinguibile da una che non parte affatto
+            // — che è esattamente com'era al collaudo.
+            if (!this.chiusaVolutamente) {
+                const codice = evento?.code ?? 'ignoto';
+                const motivo = (evento?.reason || '').trim();
+                this.onErrore(new Error(
+                    `Sessione chiusa dal server (codice ${codice})` +
+                    (motivo ? `: ${motivo}` : eraPronta
+                        ? ', senza motivo indicato, dopo che era già attiva'
+                        : ', senza motivo indicato, prima di diventare attiva')
+                ));
+            }
+
             this.onStato('chiusa');
         };
 
@@ -129,9 +150,6 @@ export class LiveSession {
                 // di quello che ci si è detti.
                 inputAudioTranscription: {},
                 outputAudioTranscription: {},
-                // Finestra scorrevole: la conversazione non muore quando il
-                // contesto si riempie, e si può restare a parlare a lungo.
-                contextWindowCompression: {slidingWindow: {}},
             },
         });
     }
@@ -146,6 +164,15 @@ export class LiveSession {
                 : await new Response(evento.data).text();
             messaggio = JSON.parse(grezzo);
         } catch (error) {
+            return;
+        }
+
+        // Il server segnala i problemi anche dentro i messaggi, non solo
+        // chiudendo: se c'è, questo è il motivo scritto a lettere.
+        if (messaggio.error) {
+            this.onErrore(new Error(
+                messaggio.error.message || JSON.stringify(messaggio.error)
+            ));
             return;
         }
 

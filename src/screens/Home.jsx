@@ -532,6 +532,13 @@ export default function Home() {
             },
             onErrore: (errore) => {
                 console.warn('Conversazione continua:', errore);
+                // Anche nel registro, non solo in una finestra: la finestra si
+                // chiude con un tocco e il motivo sparisce, e senza quel
+                // motivo non si capisce perché la conversazione sia morta.
+                setChatHistory((prev) => [
+                    ...prev,
+                    {role: 'assistant', content: `Conversazione continua: ${errore.message}`},
+                ]);
                 Alert.alert('Conversazione continua', errore.message);
                 fermaLive();
             },

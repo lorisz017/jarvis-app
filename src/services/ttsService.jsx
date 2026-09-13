@@ -24,7 +24,6 @@ async function fetchVoce(url, opzioni = {}) {
     }
 }
 
-const geminiApiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
 const deepgramApiKey = process.env.EXPO_PUBLIC_DEEPGRAM_API_KEY;
 
 const DEEPGRAM_URL = 'https://api.deepgram.com/v1/speak';
@@ -35,12 +34,6 @@ const DEEPGRAM_MODELS_URL = 'https://api.deepgram.com/v1/models';
 // voci italiane disponibili.
 let preferredVoice = '';
 
-// Modello TTS di Gemini e voce predefinita.
-// Voci disponibili (30+): Charon, Puck, Kore, Fenrir, Aoede, Zephyr, Leda,
-// Orus, Enceladus, Iapetus, Algieba, Schedar, Sadachbia, Achird...
-// Charon e Fenrir sono le più profonde/maschili, adatte a J.A.R.V.I.S.
-const TTS_MODEL = 'gemini-3.1-flash-tts-preview';
-const TTS_VOICE = 'Charon';
 
 // Gemini restituisce audio PCM grezzo a 24 kHz, mono, 16 bit.
 // Android non sa riprodurre il PCM nudo: va incapsulato in un file WAV.
@@ -463,45 +456,6 @@ const speakWithDeviceVoice = (text, { scrollRef, setDisplayedText }) => {
     });
 };
 
-// Voce di Gemini. Restituisce true se ha parlato davvero.
-async function speakWithGemini(text) {
-    if (!geminiApiKey) return false;
-
-    const response = await fetchVoce(
-        `https://generativelanguage.googleapis.com/v1beta/models/${TTS_MODEL}:generateContent?key=${geminiApiKey}`,
-        {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                contents: [{
-                    parts: [{
-                        text: `Leggi con voce calma, sicura e leggermente formale, come un maggiordomo britannico d'élite: ${text}`,
-                    }],
-                }],
-                generationConfig: {
-                    responseModalities: ['AUDIO'],
-                    speechConfig: {
-                        voiceConfig: {prebuiltVoiceConfig: {voiceName: TTS_VOICE}},
-                    },
-                },
-            }),
-        }
-    );
-
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-        throw new Error(data.error?.message || `Gemini TTS HTTP ${response.status}`);
-    }
-
-    const pcmBase64 = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-    if (!pcmBase64) return false;
-
-    // PCM grezzo -> file WAV riproducibile, al volume di riferimento
-    await playAudioFile(await writeWavFile(pcmBase64));
-    return true;
-}
-
 export const speakJarvisResponse = async ({
                                               text,
                                               scrollRef,
@@ -514,15 +468,14 @@ export const speakJarvisResponse = async ({
     setDisplayedText(text);
     scrollRef?.current?.scrollToEnd({animated: true});
 
-    // Gemini per primo: è il timbro che convince. Deepgram sotto, che è
-    // quello che regge quando la quota di Gemini — stretta — si esaurisce.
-    // In fondo la voce di sistema, così l'assistente non resta mai muto.
-    try {
-        if (await speakWithGemini(text)) return;
-    } catch (err) {
-        console.warn('Voce Gemini non disponibile, passo a Deepgram:', err.message);
-    }
-
+    // Deepgram, poi la voce di sistema. Nient'altro.
+    //
+    // La sintesi di Gemini è stata provata e tolta: suona peggio e ci mette
+    // molto di più, perché genera l'audio con una richiesta completa invece
+    // che con un servizio fatto per parlare. La voce che vale davvero non è
+    // una sintesi di nessuno: è quella del modello Live, che risponde da sé
+    // in modalità conversazione. Tenere un terzo fornitore qui non serviva
+    // ad altro che a complicare la catena.
     try {
         if (await speakWithDeepgram(text)) return;
     } catch (err) {
