@@ -186,8 +186,20 @@ pannello perennemente traslucido è un pannello che si fatica a leggere.
   montato finché l'animazione di chiusura non è finita, altrimenti sparirebbe
   di scatto a metà.
 - `TastoLiquido` sostituisce `TouchableOpacity` sui tasti che si premono di
-  continuo. Lo stile va sul `Pressable` e non sul contenitore, altrimenti
-  l'area toccabile si restringe di quanto vale il bordo interno.
+  continuo, ed è **un nodo solo**: l'animazione si aggiunge allo stesso
+  premibile che porta lo stile, senza contenitori attorno.
+
+  **Un contenitore in mezzo rompe la schermata**, ed è costato una build.
+  Uno stile non descrive solo l'aspetto: dice anche **dove sta la cosa** —
+  `position: absolute`, `flex: 1`, i margini — e quelle proprietà valgono
+  rispetto al genitore. Infilando un contenitore fra il genitore e il tasto,
+  i due tondi in alto (che sono assoluti) si sono messi a posizionarsi
+  rispetto a un riquadro di dimensione zero: si vedevano al loro posto e non
+  ricevevano più il tocco, perché su Android quello che esce dai confini del
+  genitore non viene toccato. Le tre pastiglie in fondo, che si dividono la
+  riga con `flex: 1`, si sono accartocciate in un angolo. Vale per qualunque
+  componente che avvolga qualcosa di già disposto: **lo stile di disposizione
+  non si sposta di nodo.**
 - La leva delle modalità si stira nel verso in cui va (`scaleX` in su,
   `scaleY` in giù) e un velo la attraversa: è la stessa idea della goccia che
   si allunga e si ricompone.
