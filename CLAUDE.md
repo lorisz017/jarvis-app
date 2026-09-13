@@ -206,13 +206,28 @@ controllare niente:
 - **Ricostruire il pacchetto JavaScript**
   (`npx esbuild index.js --bundle --packages=external --loader:.js=jsx`)
   prende import rotti, funzioni che non esistono, stringhe non chiuse.
-- **Controllare che ogni `styles.X` citato esista** in `mainStyles.jsx`: un
-  nome sbagliato lì non lo segnala nessuno finché la schermata non si apre.
+- **`python3 strumenti/controlla.py`**, sempre, prima di dire che è pronto.
+  Fa i due controlli che il pacchetto **non** fa: che ogni componente usato
+  in JSX sia importato o definito nel file, e che ogni `styles.X` citato
+  esista in `mainStyles.jsx`.
+
+  Il primo è costato una build. `esbuild` compila benissimo un `<Pippo/>` che
+  non esiste da nessuna parte — per lui è solo una variabile libera — e il
+  vuoto si scopre all'apertura della schermata, cioè sul telefono, con l'app
+  che si chiude. È successo perché una sostituzione automatica non aveva
+  trovato la riga di import che cercava (`{ styles }` con gli spazi invece di
+  `{styles}`) e nessuno se n'era accorto: da qui la seconda regola, sotto.
 - **Provare le funzioni pure con Node**: SHA-256 e base64 sono stati
   confrontati con l'implementazione di riferimento prima di finire in una
   build.
 - **Eseguire davvero** i pezzi di shell dei workflow prima di spingerli: una
   doppia barra rovesciata a fine riga ha già fatto fallire una build.
+- **Ogni sostituzione automatica va verificata che abbia davvero sostituito.**
+  Modificare i file con uno script è l'unico modo pratico di lavorare qui, ma
+  una `replace` che non trova niente non dà errore: restituisce il testo
+  identico e tira dritto. Ogni sostituzione vuole la sua verifica — un
+  `assert` sul testo cercato prima, o un controllo del risultato dopo — se no
+  quello che si è saltato lo scopre lui.
 - Quello che **non** si può verificare: il Kotlin (niente SDK) e qualunque
   cosa passi da un WebSocket (bloccati in uscita da questo ambiente, anche
   verso un server di prova).

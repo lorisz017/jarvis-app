@@ -2,6 +2,8 @@ import React from 'react';
 import { View, Text, TouchableOpacity, FlatList } from 'react-native';
 import * as Speech from 'expo-speech';
 import { styles } from '../styles/mainStyles';
+import FoglioLiquido from './FoglioLiquido';
+import TastoLiquido from './TastoLiquido';
 
 export default function VoicePickerModal({
                                              isVisible,
