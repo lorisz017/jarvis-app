@@ -5,6 +5,147 @@ per quella ci sono `README.md` e `STATO_FUNZIONI.md`. Qui stanno le cose che
 altrimenti vivrebbero solo nella conversazione, e che si perdono quando la
 conversazione viene compattata.
 
+## Che cos'è
+
+J.A.R.V.I.S. Mobile: un assistente vocale Android in italiano, che oltre a
+rispondere **agisce sul telefono** — sveglie, timer, chiamate, messaggi,
+navigazione, calendario.
+
+Due debiti d'origine, entrambi nei crediti e da tenere così:
+
+- **[az11k-dev/jarvis-app](https://github.com/az11k-dev/jarvis-app)** — lo
+  scheletro iniziale. Nei crediti va nominato **solo per quello**: tutto il
+  resto (interfaccia, azioni, voce) è di lorisz017.
+- **[FatihMakes/Mark-LIII](https://github.com/FatihMakes/Mark-LIII)** — un
+  assistente desktop in Python. Non è codice di partenza, è l'idea. Va nei
+  crediti come ringraziamento, e la nota sulla sua licenza CC BY-NC (che non
+  si combina con MIT) sta in fondo, sotto Licenza, non accanto al
+  ringraziamento.
+
+È anche la migliore documentazione che abbiamo: quando qualcosa non funziona
+qui e lì funziona, **conviene leggere come lo fa lui**. È già successo due
+volte, e tutte e due le volte ha risolto.
+
+## Com'è fatto
+
+React Native 0.81 con Expo SDK 54, ma in **bare workflow**: le cartelle
+`android/` e `ios/` sono committate nel repository. Ha una conseguenza che
+costa una giornata a scoprirla da soli:
+
+- **EAS salta il prebuild**, quindi le impostazioni native in
+  `app.config.js` — permessi, temi — vengono **ignorate**. Un permesso nuovo
+  va scritto a mano in `android/app/src/main/AndroidManifest.xml`.
+- La versione che finisce nell'APK è `versionName` in
+  `android/app/build.gradle`, non `version` in `app.config.js`.
+
+### Il percorso di una richiesta
+
+1. **Si parla** → la registrazione va a Whisper su Groq e torna trascritta.
+2. **Ragiona** → il testo va a Gemini, con l'elenco delle azioni disponibili.
+   Groq resta sotto come riserva.
+3. **Agisce** → se il modello chiede delle azioni, l'app le esegue in ordine
+   e le conferma tutte insieme.
+4. **Risponde** → la voce di Edge legge la risposta, con Deepgram sotto e la
+   voce di sistema in fondo.
+
+La **conversazione continua** (pulsante PARLA) non fa niente di tutto questo:
+una connessione aperta con Gemini Live, audio che entra ed esce a flusso, un
+modello solo che ascolta e risponde con la propria voce.
+
+### Dove sta cosa
+
+| File | Cosa fa |
+|---|---|
+| `src/services/jarvisService.jsx` | Il cuore: trascrizione, ragionamento, ciclo delle azioni, ricerca |
+| `src/services/geminiChatService.jsx` | Traduce fra il formato di Groq e quello di Gemini, nei due sensi |
+| `src/services/liveService.jsx` | La conversazione continua |
+| `src/services/tools.jsx` | Le 18 azioni: schema per il modello ed esecuzione |
+| `src/services/ttsService.jsx` | La catena della voce e il pareggiamento del volume |
+| `src/services/edgeTtsService.jsx` | La voce di Edge |
+| `src/services/webSearchService.jsx` | Ricerca via DuckDuckGo, con lettura delle pagine |
+| `src/services/deviceActions.jsx` | Sveglie, timer, meteo, calendario |
+| `src/services/overlayService.jsx` | Il ponte con la bolla nativa |
+| `src/utils/constants.jsx` | Il prompt di sistema |
+| `src/utils/sha256.jsx`, `base64.jsx` | Funzioni pure, verificate contro Node |
+| `android/.../overlay/` | Il codice nativo: bolla, servizio, audio a flusso |
+
+Il codice nativo è registrato **a mano** in `MainApplication.kt`
+(`packages.add(JarvisOverlayPackage())`): non essendo una libreria di
+terze parti, non viene agganciato in automatico.
+
+## I fornitori, e i loro limiti
+
+| Servizio | A cosa serve | Limite da ricordare |
+|---|---|---|
+| **Groq** | Trascrizione (Whisper), ragionamento di riserva | **8000 token al minuto.** Una sola richiesta di quest'app ne consuma ~3000 |
+| **Gemini** | Ragionamento, conversazione continua | Tetto alto. La **ricerca Google** però non è nel piano gratuito |
+| **Edge** | Voce principale | Nessuna chiave, nessuna quota. **Non è una API ufficiale** |
+| **Deepgram** | Voce di riserva | $200 di credito che non scade. Ottimizzata per la latenza, non per la qualità |
+| **DuckDuckGo** | Ricerca sul web | Nessuna chiave. Pagine HTML da leggere, non una API |
+| **Open-Meteo** | Meteo | Nessuna chiave |
+
+Scartati, e perché — per non ripercorrerli:
+
+- **Tavily** — funzionerebbe, ma era una registrazione in più per un problema
+  che DuckDuckGo risolve senza chiedere niente.
+- **Kokoro** (open source, illimitato) — ha un difetto aperto: le voci
+  italiane pronunciano con accento inglese.
+- **ElevenLabs** — la voce migliore in assoluto, ma 10.000 crediti al mese
+  sono dieci minuti di parlato.
+- **Sintesi vocale di Gemini** — provata e tolta: suona peggio di Deepgram e
+  ci mette molto di più, perché genera l'audio con una richiesta completa al
+  modello invece che con un servizio fatto per parlare.
+- **Speechify** (50.000 caratteri al mese, senza carta, prima nelle
+  classifiche indipendenti) e **Cartesia Sonic-3** (20.000 al mese) — **non
+  scartati**: sono il piano B se la voce di Edge si chiude.
+
+## Le trappole di Android, imparate una alla volta
+
+Ognuna di queste è costata almeno una build, alcune parecchie:
+
+- `Linking.sendIntent` manda ogni numero come **decimale**, quindi gli intent
+  che leggono interi (`SET_ALARM`, `SET_TIMER`) si ritrovano i valori di
+  default **senza dare errore**. Si usa `expo-intent-launcher`.
+- Un servizio in primo piano ottiene il tipo **microfono** solo se l'app è in
+  primo piano **nel momento in cui il servizio parte**. Farlo partire mentre
+  si esce — il momento ovvio per una bolla — è l'unico che Android rifiuta, e
+  l'eccezione esce da `onCreate` portandosi giù l'applicazione.
+- Per riprodurre audio da fuori serve **anche** il tipo riproduzione
+  multimediale. Senza, Android fa partire l'audio e non lo manda da nessuna
+  parte.
+- Prima di riprodurre si esce dalla modalità registrazione: finché la
+  sessione è impegnata dal microfono, si può suonare nel vuoto.
+- Un'app in secondo piano **non può aprire la schermata di un'altra app**.
+  Impostare una sveglia apre l'orologio, e da lì ogni azione successiva della
+  catena viene scartata in silenzio. Il permesso di sovrapposizione è
+  l'eccezione prevista: si torna davanti, e si **aspetta di esserci davvero**.
+- Ogni richiesta di rete vuole un limite di tempo. Dentro l'app una richiesta
+  bloccata sembra lenta; da una bolla non c'è schermo, ed è indistinguibile
+  da un'app morta.
+- Le richieste che comportano azioni vogliono una **temperatura bassa**. Col
+  valore predefinito il modello ripianifica ogni volta la stessa frase in modo
+  diverso, e quale azione sopravviva a una catena diventa un sorteggio.
+- In Kotlin gli **apici singoli sono un carattere**, non una stringa.
+
+## Cosa si può verificare prima di una build
+
+Qui non c'è né SDK Android né telefono, ma non è vero che non si può
+controllare niente:
+
+- **Ricostruire il pacchetto JavaScript**
+  (`npx esbuild index.js --bundle --packages=external --loader:.js=jsx`)
+  prende import rotti, funzioni che non esistono, stringhe non chiuse.
+- **Controllare che ogni `styles.X` citato esista** in `mainStyles.jsx`: un
+  nome sbagliato lì non lo segnala nessuno finché la schermata non si apre.
+- **Provare le funzioni pure con Node**: SHA-256 e base64 sono stati
+  confrontati con l'implementazione di riferimento prima di finire in una
+  build.
+- **Eseguire davvero** i pezzi di shell dei workflow prima di spingerli: una
+  doppia barra rovesciata a fine riga ha già fatto fallire una build.
+- Quello che **non** si può verificare: il Kotlin (niente SDK) e qualunque
+  cosa passi da un WebSocket (bloccati in uscita da questo ambiente, anche
+  verso un server di prova).
+
 ## Chi fa cosa
 
 lorisz017 lavora **solo dal browser del telefono**: niente ambiente di
@@ -71,9 +212,9 @@ Conversazione salvata, preferenze e permessi concessi restano come sono.
 
 - **In italiano.** Il README ha due metà, inglese e italiano; quella italiana
   è scritta in forma impersonale, non dando del lei.
-- **Ogni messaggio finisce con la lista `📋 DA TESTARE ALLA PROSSIMA BUILD`**,
-  divisa per argomento, con in fondo la sezione `⏳ In attesa di
-  configurazione` per le chiavi mancanti. È il formato che ha scelto lui.
+- **Ogni messaggio finisce con la lista da testare.** Sempre, anche quando il
+  messaggio è breve o non si è toccato codice. Il formato è quello qui sotto
+  e l'ha scelto lui: va rispettato, non reinventato ogni volta.
 - **Gli orari si scrivono nel suo fuso**, che è due ore avanti rispetto a UTC.
   GitHub mostra tutto in UTC: va tradotto prima di scriverlo.
 - **Niente attese a tempo fisso** per aspettare una build: sono tiri a
@@ -84,6 +225,46 @@ Le build lanciate da Claude compaiono su GitHub a nome di lorisz017, perché
 Claude agisce con la sua autorizzazione e non ha un'identità propria lì
 dentro. Non vuol dire che le abbia lanciate lui.
 
+## Il formato della lista da testare
+
+Va in fondo a **ogni** messaggio, così com'è:
+
+```markdown
+---
+
+## 📋 DA TESTARE ALLA PROSSIMA BUILD
+
+### [Nome del gruppo]
+
+1. **[Cosa provare]** — [come provarlo, e cosa deve succedere perché sia a posto]
+2. **[Cosa provare]** — [...]
+
+### [Un altro gruppo]
+
+3. **[...]** — [...]
+
+### ⏳ In attesa di configurazione
+
+- **`NOME_DEL_SECRET`** → [a cosa serve, e cosa resta fermo senza]
+```
+
+Le regole che lo rendono utile invece che decorativo:
+
+- **La numerazione è continua** attraverso i gruppi: 1, 2, 3, 4… non riparte
+  da capo a ogni titolo. Serve per poter dire "il punto 4 non funziona".
+- **I gruppi si nominano in base al giro in corso** — "La bolla", "Le
+  catene", "La voce" — non con etichette fisse.
+- **Le cose nuove o rischiose stanno in cima**, le conferme di routine in
+  fondo.
+- **Ogni punto dice anche come si capisce che è andato bene**, non solo cosa
+  toccare. "Deve rispondere con la sua voce restando fuori dall'app" è utile;
+  "prova la bolla" non lo è.
+- Quando una cosa si sa già rotta, ci va **un gruppo che dice di non
+  provarla** e perché: fargli ricollaudare un problema noto è tempo suo
+  buttato.
+- Se il titolo dice "IN QUESTA BUILD" invece di "ALLA PROSSIMA", è perché la
+  build è già pronta da installare.
+
 ## I documenti da tenere aggiornati
 
 - **`README.md`** — le due metà vanno tenute allineate fra loro. La sezione
@@ -92,6 +273,24 @@ dentro. Non vuol dire che le abbia lanciate lui.
 - **`STATO_FUNZIONI.md`** — cosa funziona, cosa no, e **perché**. La sezione
   "Cosa resta aperto" è quella che conta: ci va la diagnosi, non solo il
   sintomo.
+
+## Cosa è ancora aperto
+
+Lo stato dettagliato sta in `STATO_FUNZIONI.md`; qui la sostanza:
+
+- **La bolla flottante** non dà segni di vita fuori dall'app. Ci sono state
+  quattro correzioni, e dopo ognuna era "meno rotta ma rotta". La conclusione
+  è che la strada è sbagliata, non la toppa: la bolla passa dal giro
+  registra → trascrivi → ragiona → sintetizza → riproduci, cinque passaggi
+  che fuori dall'app possono fallire in silenzio. **Il piano è spostarla
+  sulla conversazione continua** appena quella funziona, e smettere di
+  rattoppare il giro vecchio.
+- **La conversazione continua** moriva dopo un secondo. Causa trovata e
+  corretta: l'audio andava mandato in `realtimeInput.audio`, non dentro
+  `mediaChunks`, che è deprecato. Da confermare sul telefono.
+- **La voce di Edge** non parla ancora: si sente la riserva. Da qui non è
+  verificabile — i WebSocket non escono da questo ambiente — quindi l'app
+  adesso riporta il motivo del rifiuto nelle impostazioni.
 
 ## Una cosa imparata a caro prezzo
 
