@@ -332,11 +332,12 @@ registro più grande, il riconoscimento del creatore, l'icona nuova.
 
 **Ancora aperto davvero:**
 
-- **La voce di Edge** non parla: si sente la riserva. Vale solo per la
-  modalità a comandi, quindi non è urgente — in conversazione la voce non è
-  una sintesi. L'app riporta il motivo del rifiuto nelle impostazioni, sotto
-  la voce; da qui non è verificabile perché i WebSocket non escono. Se non si
-  sblocca, il piano B è Speechify o Cartesia.
+- **La voce di Edge non è più un problema aperto, e non va rimessa in lista.**
+  Non parla e si sente la riserva, ma la sintesi vocale riguarda solo la
+  modalità a comandi, che ora è un ripiego dietro un interruttore: in
+  conversazione la voce è il modello stesso. Resta scritto qui perché è già
+  stato affrontato, non perché serva ricollaudarlo. Se un giorno la modalità
+  a comandi tornasse in primo piano, il piano B è Speechify o Cartesia.
 - **`EXPO_PUBLIC_GITHUB_TOKEN_KEY`** non è mai stata configurata: i tre
   comandi GitHub sono fermi lì.
 
