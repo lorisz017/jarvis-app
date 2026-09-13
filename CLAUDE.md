@@ -36,9 +36,18 @@ costa una giornata a scoprirla da soli:
   `app.config.js` — permessi, temi — vengono **ignorate**. Un permesso nuovo
   va scritto a mano in `android/app/src/main/AndroidManifest.xml`.
 - La versione che finisce nell'APK è `versionName` in
-  `android/app/build.gradle`, non `version` in `app.config.js`.
+  `android/app/build.gradle`, non `version` in `app.config.js`. Vanno tenuti
+  allineati lo stesso — insieme a `package.json` e a `APP_VERSION` in
+  `SettingsModal.jsx`, che è quella mostrata nella scheda Info.
+- **L'icona è generata da codice.** Non c'è nessuna libreria di immagini in
+  questo ambiente, quindi i PNG sono scritti a mano con `zlib`: il disegno è
+  il radar dell'app, con quattro campioni per lato contro i bordi a scaletta.
+  Lo script sta nello scratchpad della sessione in cui è stata fatta; se
+  serve rifarla, si riscrive — sono sessanta righe. L'area sicura di
+  un'icona adattiva è il cerchio centrale, circa il 60% del lato: fuori di
+  lì ogni telefono taglia in modo diverso.
 
-### Il percorso di una richiesta
+### Il percorso di una richiesta (modalità a comandi)
 
 1. **Si parla** → la registrazione va a Whisper su Groq e torna trascritta.
 2. **Ragiona** → il testo va a Gemini, con l'elenco delle azioni disponibili.
@@ -308,20 +317,24 @@ Le regole che lo rendono utile invece che decorativo:
 
 ## Cosa è ancora aperto
 
-Lo stato dettagliato sta in `STATO_FUNZIONI.md`; qui la sostanza:
+Lo stato dettagliato sta in `STATO_FUNZIONI.md`; qui la sostanza.
 
-- **La conversazione continua funziona**, ed è la parte migliore del
-  progetto: si attiva, si parla, resta aperta, risponde in un istante, e le
-  azioni partono più in fretta che dal giro normale. La voce è quella che
-  lorisz017 voleva fin dall'inizio — **non va cambiata**.
-- **La bolla** è stata spostata su quella modalità. Il giro precedente aveva
-  cinque passaggi che fuori dall'app potevano fallire in silenzio, e quattro
-  correzioni non erano bastate: il problema era la strada.
-- **La voce di Edge** resta da verificare per la modalità a comandi. È meno
-  urgente di prima: in conversazione la voce non è una sintesi, è il modello
-  che parla. Se non si sblocca, il piano B è Speechify o Cartesia.
-- **Da confermare sul telefono**: la leva, l'interruzione immediata, la
-  ricerca come azione e la bolla sulla strada nuova.
+**Funziona e va lasciato stare:** la conversazione continua, la sua voce, le
+azioni concatenate, la ricerca, l'interruzione immediata, la bolla.
+
+**Da confermare sul telefono** (versione 3.0.0): la memoria personale, il
+campo di testo dentro la conversazione, la voce spegnibile anche lì, il
+registro più grande, il riconoscimento del creatore, l'icona nuova.
+
+**Ancora aperto davvero:**
+
+- **La voce di Edge** non parla: si sente la riserva. Vale solo per la
+  modalità a comandi, quindi non è urgente — in conversazione la voce non è
+  una sintesi. L'app riporta il motivo del rifiuto nelle impostazioni, sotto
+  la voce; da qui non è verificabile perché i WebSocket non escono. Se non si
+  sblocca, il piano B è Speechify o Cartesia.
+- **`EXPO_PUBLIC_GITHUB_TOKEN_KEY`** non è mai stata configurata: i tre
+  comandi GitHub sono fermi lì.
 
 Cose decise, da non rimettere in discussione:
 
@@ -333,10 +346,8 @@ Cose decise, da non rimettere in discussione:
   motivo è che è l'unica strada che non passa da Gemini: il giorno che il
   modello Live non risponde — è in anteprima — quella è la differenza fra
   un'app più lenta e un'app morta.
-- Per lo stesso motivo **Groq e Deepgram restano**. Ha detto che potrebbero
-  andarsene e ha ragione sul fatto che non servono a niente finché tutto
-  funziona: sono lì proprio per quando qualcosa non funzionerà. Non costano
-  nulla e non si vedono.
+- Per lo stesso motivo **Groq e Deepgram restano**. Non servono a niente
+  finché tutto funziona: sono lì proprio per quando qualcosa non funzionerà.
 
 ## Una cosa imparata a caro prezzo
 

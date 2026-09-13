@@ -20,7 +20,7 @@ It speaks and understands **Italian**, and it runs entirely on free API tiers.
 
 Phone assistants tend to fall into two camps: the ones built into the system, which are closed and can't be changed, and the chat apps, which talk beautifully but can't touch anything on your device. This project is an attempt at the middle ground — something that holds a real conversation *and* has hands.
 
-It started as a fork of an existing open-source assistant and grew from there: translated to Italian, rebuilt around free providers, given a heads-up-display interface, and taught roughly thirty commands that do actual work on the phone.
+It started as a fork of an existing open-source assistant and grew from there — and by version 3 the heart of it is a continuous spoken conversation rather than the command loop it began as: translated to Italian, rebuilt around free providers, given a heads-up-display interface, and taught roughly thirty commands that do actual work on the phone.
 
 ## How it works
 
@@ -170,7 +170,7 @@ Parla e capisce **italiano**, e funziona interamente con quote gratuite.
 
 Gli assistenti sul telefono tendono a dividersi in due categorie: quelli di sistema, chiusi e non modificabili, e le app di chat, che conversano benissimo ma non possono toccare nulla del dispositivo. Questo progetto prova a stare nel mezzo — qualcosa che sostiene una conversazione vera *e* ha le mani.
 
-È nato come fork di un assistente open source già esistente ed è cresciuto da lì: tradotto in italiano, ricostruito su provider gratuiti, dotato di un'interfaccia in stile HUD e istruito con una trentina di comandi che fanno cose concrete sul telefono.
+È nato come fork di un assistente open source già esistente ed è cresciuto da lì — e alla versione 3 il suo cuore è una conversazione continua a voce, non più il giro a comandi da cui era partito: tradotto in italiano, ricostruito su provider gratuiti, dotato di un'interfaccia in stile HUD e istruito con una trentina di comandi che fanno cose concrete sul telefono.
 
 ## Come funziona
 

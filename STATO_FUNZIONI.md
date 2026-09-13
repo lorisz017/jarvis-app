@@ -7,7 +7,7 @@ Legenda:
 - ❌ **Non funziona** — provata e non funzionante
 - ⏳ **Non testabile** — bloccata da qualcosa di esterno (chiave mancante)
 
-Ultimo aggiornamento: dopo il collaudo della bolla flottante, della ricerca via DuckDuckGo e delle catene di azioni.
+Ultimo aggiornamento: versione 3.0.0, dopo il passaggio alla conversazione continua come modalità normale.
 
 > **Su cosa è stato provato.** Il progetto è nelle sue prime fasi e tutte le
 > spunte qui sotto vengono da **un solo dispositivo: uno Xiaomi 17 con
