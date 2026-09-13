@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {Modal, View, Text, ScrollView, TouchableOpacity, TextInput, Linking} from 'react-native';
 import {styles} from '../styles/mainStyles';
 import {FEATURE_SECTIONS} from '../utils/features';
@@ -62,6 +62,27 @@ export default function SettingsModal({
     // Com'è andata al file, non cosa c'è dentro: senza questo, una scrittura
     // fallita si scopre solo riaprendo l'app e trovando il vuoto.
     const [diagnosi, setDiagnosi] = useState(null);
+    // Salvare solo quando si esce dalla casella non bastava: chiudendo il
+    // pannello con un tocco, la casella non perde il fuoco e quello che era
+    // stato scritto non veniva mai salvato. Ora si salva da solo poco dopo
+    // l'ultimo tasto, e comunque prima che il pannello si chiuda.
+    const attesaSalvataggio = useRef(null);
+    const notaRef = useRef(nota);
+    notaRef.current = nota;
+
+    const salvaNota = (testo) => {
+        clearTimeout(attesaSalvataggio.current);
+        attesaSalvataggio.current = null;
+        onSalvaNota?.(testo);
+    };
+
+    const scriviNota = (testo) => {
+        setNotaLocale(testo);
+        clearTimeout(attesaSalvataggio.current);
+        // Mezzo secondo dopo l'ultimo tasto: scrivere a ogni lettera
+        // vorrebbe dire toccare il disco a ogni battuta.
+        attesaSalvataggio.current = setTimeout(() => salvaNota(testo), 500);
+    };
 
     useEffect(() => {
         if (!isVisible) return;
@@ -70,6 +91,15 @@ export default function SettingsModal({
         onRileggiMemoria?.();
         setDiagnosi(statoMemoria());
     }, [isVisible, memoria]);
+
+    // Il pannello si chiude: quello che è rimasto nella casella va salvato
+    // adesso, non alla prossima apertura.
+    useEffect(() => {
+        if (isVisible) return;
+        if (attesaSalvataggio.current) salvaNota(notaRef.current);
+    }, [isVisible]);
+
+    useEffect(() => () => clearTimeout(attesaSalvataggio.current), []);
 
     // Se la memoria cambia da fuori — perché se l'è annotata lui mentre si
     // parlava — la casella deve rifletterlo invece di restare indietro.
@@ -129,8 +159,8 @@ export default function SettingsModal({
                                 <TextInput
                                     style={styles.memoriaInput}
                                     value={nota}
-                                    onChangeText={setNotaLocale}
-                                    onBlur={() => onSalvaNota?.(nota)}
+                                    onChangeText={scriviNota}
+                                    onBlur={() => salvaNota(nota)}
                                     placeholder="Mi chiamo... lavoro come... ho un..."
                                     placeholderTextColor="rgba(200, 244, 255, 0.35)"
                                     multiline

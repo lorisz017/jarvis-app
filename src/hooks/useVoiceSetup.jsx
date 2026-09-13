@@ -45,8 +45,13 @@ export const useVoiceSetup = ({
                     console.warn('Nessuna voce italiana trovata sul dispositivo.');
                 }
             } catch (err) {
-                console.error('Voice setup error:', err);
-                Alert.alert('Errore configurazione voce', err.message);
+                // Non è un guasto da annunciare. Qui si cerca la voce di
+                // sistema del telefono, che è l'ultima riserva della modalità
+                // a comandi: in conversazione la voce è il modello stesso e
+                // questa non entra mai in gioco. Se Android non la elenca,
+                // l'app funziona lo stesso — e una finestra a ogni avvio per
+                // dire che manca una riserva mai usata è solo rumore.
+                console.warn('Voci di sistema non disponibili:', err?.message || err);
             }
         };
 

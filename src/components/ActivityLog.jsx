@@ -1,17 +1,39 @@
-import React, {useEffect, useRef} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {View, ScrollView, Text} from 'react-native';
 import {styles} from '../styles/mainStyles';
 
+// Quanto si può stare sopra il fondo continuando a considerarsi "in fondo":
+// scorrendo con un dito non ci si ferma mai al pixel esatto.
+const VICINO_AL_FONDO = 40;
+
 export default function ActivityLog({chatHistory}) {
     const scrollRef = useRef();
+    // Finché si sta guardando il fondo, il registro segue la conversazione da
+    // solo. Appena si risale a rileggere qualcosa deve restare fermo: essere
+    // riportati in fondo mentre si legge è il modo più rapido di perdere il
+    // segno.
+    const [seguiIlFondo, setSeguiIlFondo] = useState(true);
 
     const entries = (chatHistory || []).filter(
         (message) => message.role === 'user' || message.role === 'assistant'
     );
 
+    // Non basta contare le righe: in conversazione l'ultima **cresce** parola
+    // per parola senza che ne compaiano di nuove, ed era proprio in quel caso
+    // che il registro restava indietro.
+    const ultimo = entries[entries.length - 1];
+    const impronta = `${entries.length}:${ultimo?.content?.length || 0}`;
+
     useEffect(() => {
+        if (!seguiIlFondo) return;
         scrollRef.current?.scrollToEnd({animated: true});
-    }, [entries.length]);
+    }, [impronta, seguiIlFondo]);
+
+    const guarda = ({nativeEvent}) => {
+        const {layoutMeasurement, contentOffset, contentSize} = nativeEvent;
+        const distanza = contentSize.height - layoutMeasurement.height - contentOffset.y;
+        setSeguiIlFondo(distanza <= VICINO_AL_FONDO);
+    };
 
     return (
         <View style={styles.activityLogContainer}>
@@ -21,6 +43,8 @@ export default function ActivityLog({chatHistory}) {
                 style={styles.activityLogScroll}
                 nestedScrollEnabled
                 showsVerticalScrollIndicator
+                onScroll={guarda}
+                scrollEventThrottle={80}
             >
                 {entries.length === 0 ? (
                     <Text style={styles.activityLogEmpty}>Nessuna attività, in attesa dei suoi comandi.</Text>

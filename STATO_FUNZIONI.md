@@ -28,7 +28,8 @@ L'ultima versione provata sul telefono e funzionante è sul ramo `funzionante`.
 | Comando vocale | Tocchi il radar e parli | ✅ |
 | Comando scritto | Campo di testo in fondo | ✅ vale in tutte e due le modalità: in conversazione la frase scritta entra nella sessione aperta |
 | Risposta parlata (voce Edge) | Automatica | ⚠️ non parte, si sente Deepgram. Riguarda solo la modalità a comandi: in conversazione la voce è il modello stesso |
-| Memoria personale | Impostazioni → Memoria | ⚠️ la nota si scrive e si conserva, ma al collaudo non arrivava al modello. Una causa è corretta, il resto ora si racconta da solo: vedi "Cosa resta aperto" |
+| Memoria personale — i ricordi | Automatica, parlando | ✅ si annota da solo, resta dopo la chiusura dell'app, e alla domanda successiva la sa |
+| Memoria personale — la nota | Impostazioni → Memoria | ⏳ corretta: non veniva salvata chiudendo il pannello senza uscire dalla casella |
 | Conversazione continua (modalità normale) | Si apre da sola all'avvio | ✅ **funziona**. Si attiva, si parla e resta aperta. Le azioni partono in un istante, più rapide che dal giro normale, e la voce è quella del modello stesso |
 | Scelta della voce naturale | Impostazioni → Voce naturale | ⏳ quattro voci italiane Edge: Diego, Giuseppe, Isabella, Elsa |
 | Volume pari fra le voci | Automatico | ✅ confermato: le voci più basse arrivano al livello delle altre |
@@ -117,6 +118,22 @@ L'ultima versione provata sul telefono e funzionante è sul ramo `funzionante`.
 ## Cosa resta aperto
 
 **Scrivere dentro la conversazione** — il campo di testo resta anche in conversazione, per quando parlare non è possibile. Non apre un giro a parte: la frase scritta entra nella sessione aperta, con la stessa memoria, e la risposta torna a voce. Con la voce spenta la conversazione continua ad ascoltare e a capire, ma non parla: l'audio arriva e viene scartato, e resta la trascrizione a schermo.
+
+**Sei difetti del collaudo della 3.0.0** — trovati tutti nella stessa sera, con cause diverse fra loro.
+
+*La nota scritta a mano spariva, i ricordi no.* Le due metà della memoria si salvano nello stesso file, quindi il file non c'entrava: la nota si salvava **solo quando la casella perdeva il fuoco**, e chiudendo il pannello con un tocco il fuoco non si perde mai. Ora si salva mezzo secondo dopo l'ultimo tasto e comunque prima che il pannello si chiuda. Il fatto che i ricordi annotati dal modello resistessero alla chiusura dell'app è anche la prova che il resto della memoria funziona.
+
+*Il radar non riprendeva dopo uno stop.* Fermando la conversazione, la chiusura del WebSocket riportava la leva sui comandi — un rimedio pensato per le sessioni che **cadono**, applicato anche a quelle chiuse apposta. Il radar passava così in mano alla modalità a comandi, e il tocco successivo apriva una registrazione invece di riaprire la conversazione. Da fuori sembrava semplicemente che non rispondesse più. Ora la chiusura dice se era voluta, e la leva si sposta solo se la sessione è caduta e solo se la modalità a comandi esiste.
+
+*Le accentate storpiate nel riquadro della risposta.* I messaggi della sessione arrivano anche come dati binari, e la conversione che React Native fa da sola legge ogni byte come un carattere: un'accentata occupa due byte e usciva spezzata in due simboli, "perché" diventava "perchÃ©". Ora i byte si chiedono grezzi e si decodificano come UTF-8 con una funzione propria, confrontata con l'implementazione di Node.
+
+*Il riquadro mostrava solo l'ultima parola.* Le trascrizioni arrivano a flusso e ognuna sostituiva la precedente. Ora si accumulano per turno, il testo si può selezionare oltre che copiare con un tocco, e il riquadro segue quello che cresce.
+
+*Il registro non seguiva la conversazione.* Scorreva solo quando **compariva** una riga nuova, mentre in conversazione è l'ultima a crescere parola per parola. Ora segue anche quella — ma solo finché si sta guardando il fondo: appena si risale a rileggere qualcosa resta fermo.
+
+*Uscendo dall'app il microfono restava acceso.* La conversazione continuava a sentire e a rispondere anche senza la bolla. Ora uscire la chiude, a meno che la bolla non sia accesa — che è il caso in cui restare fuori è proprio il suo mestiere — e rientrando riprende da sola se era impostata per aprirsi all'avvio.
+
+*L'avviso "Errore configurazione voce" a ogni apertura.* Non era un guasto: è il telefono che non elenca le proprie voci di sistema, cioè l'ultima riserva della modalità a comandi, quella che in conversazione non entra mai in gioco. L'app funzionava lo stesso. Una finestra a ogni avvio per annunciare che manca una riserva mai usata è solo rumore: ora resta nel registro tecnico e basta.
 
 **La memoria non arrivava al modello** — al collaudo J.A.R.V.I.S. non sapeva dire che dispositivo ha l'utente, pur avendo la nota scritta e visibile nelle impostazioni. Un pezzo del motivo è certo: in modalità a comandi la conversazione partiva da `SYSTEM_MESSAGE`, una costante costruita quando il modulo viene importato — cioè **prima** che il file della memoria sia stato letto. Portava dentro una memoria vuota per sempre. Ora il messaggio di sistema si costruisce dopo la lettura, e anche a ogni nuova conversazione.
 

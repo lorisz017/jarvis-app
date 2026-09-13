@@ -90,6 +90,12 @@ export default function Home() {
     const [memoria, setMemoria] = useState({nota: '', ricordi: []});
 
     const scrollRef = useRef();
+    // Quale voce sta parlando adesso e quanto ha detto finora: serve a
+    // ricomporre la risposta dai frammenti che arrivano a flusso.
+    const turnoLiveRef = useRef({chi: null, testo: ''});
+    // Se la conversazione si è chiusa perché si è usciti dall'app, rientrando
+    // va riaperta: chiuderla è una conseguenza dell'uscita, non una scelta.
+    const chiusaPerUscitaRef = useRef(false);
     const animatedScale = useRef(new Animated.Value(1)).current;
     const briefingDoneRef = useRef(false);
     // Cosa deve fare un tocco sulla bolla in questo momento. È un riferimento
@@ -541,6 +547,35 @@ export default function Home() {
         }
     };
 
+    // Uscire dall'app deve chiudere la conversazione, non lasciarla aperta a
+    // microfono acceso dietro le altre applicazioni. L'eccezione è la bolla:
+    // se è accesa, restare fuori è proprio il suo mestiere, e lì la
+    // conversazione deve continuare.
+    useEffect(() => {
+        if (!isStateLoaded) return;
+
+        const iscrizione = AppState.addEventListener('change', (stato) => {
+            if (stato === 'active') {
+                // Si riprende da dove si era, ma solo se era stata chiusa
+                // uscendo e solo se la conversazione si apre da sola: altrimenti
+                // si riaccenderebbe da sé una cosa che lui aveva spento.
+                if (chiusaPerUscitaRef.current) {
+                    chiusaPerUscitaRef.current = false;
+                    if (apriConversazioneAllAvvio && modalita === 'conversazione') toggleLive();
+                }
+                return;
+            }
+
+            if (isOverlayEnabled) return;
+            if (!sessioneLiveRef.current) return;
+
+            chiusaPerUscitaRef.current = true;
+            fermaLive();
+        });
+
+        return () => iscrizione.remove();
+    }, [isStateLoaded, isOverlayEnabled, apriConversazioneAllAvvio, modalita]);
+
     const toggleLive = async () => {
         if (statoLive !== 'spenta') {
             fermaLive();
@@ -573,14 +608,17 @@ export default function Home() {
 
         const sessione = new LiveSession({
             contesto: contestoAzioni(),
-            onStato: (stato) => {
+            onStato: (stato, dettagli) => {
                 setStatoLive(stato === 'chiusa' ? 'spenta' : stato);
                 if (stato === 'chiusa') {
                     sessioneLiveRef.current = null;
-                    // Chiusa dal server o da un errore: la leva deve tornare
-                    // indietro da sola, altrimenti resta a indicare una
-                    // conversazione che non c'è più.
-                    setModalita('comandi');
+                    // La leva torna indietro solo se la sessione è **caduta**,
+                    // e solo se la modalità a comandi esiste: spostarla dopo
+                    // uno stop chiesto da lui lasciava il radar in mano ai
+                    // comandi, e il tocco successivo — quello per riprendere a
+                    // parlare — apriva una registrazione invece della
+                    // conversazione. Da fuori sembrava che non rispondesse più.
+                    if (!dettagli?.volontaria && isCommandModeEnabled) setModalita('comandi');
                 }
             },
             onTesto: ({chi, testo}) => {
@@ -597,7 +635,20 @@ export default function Home() {
                     }
                     return [...prev, {role: ruolo, content: testo, live: true}];
                 });
-                if (chi !== 'utente') setDisplayedText(testo);
+                // Il riquadro sopra il registro mostra l'ultima risposta
+                // **intera**. Le trascrizioni arrivano parola per parola: se
+                // ognuna sostituisse la precedente resterebbe a schermo solo
+                // l'ultima, che è esattamente come si comportava.
+                if (chi !== 'utente') {
+                    if (turnoLiveRef.current.chi !== chi) {
+                        turnoLiveRef.current = {chi, testo: ''};
+                    }
+                    turnoLiveRef.current.testo += testo;
+                    setDisplayedText(turnoLiveRef.current.testo);
+                } else {
+                    // Ha ripreso la parola: la risposta che segue è nuova.
+                    turnoLiveRef.current = {chi: null, testo: ''};
+                }
                 // Se l'azione era un'annotazione, la sezione Memoria deve
                 // mostrarla adesso: è l'unico modo per vedere subito se la
                 // scrittura è arrivata a destinazione.

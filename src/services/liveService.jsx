@@ -1,5 +1,6 @@
 import {NativeModules, NativeEventEmitter, Platform} from 'react-native';
 import {TOOLS, executeTool} from './tools';
+import {decodeUtf8} from '../utils/utf8';
 import {buildSystemMessage} from '../utils/constants';
 import {base64ToBytes} from '../utils/base64';
 
@@ -195,6 +196,15 @@ export class LiveSession {
         }
 
         this.socket = new WebSocket(`${LIVE_URL}?key=${geminiApiKey}`);
+        // Meglio i byte grezzi che un Blob: da un ArrayBuffer si decodifica
+        // l'UTF-8 per conto proprio, che è l'unico modo per non perdere le
+        // accentate per strada.
+        try {
+            this.socket.binaryType = 'arraybuffer';
+        } catch (error) {
+            // Non tutte le implementazioni lo lasciano scegliere: si legge
+            // comunque, passando dal Blob.
+        }
 
         this.socket.onopen = () => this._mandaConfigurazione();
         this.socket.onmessage = (evento) => this._riceviMessaggio(evento);
@@ -224,7 +234,7 @@ export class LiveSession {
                 ));
             }
 
-            this.onStato('chiusa');
+            this.onStato('chiusa', {volontaria: this.chiusaVolutamente});
         };
 
         return true;
@@ -258,10 +268,15 @@ export class LiveSession {
         let messaggio;
         try {
             // I messaggi arrivano come testo JSON, ma su alcune connessioni
-            // come dati binari: in quel caso vanno letti prima.
+            // come dati binari. Vanno decodificati come UTF-8 **a mano**: la
+            // conversione che React Native fa da sola legge ogni byte come un
+            // carattere, e ogni accentata — che di byte ne occupa due — esce
+            // spezzata in due simboli ("perché" diventa "perchÃ©").
             const grezzo = typeof evento.data === 'string'
                 ? evento.data
-                : await new Response(evento.data).text();
+                : decodeUtf8(evento.data instanceof ArrayBuffer
+                    ? evento.data
+                    : await new Response(evento.data).arrayBuffer());
             messaggio = JSON.parse(grezzo);
         } catch (error) {
             return;
