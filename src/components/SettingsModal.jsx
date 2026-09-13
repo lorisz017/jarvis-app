@@ -119,14 +119,12 @@ export default function SettingsModal({
                                 </Text>
 
                                 <Text style={styles.settingsSectionTitle}>VOCE NATURALE</Text>
-                                {!voiceInfo.hasKey ? (
-                                    <Text style={styles.settingsHint}>
-                                        Nessuna chiave Deepgram configurata: si usa la voce di riserva.
-                                    </Text>
-                                ) : voiceInfo.available.length ? (
+                                {voiceInfo.available.length ? (
                                     <>
                                         <Text style={styles.settingsHint}>
                                             Tocchi una voce per usarla: cambia dalla frase successiva.
+                                            Se questa voce non fosse raggiungibile, J.A.R.V.I.S. scende
+                                            da solo su quella di riserva senza restare muto.
                                         </Text>
                                         {voiceInfo.available.map((nome) => {
                                             const inUso = nome === voiceInfo.selected;
@@ -141,7 +139,7 @@ export default function SettingsModal({
                                                 >
                                                     <Text style={styles.voiceText}>
                                                         {inUso ? '● ' : '   '}
-                                                        {nome.replace(/^aura-2-|-it$/g, '')}
+                                                        {nome.replace(/^it-IT-|Neural$|MultilingualNeural$/g, '')}
                                                     </Text>
                                                 </TouchableOpacity>
                                             );
@@ -149,7 +147,7 @@ export default function SettingsModal({
                                     </>
                                 ) : (
                                     <Text style={styles.settingsHint}>
-                                        Ancora da determinare: verrà scelta alla prima risposta parlata.
+                                        Nessuna voce disponibile: si usa quella di sistema.
                                     </Text>
                                 )}
                             </View>

@@ -29,7 +29,7 @@ The flow of a single request:
 1. **You speak** — the recording is sent to **Whisper** (via Groq) and transcribed.
 2. **It thinks** — the text goes to a language model (**GPT-OSS 120B** via Groq), which is handed the list of actions the app can perform on the phone.
 3. **It acts** — if the model asks for one or more of those actions, the app carries them out in order and reports back on all of them at once, so a single request can set an alarm, start a timer and place a call. Otherwise the answer is simply spoken.
-4. **It speaks** — the reply is read aloud with a natural voice from **Gemini**, stepping down to Deepgram Aura-2 and then to the phone's built-in voice if a provider is unavailable, so it never falls silent.
+4. **It speaks** — the reply is read aloud with a neural voice from **Microsoft Edge's read-aloud service**, stepping down to Deepgram Aura-2 and then to the phone's built-in voice, so it never falls silent.
 
 The reasoning runs on **Gemini**, with Groq kept behind it. Groq's free tier allows 8000 tokens a minute and a single request here spends about three thousand of them, which a chain of actions exhausts in two rounds — after that the model stops answering, and the actions that never happened only looked forgotten.
 
@@ -138,6 +138,7 @@ Two more things worth knowing:
 - An app in the background cannot start another app's screen. Setting an alarm opens the clock, and from then on every further action in the same chain is dropped in silence. Holding `SYSTEM_ALERT_WINDOW` is the documented exemption: bring yourself back to the front first, and wait until you actually are.
 - Give every network call a deadline. Inside the app a stalled request merely looks slow; from a floating bubble there is no screen at all, and it is indistinguishable from a dead app.
 - Leave recording mode before playing audio back. While the session is held for the microphone, Android can play to nowhere.
+- The voice comes from Edge's read-aloud service, which needs no key and has no quota. It is **not an official API**: there is no documented endpoint, and the service is meant to be used from the browser. It works and many projects rely on it, but it can stop working overnight — which is why Deepgram stays underneath, and why nothing here should be built on the assumption that it will keep answering.
 - Tool calling gets its own temperature. At the default the model re-plans the same sentence differently each time, and which action survives a chain becomes a draw.
 
 ## Credits
@@ -178,7 +179,7 @@ Il percorso di una singola richiesta:
 1. **Si parla** — la registrazione viene mandata a **Whisper** (tramite Groq) e trascritta.
 2. **Ragiona** — il testo va a un modello linguistico (**GPT-OSS 120B** tramite Groq), a cui viene consegnato l'elenco delle azioni che l'app sa compiere sul telefono.
 3. **Agisce** — se il modello ne richiede una o più, l'app le esegue in ordine e le conferma tutte insieme: una sola richiesta può quindi mettere una sveglia, avviare un timer e fare una chiamata. Altrimenti la risposta viene semplicemente letta.
-4. **Risponde** — la risposta viene letta con una voce naturale di **Gemini**, scendendo su Deepgram Aura-2 e poi sulla voce di sistema del telefono se un fornitore non è disponibile, così non resta mai muto.
+4. **Risponde** — la risposta viene letta con una voce neurale del **servizio di lettura ad alta voce di Microsoft Edge**, scendendo su Deepgram Aura-2 e poi sulla voce di sistema del telefono, così non resta mai muto.
 
 Il ragionamento passa da **Gemini**, con Groq dietro come riserva. Il piano gratuito di Groq concede 8000 token al minuto e una sola richiesta di questa app ne consuma circa tremila: una catena di azioni li esaurisce in due giri, e da lì in poi il modello smette di rispondere — le azioni mai eseguite sembravano dimenticate, ma non erano mai state chieste.
 
@@ -288,6 +289,7 @@ Altre due cose che vale la pena sapere:
 - Un'app in secondo piano non può aprire la schermata di un'altra app. Impostare una sveglia apre l'orologio, e da lì in poi ogni azione successiva della stessa catena viene scartata in silenzio. Il permesso `SYSTEM_ALERT_WINDOW` è l'eccezione prevista: prima si torna davanti, e si aspetta di esserci davvero.
 - Ogni richiesta di rete vuole un limite di tempo. Dentro l'app una richiesta bloccata sembra solo lenta; da una bolla flottante non c'è nessuno schermo, ed è indistinguibile da un'app morta.
 - Prima di riprodurre audio si esce dalla modalità registrazione: finché la sessione è impegnata dal microfono, Android può riprodurre nel vuoto.
+- La voce arriva dal servizio di lettura ad alta voce di Edge, che non chiede chiavi e non ha quote. **Non è una API ufficiale**: non esiste un indirizzo documentato, e il servizio è pensato per essere usato dal browser. Funziona e ci si appoggiano in molti, ma può smettere da un giorno all'altro — per questo Deepgram resta sotto, e per questo niente qui va costruito dando per scontato che continui a rispondere.
 - Le richieste che comportano azioni vogliono una temperatura propria. Con il valore predefinito il modello ripianifica ogni volta la stessa frase in modo diverso, e quale azione sopravviva a una catena diventa un sorteggio.
 
 ## Crediti

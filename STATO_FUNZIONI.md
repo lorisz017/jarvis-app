@@ -25,9 +25,9 @@ Ultimo aggiornamento: dopo il collaudo della bolla flottante, della ricerca via 
 |---|---|---|
 | Comando vocale | Tocchi il radar e parli | ✅ |
 | Comando scritto | Campo di testo in fondo | ✅ |
-| Risposta parlata (voce Deepgram) | Automatica | ✅ non degrada più: il credito Deepgram regge l'uso quotidiano |
+| Risposta parlata (voce Edge) | Automatica | ⏳ nuova: voci neurali Microsoft, senza chiave e senza quota. Deepgram resta come riserva |
 | Conversazione continua (pulsante PARLA) | Schermata principale | ⏳ nuova: un solo modello ascolta e risponde in voce, interrompibile a metà frase, con le stesse azioni. Mai provata su un telefono |
-| Scelta della voce naturale | Impostazioni → Voce naturale | ✅ nove voci italiane, si cambia senza ricompilare |
+| Scelta della voce naturale | Impostazioni → Voce naturale | ⏳ quattro voci italiane Edge: Diego, Giuseppe, Isabella, Elsa |
 | Volume pari fra le voci | Automatico | ✅ confermato: le voci più basse arrivano al livello delle altre |
 | Bolla flottante sopra le altre app | Impostazioni → Bolla flottante | ⏳ compare, non crasha, il tocco accende il microfono e la linguetta "Rimuovi" funziona. Da fuori però la risposta non arriva ancora: restava sempre la prima frase, e il resto si sbloccava solo rientrando. Tre cause affrontate in un colpo, da riconfermare |
 | Ripiego su Gemini e voce di sistema | Automatico | ✅ entra solo se Deepgram non è disponibile |

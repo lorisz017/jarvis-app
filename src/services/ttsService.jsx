@@ -1,6 +1,7 @@
 import * as Speech from 'expo-speech';
 import * as FileSystem from 'expo-file-system/legacy';
 import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
+import { synthesizeWithEdge, VOCI_EDGE } from './edgeTtsService';
 
 // Nessuna di queste richieste aveva un limite di tempo. Dentro l'app un
 // blocco si vede: la risposta non arriva. Fuori, dalla bolla, non si vede
@@ -29,9 +30,7 @@ const deepgramApiKey = process.env.EXPO_PUBLIC_DEEPGRAM_API_KEY;
 const DEEPGRAM_URL = 'https://api.deepgram.com/v1/speak';
 const DEEPGRAM_MODELS_URL = 'https://api.deepgram.com/v1/models';
 
-// Voce italiana scelta dall'utente nelle impostazioni, nella forma
-// aura-2-<nome>-it. Vuota significa "decidi tu": l'app prende la prima delle
-// voci italiane disponibili.
+// Voce scelta dall'utente nelle impostazioni. Vuota significa "decidi tu".
 let preferredVoice = '';
 
 
@@ -328,8 +327,8 @@ let availableVoiceNames = [];
 // Serve al pannello impostazioni per mostrare quale voce è in uso e quali
 // altre ci sono: sul telefono i messaggi di log non sono consultabili.
 export const getVoiceInfo = () => ({
-    selected: resolvedVoice ?? null,
-    available: availableVoiceNames,
+    selected: preferredVoice || VOCI_EDGE[0].id,
+    available: VOCI_EDGE.map((v) => v.id),
     hasKey: Boolean(deepgramApiKey),
 });
 
@@ -456,6 +455,20 @@ const speakWithDeviceVoice = (text, { scrollRef, setDisplayedText }) => {
     });
 };
 
+// Voce di Edge: genera l'audio, lo scrive e lo riproduce.
+async function speakWithEdge(text) {
+    const voce = preferredVoice || undefined;
+    const base64 = await synthesizeWithEdge(text, voce);
+
+    const fileUri = `${FileSystem.cacheDirectory}jarvis-voce-${Date.now()}.mp3`;
+    await FileSystem.writeAsStringAsync(fileUri, base64, {
+        encoding: FileSystem.EncodingType.Base64,
+    });
+
+    await playAudioFile(fileUri);
+    return true;
+}
+
 export const speakJarvisResponse = async ({
                                               text,
                                               scrollRef,
@@ -468,7 +481,20 @@ export const speakJarvisResponse = async ({
     setDisplayedText(text);
     scrollRef?.current?.scrollToEnd({animated: true});
 
-    // Deepgram, poi la voce di sistema. Nient'altro.
+    // Edge, poi Deepgram, poi la voce di sistema.
+    //
+    // Edge davanti perché è l'unica delle tre che parla italiano come lo
+    // parla una persona: Deepgram lo dichiara apertamente nella propria
+    // documentazione, la sua voce è costruita per rispondere in fretta, non
+    // per suonare bene. Resta però sotto, e non è un dettaglio: l'accesso
+    // alla voce di Edge non è ufficiale e il giorno che si chiude nessuno ci
+    // avvisa, quindi sotto ci vuole qualcosa che non dipenda da quello.
+    try {
+        if (await speakWithEdge(text)) return;
+    } catch (err) {
+        console.warn('Voce Edge non disponibile, passo a Deepgram:', err.message);
+    }
+
     //
     // La sintesi di Gemini è stata provata e tolta: suona peggio e ci mette
     // molto di più, perché genera l'audio con una richiesta completa invece
