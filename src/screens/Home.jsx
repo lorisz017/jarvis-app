@@ -3,7 +3,6 @@ import {
     Alert,
     AppState,
     BackHandler,
-    TouchableOpacity,
     Text,
     Animated,
     View,
@@ -20,6 +19,7 @@ import Header from '../components/Header';
 import SystemStatus from '../components/SystemStatus';
 import MicrophoneButton from '../components/MicrophoneButton';
 import ActivityLog from '../components/ActivityLog';
+import TastoLiquido from '../components/TastoLiquido';
 import ResponseBox from '../components/ResponseBox';
 import VoicePickerModal from '../components/VoicePickerModal';
 import SettingsModal from '../components/SettingsModal';
@@ -777,13 +777,13 @@ export default function Home() {
     return (
         <SafeAreaView style={styles.container}>
             {/* Impostazioni e toggle voce, fissi in alto a destra */}
-            <TouchableOpacity style={styles.settingsButton} onPress={() => setIsSettingsVisible(true)}>
+            <TastoLiquido style={styles.settingsButton} onPress={() => setIsSettingsVisible(true)}>
                 <Text style={styles.settingsButtonText}>⋮</Text>
-            </TouchableOpacity>
+            </TastoLiquido>
 
-            <TouchableOpacity style={styles.voiceToggleButton} onPress={toggleVoice}>
+            <TastoLiquido style={styles.voiceToggleButton} onPress={toggleVoice}>
                 <Text style={styles.voiceToggleButtonText}>{isVoiceEnabled ? '🔊' : '🔇'}</Text>
-            </TouchableOpacity>
+            </TastoLiquido>
 
             <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
                 <Header/>
@@ -853,18 +853,18 @@ export default function Home() {
                             onSubmitEditing={sendTypedMessage}
                             returnKeyType="send"
                         />
-                        <TouchableOpacity style={styles.sendButton} onPress={sendTypedMessage}>
+                        <TastoLiquido style={styles.sendButton} onPress={sendTypedMessage}>
                             <Text style={styles.sendButtonText}>➤</Text>
-                        </TouchableOpacity>
+                        </TastoLiquido>
                     </KeyboardAvoidingView>
 
                     <View style={styles.actionRow}>
-                        <TouchableOpacity style={styles.pillButton} onPress={() => setIsVoicePickerVisible(true)}>
+                        <TastoLiquido style={styles.pillButton} onPress={() => setIsVoicePickerVisible(true)}>
                             <Text style={styles.pillButtonIcon}>🎙</Text>
                             <Text style={styles.pillButtonText}>VOCE</Text>
-                        </TouchableOpacity>
+                        </TastoLiquido>
 
-                        <TouchableOpacity
+                        <TastoLiquido
                             style={[styles.pillButton, styles.pillButtonDanger]}
                             onPress={() => {
                                 setChatHistory([buildSystemMessage()]);
@@ -874,9 +874,9 @@ export default function Home() {
                         >
                             <Text style={styles.pillButtonIcon}>🗑</Text>
                             <Text style={[styles.pillButtonText, styles.pillButtonTextDanger]}>PULISCI</Text>
-                        </TouchableOpacity>
+                        </TastoLiquido>
 
-                        <TouchableOpacity
+                        <TastoLiquido
                             style={[styles.pillButton, styles.pillButtonDanger]}
                             onPress={() => {
                                 // Due modalità, due sorgenti audio diverse: la voce
@@ -890,7 +890,7 @@ export default function Home() {
                         >
                             <Text style={styles.pillButtonIcon}>⛔</Text>
                             <Text style={[styles.pillButtonText, styles.pillButtonTextDanger]}>FERMA</Text>
-                        </TouchableOpacity>
+                        </TastoLiquido>
                     </View>
                 </View>
             </ScrollView>

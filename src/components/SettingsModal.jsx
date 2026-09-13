@@ -1,6 +1,9 @@
 import React, {useState, useEffect, useRef} from 'react';
-import {Modal, View, Text, ScrollView, TouchableOpacity, TextInput, Linking} from 'react-native';
+import {Animated, Easing, View, Text, ScrollView, TouchableOpacity, TextInput, Linking} from 'react-native';
+import {BlurView} from 'expo-blur';
 import {styles} from '../styles/mainStyles';
+import FoglioLiquido from './FoglioLiquido';
+import TastoLiquido from './TastoLiquido';
 import {FEATURE_SECTIONS} from '../utils/features';
 import {getVoiceInfo, getUltimoErroreEdge} from '../services/ttsService';
 import {statoMemoria} from '../services/memoryService';
@@ -18,15 +21,66 @@ const TABS = [
 ];
 
 function ToggleRow({label, value, onToggle}) {
+    // Nell'istante in cui l'interruttore cambia, la pastiglia si gonfia appena
+    // e si vela di vetro. Un battito solo: subito dopo è di nuovo la pastiglia
+    // di prima, perché è a riposo che deve restare leggibile.
+    const cambio = useRef(new Animated.Value(0)).current;
+    const primoGiro = useRef(true);
+
+    useEffect(() => {
+        if (primoGiro.current) {
+            primoGiro.current = false;
+            return;
+        }
+
+        Animated.sequence([
+            Animated.timing(cambio, {
+                toValue: 1,
+                duration: 120,
+                easing: Easing.out(Easing.quad),
+                useNativeDriver: true,
+            }),
+            Animated.spring(cambio, {
+                toValue: 0,
+                useNativeDriver: true,
+                damping: 14,
+                stiffness: 200,
+                mass: 0.7,
+            }),
+        ]).start();
+    }, [value, cambio]);
+
     return (
-        <TouchableOpacity style={styles.settingsRow} onPress={onToggle}>
+        <TastoLiquido style={styles.settingsRow} onPress={onToggle} raggio={14}>
             <Text style={styles.settingsRowLabel}>{label}</Text>
-            <View style={[styles.settingsToggle, value && styles.settingsToggleOn]}>
+            <Animated.View
+                style={[
+                    styles.settingsToggle,
+                    value && styles.settingsToggleOn,
+                    {
+                        transform: [{
+                            scale: cambio.interpolate({inputRange: [0, 1], outputRange: [1, 1.09]}),
+                        }],
+                    },
+                ]}
+            >
                 <Text style={[styles.settingsToggleText, value && styles.settingsToggleTextOn]}>
                     {value ? 'ATTIVA' : 'SPENTA'}
                 </Text>
-            </View>
-        </TouchableOpacity>
+                <Animated.View
+                    pointerEvents="none"
+                    style={{
+                        position: 'absolute',
+                        top: 0, left: 0, right: 0, bottom: 0,
+                        borderRadius: 999,
+                        overflow: 'hidden',
+                        opacity: cambio.interpolate({inputRange: [0, 1], outputRange: [0, 0.6]}),
+                    }}
+                >
+                    <BlurView intensity={40} tint="light" style={{flex: 1}}/>
+                </Animated.View>
+            </Animated.View>
+        </TastoLiquido>
     );
 }
 
@@ -108,13 +162,12 @@ export default function SettingsModal({
     }, [memoria?.nota]);
 
     return (
-        <Modal animationType="slide" transparent visible={isVisible} onRequestClose={onClose}>
-            <View style={styles.modalOverlay}>
-                <View style={styles.settingsSheet}>
+        <FoglioLiquido visibile={isVisible} onChiudi={onClose} stile={styles.settingsSheet}>
                     <View style={styles.settingsTabRow}>
                         {TABS.map((tab) => (
-                            <TouchableOpacity
+                            <TastoLiquido
                                 key={tab.key}
+                                raggio={12}
                                 style={[styles.settingsTab, activeTab === tab.key && styles.settingsTabActive]}
                                 onPress={() => setActiveTab(tab.key)}
                             >
@@ -126,7 +179,7 @@ export default function SettingsModal({
                                 >
                                     {tab.label}
                                 </Text>
-                            </TouchableOpacity>
+                            </TastoLiquido>
                         ))}
                     </View>
 
@@ -364,11 +417,9 @@ export default function SettingsModal({
                         )}
                     </ScrollView>
 
-                    <TouchableOpacity style={styles.closeModalButton} onPress={onClose}>
-                        <Text style={styles.closeModalButtonText}>Chiudi</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-        </Modal>
+                <TastoLiquido style={styles.closeModalButton} onPress={onClose}>
+                    <Text style={styles.closeModalButtonText}>Chiudi</Text>
+                </TastoLiquido>
+        </FoglioLiquido>
     );
 }

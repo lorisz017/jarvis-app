@@ -21,6 +21,10 @@ export default function ModeSwitch({valore, onChange, attiva, inAttesa}) {
     const indice = Math.max(0, MODALITA.findIndex((m) => m.id === valore));
     const scorrimento = useRef(new Animated.Value(indice)).current;
     const respiro = useRef(new Animated.Value(0)).current;
+    // Quanto la leva è "liquida" in questo istante: sale di scatto quando
+    // parte e torna a zero quando si è posata. Da ferma vale zero, ed è per
+    // questo che da ferma la leva è identica a prima.
+    const liquido = useRef(new Animated.Value(0)).current;
     const [larghezza, setLarghezza] = useState(0);
 
     useEffect(() => {
@@ -33,7 +37,26 @@ export default function ModeSwitch({valore, onChange, attiva, inAttesa}) {
             stiffness: 190,
             mass: 0.9,
         }).start();
-    }, [indice, scorrimento]);
+
+        // Mentre si sposta il cursore si allunga nel verso in cui va e si vela
+        // di vetro, come una goccia che si stira e poi si ricompone. Il velo
+        // si accende in fretta e si spegne piano, così l'occhio lo vede
+        // arrivare e non lo vede andarsene.
+        Animated.sequence([
+            Animated.timing(liquido, {
+                toValue: 1,
+                duration: 130,
+                easing: Easing.out(Easing.quad),
+                useNativeDriver: true,
+            }),
+            Animated.timing(liquido, {
+                toValue: 0,
+                duration: 420,
+                easing: Easing.inOut(Easing.quad),
+                useNativeDriver: true,
+            }),
+        ]).start();
+    }, [indice, scorrimento, liquido]);
 
     // Quando la conversazione è aperta il bordo respira piano: da lontano si
     // capisce che sta ascoltando senza dover leggere niente.
@@ -79,12 +102,26 @@ export default function ModeSwitch({valore, onChange, attiva, inAttesa}) {
                         styles.modeSwitchCursore,
                         {
                             width: metà,
-                            transform: [{
-                                translateX: scorrimento.interpolate({
-                                    inputRange: [0, 1],
-                                    outputRange: [0, metà],
-                                }),
-                            }],
+                            transform: [
+                                {
+                                    translateX: scorrimento.interpolate({
+                                        inputRange: [0, 1],
+                                        outputRange: [0, metà],
+                                    }),
+                                },
+                                {
+                                    scaleX: liquido.interpolate({
+                                        inputRange: [0, 1],
+                                        outputRange: [1, 1.08],
+                                    }),
+                                },
+                                {
+                                    scaleY: liquido.interpolate({
+                                        inputRange: [0, 1],
+                                        outputRange: [1, 0.94],
+                                    }),
+                                },
+                            ],
                             borderColor: attiva ? COLORS.GREEN : COLORS.CYAN,
                             opacity: respiro.interpolate({
                                 inputRange: [0, 1],
@@ -93,6 +130,21 @@ export default function ModeSwitch({valore, onChange, attiva, inAttesa}) {
                         },
                     ]}
                 />
+
+                {/* Il velo di vetro che attraversa la leva mentre si sposta */}
+                <Animated.View
+                    pointerEvents="none"
+                    style={{
+                        position: 'absolute',
+                        top: 0, left: 0, right: 0, bottom: 0,
+                        opacity: liquido.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [0, 0.55],
+                        }),
+                    }}
+                >
+                    <BlurView intensity={40} tint="light" style={{flex: 1}}/>
+                </Animated.View>
 
                 {MODALITA.map((modalita) => {
                     const scelta = modalita.id === valore;

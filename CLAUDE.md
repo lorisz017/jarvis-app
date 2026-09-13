@@ -98,6 +98,8 @@ parla sopra, abbassata.**
 | `src/services/geminiChatService.jsx` | Traduce fra il formato di Groq e quello di Gemini, nei due sensi |
 | `src/services/liveService.jsx` | La conversazione continua e l'interruzione |
 | `src/components/ModeSwitch.jsx` | La leva fra le due modalità |
+| `src/components/FoglioLiquido.jsx` | L'apertura dei pannelli: vetro sul fondo, foglio che sale |
+| `src/components/TastoLiquido.jsx` | Il tasto che si abbassa e si vela sotto il dito |
 | `src/services/tools.jsx` | Le 21 azioni: schema per il modello ed esecuzione |
 | `src/services/ttsService.jsx` | La catena della voce e il pareggiamento del volume |
 | `src/services/edgeTtsService.jsx` | La voce di Edge |
@@ -171,6 +173,30 @@ Ognuna di queste è costata almeno una build, alcune parecchie:
   valore predefinito il modello ripianifica ogni volta la stessa frase in modo
   diverso, e quale azione sopravviva a una catena diventa un sorteggio.
 - In Kotlin gli **apici singoli sono un carattere**, non una stringa.
+
+### Come si muove l'interfaccia
+
+Una regola sola, e tiene insieme tutto il resto: **il vetro vive solo durante
+il movimento.** A riposo ogni cosa è identica a com'era — stessi colori,
+stesse misure, nessun velo residuo — perché è da ferma che si legge, e un
+pannello perennemente traslucido è un pannello che si fatica a leggere.
+
+- `FoglioLiquido` apre i pannelli: il fondo si vela di vetro smerigliato
+  mentre il foglio sale di poco e si apre da 92 a 100 con una molla. Resta
+  montato finché l'animazione di chiusura non è finita, altrimenti sparirebbe
+  di scatto a metà.
+- `TastoLiquido` sostituisce `TouchableOpacity` sui tasti che si premono di
+  continuo. Lo stile va sul `Pressable` e non sul contenitore, altrimenti
+  l'area toccabile si restringe di quanto vale il bordo interno.
+- La leva delle modalità si stira nel verso in cui va (`scaleX` in su,
+  `scaleY` in giù) e un velo la attraversa: è la stessa idea della goccia che
+  si allunga e si ricompone.
+- Tutto passa dal driver nativo, quindi si animano **trasformazioni e
+  opacità**, mai l'intensità della sfocatura: quella si accende scoprendo un
+  `BlurView` già montato.
+- Su Android la sfocatura dentro una finestra modale non sempre prende quello
+  che c'è sotto. Sotto al vetro resta perciò un velo scuro vero: se il vetro
+  non si vede, il pannello si legge lo stesso.
 
 ## Cosa si può verificare prima di una build
 

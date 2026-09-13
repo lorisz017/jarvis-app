@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, View, Text, TouchableOpacity, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList } from 'react-native';
 import * as Speech from 'expo-speech';
 import { styles } from '../styles/mainStyles';
 
@@ -37,9 +37,7 @@ export default function VoicePickerModal({
     );
 
     return (
-        <Modal animationType="slide" transparent={true} visible={isVisible} onRequestClose={onClose}>
-            <View style={styles.modalOverlay}>
-                <View style={styles.modalContent}>
+        <FoglioLiquido visibile={isVisible} onChiudi={onClose} stile={styles.modalContent}>
                     <Text style={styles.modalTitle}>Scelga la voce di JARVIS</Text>
                     {availableVoices.length > 0 ? (
                         <FlatList
@@ -53,11 +51,9 @@ export default function VoicePickerModal({
                             Nessuna voce disponibile trovata su questo dispositivo.
                         </Text>
                     )}
-                    <TouchableOpacity style={styles.closeModalButton} onPress={onClose}>
-                        <Text style={styles.closeModalButtonText}>Chiudi</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-        </Modal>
+                <TastoLiquido style={styles.closeModalButton} onPress={onClose}>
+                    <Text style={styles.closeModalButtonText}>Chiudi</Text>
+                </TastoLiquido>
+        </FoglioLiquido>
     );
 }

@@ -701,7 +701,12 @@ export const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(4, 7, 13, 0.96)',
+        // Non più quasi opaco: sopra ci va il vetro smerigliato vero, e
+        // coprire tutto vorrebbe dire non vedere più niente da sfocare.
+        // Su Android la sfocatura dentro una finestra modale non sempre
+        // prende quello che c'è sotto: il velo scuro resta comunque, così se
+        // il vetro non c'è il pannello si legge lo stesso.
+        backgroundColor: 'rgba(4, 7, 13, 0.72)',
     },
     modalContent: {
         backgroundColor: PANEL,
