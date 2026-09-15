@@ -20,6 +20,7 @@ import SystemStatus from '../components/SystemStatus';
 import MicrophoneButton from '../components/MicrophoneButton';
 import ActivityLog from '../components/ActivityLog';
 import TastoLiquido from '../components/TastoLiquido';
+import Occhio from '../components/Occhio';
 import ResponseBox from '../components/ResponseBox';
 import VoicePickerModal from '../components/VoicePickerModal';
 import SettingsModal from '../components/SettingsModal';
@@ -61,6 +62,8 @@ export default function Home() {
     const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
     const recorderState = useAudioRecorderState(audioRecorder);
     const [displayedText, setDisplayedText] = useState('');
+    // L'occhio: la fotocamera al posto del radar, dentro la conversazione.
+    const [vistaAperta, setVistaAperta] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [availableVoices, setAvailableVoices] = useState([]);
     const [selectedVoiceId, setSelectedVoiceId] = useState(undefined);
@@ -559,6 +562,19 @@ export default function Home() {
         return true;
     };
 
+    // Guardare è una cosa che si fa **dentro** la conversazione: se non ce
+    // n'è una aperta, aprirla è il primo passo, altrimenti i fotogrammi non
+    // avrebbero dove andare.
+    const apriChiudiVista = async () => {
+        if (vistaAperta) {
+            setVistaAperta(false);
+            return;
+        }
+
+        setVistaAperta(true);
+        if (!sessioneLiveRef.current && statoLive === 'spenta') await toggleLive();
+    };
+
     const contestoAzioni = () => buildToolContext({
         goToSleep: vaiADormire,
         openCamera,
@@ -611,6 +627,7 @@ export default function Home() {
             if (!sessioneLiveRef.current) return;
 
             chiusaPerUscitaRef.current = true;
+            setVistaAperta(false);
             fermaLive();
         });
 
@@ -653,6 +670,10 @@ export default function Home() {
                 setStatoLive(stato === 'chiusa' ? 'spenta' : stato);
                 if (stato === 'chiusa') {
                     sessioneLiveRef.current = null;
+                    // Senza una conversazione i fotogrammi non hanno dove
+                    // andare: tenere la fotocamera accesa sarebbe solo una
+                    // spia rossa che non serve a niente.
+                    setVistaAperta(false);
                     // La leva torna indietro solo se la sessione è **caduta**,
                     // e solo se la modalità a comandi esiste: spostarla dopo
                     // uno stop chiesto da lui lasciava il radar in mano ai
@@ -777,6 +798,12 @@ export default function Home() {
     return (
         <SafeAreaView style={styles.container}>
             {/* Impostazioni e toggle voce, fissi in alto a destra */}
+            {modalita === 'conversazione' ? (
+                <TastoLiquido style={styles.eyeButton} onPress={apriChiudiVista}>
+                    <Text style={styles.settingsButtonText}>{vistaAperta ? '🚫' : '📷'}</Text>
+                </TastoLiquido>
+            ) : null}
+
             <TastoLiquido style={styles.settingsButton} onPress={() => setIsSettingsVisible(true)}>
                 <Text style={styles.settingsButtonText}>⋮</Text>
             </TastoLiquido>
@@ -799,6 +826,14 @@ export default function Home() {
 
                 <SystemStatus/>
 
+                {vistaAperta ? (
+                    <Occhio
+                        attiva={statoLive === 'attiva'}
+                        inAttesa={statoLive === 'connessione'}
+                        onFotogramma={(base64) => sessioneLiveRef.current?.sendFrame(base64)}
+                        onChiudi={() => setVistaAperta(false)}
+                    />
+                ) : (
                 <MicrophoneButton
                     onPress={
                         modalita === 'conversazione'
@@ -820,6 +855,7 @@ export default function Home() {
                     }
                     animatedScale={animatedScale}
                 />
+                )}
 
                 <ActivityLog chatHistory={chatHistory}/>
 

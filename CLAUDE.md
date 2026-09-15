@@ -65,6 +65,15 @@ La **conversazione continua** non fa niente di tutto questo: una connessione
 aperta con Gemini Live, audio che entra ed esce a flusso, un modello solo che
 ascolta e risponde con la propria voce.
 
+Dalla stessa connessione passa anche **quello che vede la fotocamera**:
+`realtimeInput.video` sta accanto ad `audio`, con `image/jpeg` e un
+fotogramma al secondo — è il ritmo che consiglia Google, di più è banda
+buttata. Le foto della fotocamera sono enormi rispetto a quello che serve,
+quindi si chiede al telefono quali misure sa fare e si prende la più piccola
+sopra i 640 pixel: sotto, il modello non distingue più le scritte. Uno scatto
+per volta, se no un telefono lento accoda fotogrammi che non guarderà
+nessuno.
+
 **La conversazione è la modalità normale.** Quella a comandi esiste ancora ma
 va chiesta: si accende da Impostazioni → Modalità comandi, e solo allora
 compare in cima alla schermata la leva per passare dall'una all'altra.
@@ -100,6 +109,7 @@ parla sopra, abbassata.**
 | `src/components/ModeSwitch.jsx` | La leva fra le due modalità |
 | `src/components/FoglioLiquido.jsx` | L'apertura dei pannelli: vetro sul fondo, foglio che sale |
 | `src/components/TastoLiquido.jsx` | Il tasto che si abbassa e si vela sotto il dito |
+| `src/components/Occhio.jsx` | La fotocamera al posto del radar, un fotogramma al secondo |
 | `src/services/tools.jsx` | Le 21 azioni: schema per il modello ed esecuzione |
 | `src/services/ttsService.jsx` | La catena della voce e il pareggiamento del volume |
 | `src/services/edgeTtsService.jsx` | La voce di Edge |
@@ -120,7 +130,7 @@ terze parti, non viene agganciato in automatico.
 | Servizio | A cosa serve | Limite da ricordare |
 |---|---|---|
 | **Groq** | Trascrizione (Whisper), ragionamento di riserva | **8000 token al minuto.** Una sola richiesta di quest'app ne consuma ~3000 |
-| **Gemini** | Ragionamento, conversazione continua | Tetto alto. La **ricerca Google** però non è nel piano gratuito |
+| **Gemini** | Ragionamento, conversazione continua, vista | Tetto alto. La **ricerca Google** però non è nel piano gratuito |
 | **Edge** | Voce principale | Nessuna chiave, nessuna quota. **Non è una API ufficiale** |
 | **Deepgram** | Voce di riserva | $200 di credito che non scade. Ottimizzata per la latenza, non per la qualità |
 | **DuckDuckGo** | Ricerca sul web | Nessuna chiave. Pagine HTML da leggere, non una API |

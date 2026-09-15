@@ -33,6 +33,7 @@ const LIVE_URL =
 // Gemini ascolta a 16 kHz e risponde a 24 kHz: sono i due formati che il
 // modulo nativo produce e consuma.
 const MIME_INVIO = 'audio/pcm;rate=16000';
+const MIME_FOTOGRAMMA = 'image/jpeg';
 
 // Il primo tentativo mandava l'audio dentro "mediaChunks", e il server
 // chiudeva la sessione dopo un secondo dicendo che quel campo non si usa più:
@@ -176,6 +177,23 @@ export class LiveSession {
             },
         });
 
+        return true;
+    }
+
+    /**
+     * Manda un fotogramma di quello che vede la fotocamera.
+     *
+     * Va nello stesso canale della voce e con la stessa forma — `video` sta
+     * accanto ad `audio` dentro `realtimeInput` — quindi il modello riceve le
+     * due cose come un flusso solo e può rispondere a "questo cos'è?" senza
+     * che nessuno gli spieghi a cosa si riferisce "questo".
+     *
+     * Un fotogramma al secondo: è quanto consiglia il modello, e di più
+     * sarebbe soltanto banda buttata.
+     */
+    sendFrame(base64) {
+        if (!base64 || !this.pronta) return false;
+        this._invia({realtimeInput: {video: {mimeType: MIME_FOTOGRAMMA, data: base64}}});
         return true;
     }
 

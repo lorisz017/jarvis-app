@@ -30,6 +30,7 @@ L'ultima versione provata sul telefono e funzionante è sul ramo `funzionante`.
 | Risposta parlata (voce Edge) | Automatica | ⚠️ non parte, si sente Deepgram. Riguarda solo la modalità a comandi: in conversazione la voce è il modello stesso |
 | Memoria personale — i ricordi | Automatica, parlando | ✅ si annota da solo, resta dopo la chiusura dell'app, e alla domanda successiva la sa |
 | Memoria personale — la nota | Impostazioni → Memoria | ✅ si salva da sola poco dopo l'ultimo tasto, e comunque prima che il pannello si chiuda |
+| La vista (fotocamera dentro la conversazione) | Tasto 📷 in alto | ⏳ nuova: la fotocamera prende il posto del radar e un fotogramma al secondo entra nella conversazione, accanto alla voce |
 | Conversazione continua (modalità normale) | Si apre da sola all'avvio | ✅ **funziona**. Si attiva, si parla e resta aperta. Le azioni partono in un istante, più rapide che dal giro normale, e la voce è quella del modello stesso |
 | Scelta della voce naturale | Impostazioni → Voce naturale | ⏳ quattro voci italiane Edge: Diego, Giuseppe, Isabella, Elsa |
 | Volume pari fra le voci | Automatico | ✅ confermato: le voci più basse arrivano al livello delle altre |

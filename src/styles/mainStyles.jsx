@@ -127,6 +127,64 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
+    // L'occhio: la fotocamera occupa la cornice del radar, con gli stessi
+    // angoli attorno. Il bordo tondo la fa sembrare parte dello strumento
+    // invece di una finestra incollata sopra.
+    occhioVista: {
+        position: 'absolute',
+        top: 10,
+        left: 10,
+        right: 10,
+        bottom: 10,
+        borderRadius: 18,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: CYAN,
+    },
+    occhioVuoto: {
+        position: 'absolute',
+        top: 10,
+        left: 10,
+        right: 10,
+        bottom: 10,
+        borderRadius: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 14,
+        backgroundColor: 'rgba(0, 217, 255, 0.05)',
+        borderWidth: 1,
+        borderColor: 'rgba(0, 217, 255, 0.35)',
+    },
+    occhioAvviso: {
+        fontFamily: MONO,
+        fontSize: 12,
+        lineHeight: 18,
+        color: CYAN_DIM,
+        textAlign: 'center',
+        marginBottom: 12,
+    },
+    occhioAttesa: {
+        position: 'absolute',
+    },
+    occhioComandi: {
+        flexDirection: 'row',
+        gap: 10,
+        marginTop: 10,
+    },
+    occhioTasto: {
+        paddingVertical: 8,
+        paddingHorizontal: 14,
+        borderRadius: 18,
+        backgroundColor: 'rgba(0, 217, 255, 0.10)',
+        borderWidth: 1,
+        borderColor: 'rgba(0, 217, 255, 0.30)',
+    },
+    occhioTastoTesto: {
+        fontFamily: MONO,
+        fontSize: 11,
+        letterSpacing: 1,
+        color: CYAN,
+    },
     radarRingOuter: {
         position: 'absolute',
         width: RADAR_SIZE - 20,
@@ -330,6 +388,21 @@ export const styles = StyleSheet.create({
         fontSize: 20,
     },
     // Pulsante impostazioni, accanto al toggle voce in alto a destra
+    // Il terzo tondo in alto, accanto agli altri due: accende l'occhio.
+    eyeButton: {
+        position: 'absolute',
+        top: 16,
+        right: 120,
+        zIndex: 10,
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(0, 217, 255, 0.08)',
+        borderWidth: 1,
+        borderColor: 'rgba(0, 217, 255, 0.35)',
+    },
     settingsButton: {
         position: 'absolute',
         top: 16,
