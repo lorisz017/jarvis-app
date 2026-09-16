@@ -397,7 +397,11 @@ Le regole che lo rendono utile invece che decorativo:
 Lo stato dettagliato sta in `STATO_FUNZIONI.md`; qui la sostanza.
 
 **Funziona e va lasciato stare:** la conversazione continua, la sua voce, le
-azioni concatenate, la ricerca, l'interruzione immediata, la bolla.
+azioni concatenate, la ricerca, l'interruzione immediata, la bolla, e **la
+vista** — confermata al primo collaudo: legge le scritte, capisce il contesto
+e lo racconta con naturalezza. Il ritmo di un fotogramma al secondo e la
+misura sopra i 640 pixel erano due numeri scelti a tavolino e sono risultati
+giusti: non si toccano senza un motivo.
 
 **Confermato sul telefono** (versione 3.0.0): la memoria personale in tutte e
 due le metà, il campo di testo dentro la conversazione, la voce spegnibile, il
