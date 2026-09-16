@@ -245,9 +245,38 @@ export default function Home() {
     // rispetta il toggle della voce.
     useEffect(() => {
         if (!isStateLoaded || briefingDoneRef.current) return;
-        briefingDoneRef.current = true;
-        if (!isBriefingEnabled) return;
 
+        if (!isBriefingEnabled) {
+            briefingDoneRef.current = true;
+            return;
+        }
+
+        // In conversazione il riepilogo **lo dice lui**, dentro la sessione.
+        // Farlo leggere alla voce di riserva vorrebbe dire aprire l'app con
+        // una voce che non è la sua, sostituita un istante dopo da quella
+        // vera; e i due audio si contenderebbero il microfono appena aperto.
+        // Quindi si aspetta che la conversazione sia in piedi, e gli si passa
+        // il riepilogo perché lo riferisca a parole sue.
+        if (modalita === 'conversazione') {
+            if (statoLive !== 'attiva' || !sessioneLiveRef.current) return;
+
+            briefingDoneRef.current = true;
+            (async () => {
+                try {
+                    const briefing = await buildBriefing(homeCity);
+                    sessioneLiveRef.current?.sendText(
+                        '[RIEPILOGO DI APERTURA — non sta parlando l\'utente] ' +
+                        'Saluti il signore e gli riferisca questo in una o due frasi, ' +
+                        'con parole sue, senza leggere etichette: ' + briefing
+                    );
+                } catch (error) {
+                    console.warn('Riepilogo di apertura:', error);
+                }
+            })();
+            return;
+        }
+
+        briefingDoneRef.current = true;
         (async () => {
             try {
                 const briefing = await buildBriefing(homeCity);
@@ -257,7 +286,7 @@ export default function Home() {
                 console.warn('Briefing di apertura:', error);
             }
         })();
-    }, [isStateLoaded]);
+    }, [isStateLoaded, modalita, statoLive]);
 
     const openCamera = async () => {
         try {
@@ -531,7 +560,9 @@ export default function Home() {
     // si aspetta comunque.
     const congedo = async () => {
         const sessione = sessioneLiveRef.current;
-        const scadenza = Date.now() + 12000;
+        // Il tetto è generoso perché un congedo può essere uno scambio, non
+        // una frase: serve solo a non restare appesi se qualcosa si inceppa.
+        const scadenza = Date.now() + 30000;
 
         // Prima si aspetta che **cominci**: il saluto nasce dopo l'esito
         // dell'azione, e controllare subito se ha finito di parlare
@@ -541,9 +572,22 @@ export default function Home() {
             await new Promise((r) => setTimeout(r, 120));
         }
 
-        // Poi che finisca davvero.
-        while (sessione && sessione.staParlando && Date.now() < scadenza) {
-            await new Promise((r) => setTimeout(r, 250));
+        // Poi si aspetta il **silenzio**, non la prima pausa. Un congedo non è
+        // una frase sola: lui dice "buonanotte", tu rispondi "anche a te", e
+        // lui riprende. Chiudendo appena tace la prima volta si taglia proprio
+        // quella seconda frase, che è la parte gentile dello scambio. Quindi
+        // ogni volta che ricomincia a parlare il conto riparte, e si esce solo
+        // dopo un tratto di quiete vera.
+        const QUIETE = 2000;
+        let ultimaVoce = Date.now();
+
+        while (sessione && Date.now() < scadenza) {
+            if (sessione.staParlando) {
+                ultimaVoce = Date.now();
+            } else if (Date.now() - ultimaVoce > QUIETE) {
+                break;
+            }
+            await new Promise((r) => setTimeout(r, 150));
         }
 
         // Un soffio dopo l'ultima sillaba: uscire nell'istante esatto in cui

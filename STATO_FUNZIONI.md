@@ -121,6 +121,12 @@ L'ultima versione provata sul telefono e funzionante è sul ramo `funzionante`.
 
 **Scrivere dentro la conversazione** — il campo di testo resta anche in conversazione, per quando parlare non è possibile. Non apre un giro a parte: la frase scritta entra nella sessione aperta, con la stessa memoria, e la risposta torna a voce. Con la voce spenta la conversazione continua ad ascoltare e a capire, ma non parla: l'audio arriva e viene scartato, e resta la trascrizione a schermo.
 
+**Il congedo tagliava la seconda frase** — "vai a dormire" funzionava, ma rispondendo "anche a te" l'app si chiudeva mentre lui ricominciava a parlare. Il congedo aspettava che smettesse di parlare **la prima volta**, e un commiato non è una frase sola: è uno scambio. Ora ogni volta che riprende a parlare il conto riparte, e si esce solo dopo due secondi di quiete vera, con un tetto di trenta secondi che serve solo a non restare appesi.
+
+Le formule diverse da "vai a dormire" non venivano riconosciute: lo strumento le elencava tutte, ma come esempi di un congedo esplicito. Ora la regola è detta al contrario — se ti sta salutando, sta chiudendo — con l'eccezione scritta accanto: parlare di sé ("sono stanco", "vado a letto io") non è congedare nessuno.
+
+**Il riepilogo all'avvio non era stato adattato alla conversazione** — era rimasto sulla strada vecchia: costruiva il testo e lo faceva leggere alla catena della sintesi vocale. In modalità conversazione vuol dire aprire l'app con una voce che non è la sua, sostituita un istante dopo da quella vera, e due audio che si contendono il microfono appena aperto. Ora in conversazione il riepilogo **lo dice lui**: si aspetta che la sessione sia in piedi e gli si passa il testo perché lo riferisca a parole sue. In modalità a comandi resta com'era.
+
 **Sei difetti del collaudo della 3.0.0** — trovati tutti nella stessa sera, con cause diverse fra loro. **Tutti confermati risolti sul telefono**, insieme alla memoria e alla riservatezza delle istruzioni.
 
 *La nota scritta a mano spariva, i ricordi no.* Le due metà della memoria si salvano nello stesso file, quindi il file non c'entrava: la nota si salvava **solo quando la casella perdeva il fuoco**, e chiudendo il pannello con un tocco il fuoco non si perde mai. Ora si salva mezzo secondo dopo l'ultimo tasto e comunque prima che il pannello si chiuda. Il fatto che i ricordi annotati dal modello resistessero alla chiusura dell'app è anche la prova che il resto della memoria funziona.

@@ -171,9 +171,15 @@ export const TOOLS = [
             name: 'go_to_sleep',
             description:
                 'Chiude l\'applicazione e torna alla schermata iniziale del telefono. ' +
-                'Da usare quando l\'utente congeda: "vai a dormire", "chiudi l\'app", ' +
-                '"ci sentiamo dopo", "a domani", "puoi andare". Prima di chiamarlo ' +
-                'saluta con una frase breve: verrà pronunciata, e solo dopo l\'app si chiude.',
+                'Da usare ogni volta che l\'utente ti congeda o chiude la conversazione, ' +
+                'in qualunque modo lo dica: "vai a dormire", "chiudi l\'app", "ci sentiamo ' +
+                'dopo", "a domani", "a più tardi", "buonanotte", "ciao", "arrivederci", ' +
+                '"puoi andare", "spegniti", "basta così", "ho finito", "ci vediamo". ' +
+                'Non serve che la frase sia esplicita: se sta salutando te, sta ' +
+                'chiudendo. Saluta con una frase breve e chiama questo strumento: il ' +
+                'saluto viene pronunciato per intero, e solo dopo l\'app si chiude. ' +
+                'Non usarlo se parla di sé senza congedarti — "sono stanco", "vado a ' +
+                'letto io", "che sonno" — né se ti chiede di mettere una sveglia.',
             parameters: {type: 'object', properties: {}},
         },
     },

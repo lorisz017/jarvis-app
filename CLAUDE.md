@@ -410,8 +410,13 @@ riconoscimento del creatore, l'icona nuova, la riservatezza delle istruzioni —
 che ha retto anche alle richieste di traverso — e i sei difetti della serata
 del collaudo.
 
-**Da confermare**: il congedo a voce, che chiude l'app e torna alla schermata
-iniziale dopo aver finito di salutare.
+**Confermato anche**: i tasti in alto e le tre pastiglie dopo la correzione
+del contenitore, i pannelli che si aprono col vetro, e il congedo — che chiude
+l'app davvero.
+
+**Da confermare**: il congedo su un commiato non esplicito ("a domani",
+"ciao") e sullo scambio di saluti — chiudeva tagliando la seconda frase — più
+il riepilogo d'apertura detto dalla conversazione con la sua voce.
 
 **Ancora aperto davvero:**
 
