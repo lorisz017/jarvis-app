@@ -533,12 +533,22 @@ export default function Home() {
         const sessione = sessioneLiveRef.current;
         const scadenza = Date.now() + 12000;
 
-        // Un istante perché la risposta all'azione arrivi e cominci a parlare.
-        await new Promise((r) => setTimeout(r, 900));
+        // Prima si aspetta che **cominci**: il saluto nasce dopo l'esito
+        // dell'azione, e controllare subito se ha finito di parlare
+        // troverebbe che non ha ancora iniziato, chiudendo l'app in silenzio.
+        const inizio = Date.now() + 3500;
+        while (sessione && !sessione.staParlando && Date.now() < inizio) {
+            await new Promise((r) => setTimeout(r, 120));
+        }
 
+        // Poi che finisca davvero.
         while (sessione && sessione.staParlando && Date.now() < scadenza) {
             await new Promise((r) => setTimeout(r, 250));
         }
+
+        // Un soffio dopo l'ultima sillaba: uscire nell'istante esatto in cui
+        // tace taglia la coda della parola.
+        await new Promise((r) => setTimeout(r, 400));
         // Anche a voce spenta o in modalità a comandi, un momento perché
         // l'ultima frase si veda a schermo prima che sparisca tutto.
         if (!sessione) await new Promise((r) => setTimeout(r, 1200));

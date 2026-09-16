@@ -56,8 +56,15 @@ export default function Occhio({onFotogramma, onChiudi, attiva, inAttesa}) {
     const consegna = useRef(onFotogramma);
     consegna.current = onFotogramma;
 
+    const gia = useRef(false);
     useEffect(() => {
-        if (permesso && !permesso.granted && permesso.canAskAgain) chiediPermesso();
+        if (gia.current || !permesso) return;
+        if (permesso.granted || !permesso.canAskAgain) return;
+        // Una volta sola. Chiederlo a ogni cambio di stato vuol dire
+        // ripresentare la finestra subito dopo un rifiuto, all'infinito:
+        // dopo il primo no resta il tasto, che è una scelta e non un assedio.
+        gia.current = true;
+        chiediPermesso();
     }, [permesso]);
 
     useEffect(() => () => { viva.current = false; }, []);
@@ -102,19 +109,23 @@ export default function Occhio({onFotogramma, onChiudi, attiva, inAttesa}) {
         setPronta(true);
     };
 
-    const negato = permesso && !permesso.granted;
+    const concesso = Boolean(permesso?.granted);
 
     return (
         <View style={styles.radarTouchable}>
             <View style={styles.radarWrapper}>
-                {negato ? (
+                {!concesso ? (
                     <View style={styles.occhioVuoto}>
                         <Text style={styles.occhioAvviso}>
-                            Serve il permesso della fotocamera, signore.
+                            {permesso
+                                ? 'Serve il permesso della fotocamera, signore.'
+                                : 'Sto chiedendo il permesso, signore.'}
                         </Text>
-                        <TastoLiquido style={styles.occhioTasto} onPress={chiediPermesso}>
-                            <Text style={styles.occhioTastoTesto}>CONCEDI</Text>
-                        </TastoLiquido>
+                        {permesso ? (
+                            <TastoLiquido style={styles.occhioTasto} onPress={chiediPermesso}>
+                                <Text style={styles.occhioTastoTesto}>CONCEDI</Text>
+                            </TastoLiquido>
+                        ) : null}
                     </View>
                 ) : (
                     <CameraView
@@ -134,7 +145,7 @@ export default function Occhio({onFotogramma, onChiudi, attiva, inAttesa}) {
                 <View style={[styles.radarCorner, styles.radarCornerBL]}/>
                 <View style={[styles.radarCorner, styles.radarCornerBR]}/>
 
-                {!pronta && !negato ? (
+                {!pronta && concesso ? (
                     <ActivityIndicator style={styles.occhioAttesa} color={COLORS.CYAN}/>
                 ) : null}
             </View>
