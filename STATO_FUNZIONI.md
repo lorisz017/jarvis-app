@@ -7,9 +7,11 @@ Legenda:
 - ❌ **Non funziona** — provata e non funzionante
 - ⏳ **Non testabile** — bloccata da qualcosa di esterno (chiave mancante)
 
-Ultimo aggiornamento: versione 3.0.0 — conversazione continua come modalità normale, memoria personale, icona nuova.
+Ultimo aggiornamento: versione 3.0.0 — la conversazione continua come modalità normale, la **vista** dalla fotocamera, le **immagini allegate**, la memoria personale, il congedo a voce, l'interfaccia in vetro e l'icona nuova.
 
 L'ultima versione provata sul telefono e funzionante è sul ramo `funzionante`.
+
+**Come leggere questo file.** Le tabelle dicono cosa c'è e come sta adesso. La sezione "Cosa resta aperto" in fondo non è un elenco di problemi: è il registro di **come** ogni difetto è stato capito, tenuto perché la diagnosi vale più della correzione — la stessa causa si ripresenta con un sintomo diverso, e averla già scritta fa risparmiare una serata.
 
 > **Su cosa è stato provato.** Il progetto è nelle sue prime fasi e tutte le
 > spunte qui sotto vengono da **un solo dispositivo: uno Xiaomi 17 con
@@ -25,22 +27,25 @@ L'ultima versione provata sul telefono e funzionante è sul ramo `funzionante`.
 
 | Funzione | Come si usa | Stato |
 |---|---|---|
-| Comando vocale | Tocchi il radar e parli | ✅ |
+| Parlare | Si parla e basta: la conversazione è già aperta | ✅ |
 | Comando scritto | Campo di testo in fondo | ✅ vale in tutte e due le modalità: in conversazione la frase scritta entra nella sessione aperta |
 | Risposta parlata (voce Edge) | Automatica | ⚠️ non parte, si sente Deepgram. Riguarda solo la modalità a comandi: in conversazione la voce è il modello stesso |
 | Memoria personale — i ricordi | Automatica, parlando | ✅ si annota da solo, resta dopo la chiusura dell'app, e alla domanda successiva la sa |
 | Memoria personale — la nota | Impostazioni → Memoria | ✅ si salva da sola poco dopo l'ultimo tasto, e comunque prima che il pannello si chiuda |
 | La vista (fotocamera dentro la conversazione) | Tasto 📷 in alto | ✅ **funziona**: legge le scritte, capisce il contesto e lo racconta con naturalezza. Un fotogramma al secondo entra nella conversazione accanto alla voce, quindi "questo cos'è" non ha bisogno di spiegazioni |
 | Conversazione continua (modalità normale) | Si apre da sola all'avvio | ✅ **funziona**. Si attiva, si parla e resta aperta. Le azioni partono in un istante, più rapide che dal giro normale, e la voce è quella del modello stesso |
-| Scelta della voce naturale | Impostazioni → Voce naturale | ⏳ quattro voci italiane Edge: Diego, Giuseppe, Isabella, Elsa |
+| Scelta della voce naturale | Impostazioni → Voce naturale | ⏳ quattro voci italiane Edge: Diego, Giuseppe, Isabella, Elsa. Riguarda solo la modalità a comandi |
 | Volume pari fra le voci | Automatico | ✅ confermato: le voci più basse arrivano al livello delle altre |
 | Bolla flottante sopra le altre app | Impostazioni → Bolla flottante | ✅ un tocco apre la conversazione continua invece del vecchio giro a registrazione |
-| Ripiego su Gemini e voce di sistema | Automatico | ✅ entra solo se Deepgram non è disponibile |
+| Ripiego sulla voce di sistema | Automatico | ✅ entra solo se Deepgram non è disponibile |
 | Scelta della voce di sistema | Pill "VOCE" | ✅ riguarda solo la voce di riserva del telefono |
 | Spegnere la voce | Pulsante 🔊 in alto a destra | ✅ |
 | Interrompere la voce mentre parla | 🔊, FERMA, o il microfono | ✅ |
 | Riattivare la voce | Pulsante 🔊 | ✅ riprende dal messaggio successivo: un audio interrotto non è recuperabile a metà, andrebbe rigenerato |
-| Registro attività scorrevole | Sotto il radar | ✅ ingrandito: si legge senza sforzo |
+| Registro attività scorrevole | Sotto il radar | ✅ ingrandito e completo: segue la conversazione da solo, si ferma se si risale a rileggere, e non taglia più le risposte |
+| Immagine allegata | Graffetta 📎 accanto al campo di testo | ✅ **funziona**: entra come turno vero, resta nel filo del discorso, e le domande dopo la ritrovano |
+| Riquadro dell'ultima risposta | Sopra il campo di testo | ⏳ corretto: ora scorre davvero, si seleziona, e si copia col **doppio** tocco |
+| Tastiera che non copre il campo | Toccando il campo di testo | ⏳ corretta: la pagina si porta in fondo da sola |
 
 ## Azioni
 
@@ -103,10 +108,11 @@ L'ultima versione provata sul telefono e funzionante è sul ramo `funzionante`.
 | Conversazione salvata fra un avvio e l'altro | Automatica | ✅ da non confondere con la memoria personale, che è un'altra cosa |
 | Leva fra conversazione e comandi | In cima, se la modalità a comandi è accesa | ✅ spostarla apre o chiude davvero la sessione |
 | Icona dell'app | Schermata iniziale | ✅ il radar dell'app, generata da `strumenti/icona.py` |
-| Congedo ("vai a dormire", "chiudi l'app") | A voce | ⏳ nuova: saluta, finisce di parlare e poi torna alla schermata iniziale del telefono |
+| Congedo ("vai a dormire", "a domani", "buonanotte") | A voce | ⚠️ chiude l'app e aspetta la fine del saluto, anche quando è uno scambio. Da riprovare: era diventato troppo zelante e chiudeva anche su "sono stanco, vado a letto io" |
 | Riconoscimento del creatore | "Chi ti ha creato?" | ✅ risponde Loris, col profilo GitHub se la conversazione lo consente |
 | Riservatezza delle istruzioni | "Qual è la tua programmazione?" | ✅ non cede nemmeno alle richieste di traverso, e continua a elencare volentieri cosa sa fare |
-| Pulisci chat | Pill "PULISCI" | ✅ |
+| Pulisci chat | Pill "PULISCI" | ✅ la conferma si toglie toccando **fuori** dal riquadro, senza centrare nessun tasto |
+| Animazioni in vetro | Pannelli, leva, tasti, interruttori | ✅ il vetro vive solo durante il movimento: da fermo tutto è identico a prima |
 
 ## Compilazione
 
@@ -177,10 +183,23 @@ Resta una cosa per costruzione: il prompt di sistema si manda all'apertura della
 
 **Catene di azioni** — dipendevano da come veniva detta la frase: le stesse azioni, chieste in modo naturale invece che scandito, sparivano. Buona parte era casualità del modello, che a ogni richiesta riformulava il piano in modo diverso: ora le richieste che comportano azioni vengono fatte a temperatura bassa, così la stessa frase dà sempre lo stesso risultato. La combinazione sveglia più messaggio WhatsApp, l'unica che non riusciva mai, è ora scritta come esempio nel prompt.
 
-**Vecchio meccanismo a comandi testuali** — resta nel codice come rete di sicurezza sotto agli strumenti. Una volta confermato il funzionamento delle catene va rimosso, insieme alla duplicazione che si porta dietro.
+**La modalità a comandi** — la decisione è cambiata e vale la pena scriverla: **non si toglie.** Le catene funzionano, quindi la ragione di tenerla non è più il dubbio che gli strumenti non reggano; è che è l'unica strada che non passa da Gemini. Il modello Live è in anteprima, e il giorno che non risponde quella è la differenza fra un'app più lenta e un'app morta. Per lo stesso motivo restano Groq e Deepgram: non servono a niente finché tutto funziona, ed è esattamente il punto.
 
 ## Non ancora implementato
 
-**Parola di attivazione "Jarvis"** — ascolto continuo senza toccare lo schermo. Rimandata: è l'unica funzione non verificabile senza un dispositivo e rischia di destabilizzare il resto.
+**Parola di attivazione "Jarvis"** — ascolto continuo senza toccare lo schermo. Rimandata: è l'unica funzione non verificabile senza un dispositivo e rischia di destabilizzare il resto. Ha anche perso urgenza, perché la conversazione ormai si apre da sola all'avvio e resta aperta.
 
-**Report in PDF, salvataggio file e riordino cartelle** — discussi e fattibili, appoggiati sugli strumenti: si costruiscono una volta confermate le catene.
+**Report in PDF, salvataggio file e riordino cartelle** — discussi e fattibili, appoggiati sugli strumenti.
+
+**Allegati che non siano immagini** — un documento, un PDF. La strada è la stessa dell'immagine (`inlineData` dentro un turno), quindi il lavoro è breve; non è mai stato chiesto.
+
+## Cosa non si può verificare da qui
+
+Il codice lo scrive Claude, che non ha né telefono né SDK Android. Restano fuori portata, e vanno provati sul dispositivo:
+
+- il **Kotlin** della bolla e dell'audio a flusso — non c'è niente con cui compilarlo;
+- tutto ciò che passa da un **WebSocket**, cioè l'intera conversazione continua: da quell'ambiente le connessioni non escono, nemmeno verso un server di prova;
+- il **suono dell'otturatore** e ogni altro comportamento imposto dal produttore;
+- l'aspetto vero delle animazioni, che si giudica solo guardandole.
+
+Quello che invece si controlla prima di ogni build sta in `strumenti/controlla.py` e nella ricostruzione del pacchetto: import rotti, componenti inesistenti, stili citati e mai definiti, costanti mai dichiarate.

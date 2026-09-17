@@ -12,7 +12,9 @@
 
 ## What this is
 
-J.A.R.V.I.S. is a personal voice assistant for Android, inspired by Tony Stark's AI in Iron Man. You tap the radar, speak, and it answers — out loud and on screen. But more importantly, it *acts*: it sets real alarms in your clock app, creates real calendar events, calls people from your address book, starts navigation, and opens your apps.
+J.A.R.V.I.S. is a personal voice assistant for Android, inspired by Tony Stark's AI in Iron Man. You open it and talk — it listens and answers in its own voice, while you speak. But more importantly, it *acts*: it sets real alarms in your clock app, creates real calendar events, calls people from your address book, starts navigation, and opens your apps.
+
+It can also **see**. Point the camera at something and ask about it, or attach a photo and keep asking — the picture stays in the conversation, so the follow-up questions still find it there.
 
 It speaks and understands **Italian**, and it runs entirely on free API tiers.
 
@@ -20,28 +22,39 @@ It speaks and understands **Italian**, and it runs entirely on free API tiers.
 
 Phone assistants tend to fall into two camps: the ones built into the system, which are closed and can't be changed, and the chat apps, which talk beautifully but can't touch anything on your device. This project is an attempt at the middle ground — something that holds a real conversation *and* has hands.
 
-It started as a fork of an existing open-source assistant and grew from there — and by version 3 the heart of it is a continuous spoken conversation rather than the command loop it began as: translated to Italian, rebuilt around free providers, given a heads-up-display interface, and taught roughly thirty commands that do actual work on the phone.
+It started as a fork of an existing open-source assistant and grew from there — and by version 3 the heart of it is a continuous spoken conversation rather than the command loop it began as: translated to Italian, rebuilt around free providers, given a heads-up-display interface, and taught twenty-one actions that do real work on the phone.
 
 ## How it works
 
-The flow of a single request:
+### The conversation
 
-1. **You speak** — the recording is sent to **Whisper** (via Groq) and transcribed.
-2. **It thinks** — the text goes to a language model (**GPT-OSS 120B** via Groq), which is handed the list of actions the app can perform on the phone.
-3. **It acts** — if the model asks for one or more of those actions, the app carries them out in order and reports back on all of them at once, so a single request can set an alarm, start a timer and place a call. Otherwise the answer is simply spoken.
-4. **It speaks** — the reply is read aloud with a neural voice from **Microsoft Edge's read-aloud service**, stepping down to Deepgram Aura-2 and then to the phone's built-in voice, so it never falls silent.
+What the app opens into is a continuous conversation. One model listens to your voice and answers in its own, while you speak — no recording, no transcription, no synthetic voice reading out a text written by someone else. You can interrupt it mid-sentence and it stops, the way a person would; the app measures what comes in through the microphone rather than waiting for the server to notice.
 
-The reasoning runs on **Gemini**, with Groq kept behind it. Groq's free tier allows 8000 tokens a minute and a single request here spends about three thousand of them, which a chain of actions exhausts in two rounds — after that the model stops answering, and the actions that never happened only looked forgotten.
+It runs on **Gemini's Live API**, over a connection held open for as long as the conversation lasts, with every action available inside it. Asking for four things at once — two alarms, a timer and a call — takes one breath, because the model plans them together instead of one round trip at a time.
 
-You can also type instead of speaking — same actions, same behaviour.
+Down the same connection goes **what the camera sees**: a frame a second, beside the audio, so "what is this?" needs no explanation of what *this* refers to. And a picture from your library can be attached to what you type — that one enters as a real turn, so it stays in the thread and later questions still find it.
 
-This is the older of the two ways, and it now sits in the settings. What the app opens into is a continuous conversation: one model listens to your voice and answers in its own, while you speak — no recording, no transcription, no synthetic voice reading out a text written by someone else. You can interrupt it mid-sentence and it stops, the way a person would. It runs on Gemini's Live API, over a connection held open for as long as the conversation lasts, with the same actions available as everywhere else.
+Say goodbye — "go to sleep", "see you later", "goodnight" — and it answers, finishes the sentence, and puts the phone back on its home screen.
 
-And you do not have to be in the app at all: with the floating bubble on, leaving it puts a circle over whatever is on screen. A tap opens the continuous conversation right there, a long press brings the app back, and dragging it onto the tab at the bottom removes it. The ring turns green while it listens and amber while it thinks, because from out there the colour is all you have to go on.
+### The command mode, behind a switch
+
+The older way is still here, one setting away. It records, transcribes with **Whisper** (via Groq), reasons with **Gemini** (Groq behind it), and reads the answer aloud with a neural voice from **Microsoft Edge's read-aloud service**, stepping down to Deepgram Aura-2 and then to the phone's own voice, so it never falls silent.
+
+It is slower and flatter — a transcript loses the tone and the pauses that the live model hears — but it is the only road that does not go through Gemini. The Live model is a preview; the day it stops answering, this is the difference between a slower app and a dead one.
+
+One number explains a lot of this project's history: Groq's free tier allows 8000 tokens a minute, and a single request here spends about three thousand of them. A chain of actions exhausts that in two rounds, after which the model simply stops answering — and the actions that never happened only looked forgotten.
+
+### Outside the app
+
+You do not have to be in the app at all: with the floating bubble on, leaving it puts a circle over whatever is on screen. A tap opens the continuous conversation right there, a long press brings the app back, and dragging it onto the tab at the bottom removes it. The ring turns green while it listens and amber while it thinks, because from out there the colour is all you have to go on.
+
+With the bubble off, leaving the app closes the conversation instead: a microphone that stays open behind other apps is not a feature.
 
 ## Features
 
-A continuous spoken conversation · typing, when speaking is not an option · a memory of who you are · a floating bubble that stays over other apps · spoken replies with a natural voice, selectable in the app · several actions from one request · weather · native alarms and timers · calendar events · reminders (create, list, cancel) · phone calls and WhatsApp messages by contact name · navigation · launching ~20 common apps · camera, Telegram, YouTube · GitHub repository management · an opening briefing with the time, weather and your day's appointments · persistent memory across restarts · battery monitor · a settings panel listing every command.
+A continuous spoken conversation · **seeing through the camera**, a frame a second, while you talk · **attaching a picture** and going on asking about it · typing, when speaking is not an option · a memory of who you are, written by you and added to by it · a floating bubble that stays over other apps · a spoken goodbye that closes the app · interrupting it mid-sentence · several actions from one request · weather · native alarms and timers · calendar events · reminders (create, list, cancel) · phone calls and WhatsApp messages by contact name · navigation · launching ~20 common apps · camera, Telegram, YouTube · web search · GitHub repository management · an opening briefing with the time, weather and your day's appointments, spoken in its own voice · battery monitor · a settings panel listing every command.
+
+Twenty-one actions in all. The interface is a heads-up display that moves like something physical: panels frost the background and rise into place, the mode lever stretches in the direction it travels, buttons press like surfaces — and every bit of that glass exists only while something moves, because at rest is when a screen has to be read.
 
 Web search goes through **DuckDuckGo**, which needs no key and has no quota: it returns page excerpts, and the reply is written by the chat model already in use. Gemini's Google search sits behind it — better prose, but grounding is not in the free tier and answers "quota exceeded" — and Groq Compound behind that.
 
@@ -74,19 +87,21 @@ Fork this repository to your own GitHub account.
 
 | Key | Where | Cost | Needed for |
 |---|---|---|---|
-| Groq | [console.groq.com](https://console.groq.com) | Free | **Required** — transcription and replies |
-| Deepgram | [console.deepgram.com](https://console.deepgram.com) | Free, no card | Recommended — the natural voice. Signing up grants credit worth millions of characters that does not expire |
-| Gemini | [aistudio.google.com](https://aistudio.google.com) | Free | Optional — a second voice, used if Deepgram is unavailable. Its own quota runs out after roughly six replies in quick succession |
+| Gemini | [aistudio.google.com](https://aistudio.google.com) | Free | **Required** — the conversation itself, the reasoning, and seeing through the camera. Without it the app has no main road |
+| Groq | [console.groq.com](https://console.groq.com) | Free | **Required** — transcription, and the reasoning fallback for command mode. 8000 tokens a minute, which one request here half spends |
+| Deepgram | [console.deepgram.com](https://console.deepgram.com) | Free, no card | Optional — the fallback voice for command mode only; the conversation speaks for itself. Signing up grants credit worth millions of characters that does not expire |
 | GitHub token | GitHub → Settings → Developer settings → Personal access tokens, `repo` scope | Free | Optional — only for the repository commands |
+
+The camera and the picture attachment need no key of their own: they travel down the Gemini connection that is already open.
 
 ### 3. Create the Expo project
 
 Sign up at [expo.dev](https://expo.dev) and create a project. Then, in **Project settings → Environment variables**, add your keys as **Plain text**, for all environments:
 
 ```
-EXPO_PUBLIC_GROQ_API_KEY
-EXPO_PUBLIC_DEEPGRAM_API_KEY    (voice)
-EXPO_PUBLIC_GEMINI_API_KEY      (optional)
+EXPO_PUBLIC_GEMINI_API_KEY      (the conversation, the reasoning, the camera)
+EXPO_PUBLIC_GROQ_API_KEY        (transcription, fallback reasoning)
+EXPO_PUBLIC_DEEPGRAM_API_KEY    (fallback voice, optional)
 EXPO_PUBLIC_GITHUB_TOKEN_KEY    (optional)
 ```
 
@@ -119,7 +134,7 @@ Two caveats. It signs with the project's `debug.keystore`, a different key from 
 
 ### 6. First run
 
-The app will ask for microphone, notification, calendar and contacts permissions. Grant the ones you want to use — anything you deny simply disables the matching feature.
+The app will ask for microphone, camera, notification, calendar and contacts permissions. Grant the ones you want to use — anything you deny simply disables the matching feature. The camera is only asked for the first time you open the eye.
 
 Then say *"my city is Bologna"*, or set it in the settings panel, so the opening briefing gives you the right weather.
 
@@ -142,6 +157,12 @@ Two more things worth knowing:
 - Tool calling gets its own temperature. At the default the model re-plans the same sentence differently each time, and which action survives a chain becomes a draw.
 - A system prompt built at module scope is frozen before anything asynchronous has loaded. Here it embedded the user's saved memory, which is read from disk after the first render, so the constant carried an empty memory for the life of the process while the settings screen showed it correctly. Build the prompt where it is used, not where the module is imported.
 - A write that fails silently is worse than one that throws. A memory kept in RAM after its save failed works perfectly until the app is closed, and then the loss looks like a model that forgets rather than a disk that refused.
+- Live video rides the same socket as live audio: `realtimeInput.video` beside `realtimeInput.audio`, `image/jpeg`, one frame a second, which is the rate Google recommends. A phone's photo is enormous next to what a model needs — ask the device which picture sizes it can produce and take the smallest above 640 pixels, below which it stops reading signs — and take one shot at a time, or a slow phone queues frames describing a past nobody asked about.
+- An attached picture is not a frame: sent as a `clientContent` turn with `inlineData`, it stays in the conversation's thread, so follow-up questions still find it.
+- A scrollable box inside another scrollable box does not scroll at all on Android without `nestedScrollEnabled` — the outer one takes the gesture.
+- Copying on a single tap makes text impossible to select: every attempt to grab a word copies the whole thing. Copy on the double tap.
+- `adjustResize` shrinks the window for the keyboard but does not move what you were looking at. A text field at the bottom of a scrolling page has to be brought into view yourself, after a short delay so the keyboard has taken its space first.
+- A component that wraps something already laid out must not take its style: `position: absolute`, `flex: 1` and margins are all relative to the parent, and moving them one node down positions the child against a box of zero size — visible where expected, and untouchable, because Android does not deliver touches outside a parent's bounds.
 - The launcher icons are generated by `strumenti/icona.py`, which writes the PNGs by hand through `zlib` — edges computed rather than supersampled, so a 48-pixel icon is as clean as a 432-pixel one. An adaptive icon's safe area is the middle circle, a third of the side: outside it every phone crops differently, and fine detail has to drop out below a certain size or it turns to dirt.
 
 ## Credits
@@ -165,7 +186,9 @@ Mark-LIII, mentioned above, is licensed CC BY-NC, which does not mix with MIT. N
 
 ## Che cos'è
 
-J.A.R.V.I.S. è un assistente vocale personale per Android, ispirato all'intelligenza artificiale di Tony Stark in Iron Man. Si tocca il radar, si parla, e lui risponde — a voce e a schermo. Ma soprattutto *agisce*: mette sveglie vere nell'app Orologio, crea eventi veri nel calendario, chiama le persone in rubrica, avvia la navigazione e apre le app.
+J.A.R.V.I.S. è un assistente vocale personale per Android, ispirato all'intelligenza artificiale di Tony Stark in Iron Man. Si apre e si parla: lui ascolta e risponde con la propria voce, mentre si parla. Ma soprattutto *agisce*: mette sveglie vere nell'app Orologio, crea eventi veri nel calendario, chiama le persone in rubrica, avvia la navigazione e apre le app.
+
+E **vede**. Si inquadra qualcosa con la fotocamera e gli si chiede cos'è, oppure si allega una foto e si continua a fargli domande — l'immagine resta nella conversazione, quindi le domande successive la ritrovano.
 
 Parla e capisce **italiano**, e funziona interamente con quote gratuite.
 
@@ -173,28 +196,39 @@ Parla e capisce **italiano**, e funziona interamente con quote gratuite.
 
 Gli assistenti sul telefono tendono a dividersi in due categorie: quelli di sistema, chiusi e non modificabili, e le app di chat, che conversano benissimo ma non possono toccare nulla del dispositivo. Questo progetto prova a stare nel mezzo — qualcosa che sostiene una conversazione vera *e* ha le mani.
 
-È nato come fork di un assistente open source già esistente ed è cresciuto da lì — e alla versione 3 il suo cuore è una conversazione continua a voce, non più il giro a comandi da cui era partito: tradotto in italiano, ricostruito su provider gratuiti, dotato di un'interfaccia in stile HUD e istruito con una trentina di comandi che fanno cose concrete sul telefono.
+È nato come fork di un assistente open source già esistente ed è cresciuto da lì — e alla versione 3 il suo cuore è una conversazione continua a voce, non più il giro a comandi da cui era partito: tradotto in italiano, ricostruito su provider gratuiti, dotato di un'interfaccia in stile HUD e istruito con ventuno azioni che fanno cose concrete sul telefono.
 
 ## Come funziona
 
-Il percorso di una singola richiesta:
+### La conversazione
 
-1. **Si parla** — la registrazione viene mandata a **Whisper** (tramite Groq) e trascritta.
-2. **Ragiona** — il testo va a un modello linguistico (**GPT-OSS 120B** tramite Groq), a cui viene consegnato l'elenco delle azioni che l'app sa compiere sul telefono.
-3. **Agisce** — se il modello ne richiede una o più, l'app le esegue in ordine e le conferma tutte insieme: una sola richiesta può quindi mettere una sveglia, avviare un timer e fare una chiamata. Altrimenti la risposta viene semplicemente letta.
-4. **Risponde** — la risposta viene letta con una voce neurale del **servizio di lettura ad alta voce di Microsoft Edge**, scendendo su Deepgram Aura-2 e poi sulla voce di sistema del telefono, così non resta mai muto.
+Quello con cui l'app si apre è una conversazione continua. Un solo modello ascolta la voce e risponde con la propria, mentre si parla — niente registrazione, niente trascrizione, nessuna voce sintetica che legge un testo scritto da qualcun altro. Lo si può interrompere a metà frase e si ferma, come farebbe una persona: l'app misura quanto entra dal microfono invece di aspettare che se ne accorga il server.
 
-Il ragionamento passa da **Gemini**, con Groq dietro come riserva. Il piano gratuito di Groq concede 8000 token al minuto e una sola richiesta di questa app ne consuma circa tremila: una catena di azioni li esaurisce in due giri, e da lì in poi il modello smette di rispondere — le azioni mai eseguite sembravano dimenticate, ma non erano mai state chieste.
+Passa dall'**API Live di Gemini**, su una connessione che resta aperta per tutta la conversazione, con tutte le azioni disponibili lì dentro. Chiedergli quattro cose insieme — due sveglie, un timer e una chiamata — dura un respiro, perché il modello le pianifica insieme invece che un giro per volta.
 
-Si può anche scrivere invece di parlare — stesse azioni, stesso comportamento.
+Dalla stessa connessione passa **quello che vede la fotocamera**: un fotogramma al secondo, accanto alla voce, così "questo cos'è?" non ha bisogno di spiegare a cosa si riferisca *questo*. E a quello che si scrive si può agganciare un'immagine dalla galleria — quella entra come turno vero, quindi resta nel filo del discorso e le domande dopo la ritrovano.
 
-Questo è il più vecchio dei due modi, e sta ora nelle impostazioni. Quello con cui l'app si apre è una conversazione continua: un solo modello ascolta la voce e risponde con la propria, mentre si parla — niente registrazione, niente trascrizione, nessuna voce sintetica che legge un testo scritto da qualcun altro. Lo si può interrompere a metà frase e si ferma, come farebbe una persona. Passa dall'API Live di Gemini, su una connessione che resta aperta per tutta la conversazione, con le stesse azioni disponibili ovunque.
+Ci si congeda — "vai a dormire", "ci sentiamo dopo", "buonanotte" — e lui risponde, finisce la frase, e riporta il telefono alla schermata iniziale.
+
+### La modalità a comandi, dietro un interruttore
+
+Il modo più vecchio è ancora qui, a un'impostazione di distanza. Registra, trascrive con **Whisper** (tramite Groq), ragiona con **Gemini** (Groq dietro come riserva) e legge la risposta con una voce neurale del **servizio di lettura ad alta voce di Microsoft Edge**, scendendo su Deepgram Aura-2 e poi sulla voce di sistema del telefono, così non resta mai muto.
+
+È più lenta e più piatta — una trascrizione perde il tono e le pause che il modello dal vivo sente — ma è l'unica strada che non passa da Gemini. Il modello Live è in anteprima: il giorno che smette di rispondere, quella è la differenza fra un'app più lenta e un'app morta.
+
+Un numero solo spiega buona parte della storia di questo progetto: il piano gratuito di Groq concede 8000 token al minuto, e una sola richiesta di questa app ne consuma circa tremila. Una catena di azioni li esaurisce in due giri, e da lì in poi il modello smette semplicemente di rispondere — le azioni mai eseguite sembravano dimenticate, ma non erano mai state chieste.
+
+### Fuori dall'app
 
 E non serve nemmeno essere dentro l'app: con la bolla flottante accesa, uscendo resta un cerchio sopra qualunque cosa ci sia sullo schermo. Un tocco apre lì la conversazione continua, una pressione lunga riapre l'app, e trascinandola sulla linguetta in basso si toglie. L'anello diventa verde mentre ascolta e ambra mentre pensa, perché da lì fuori il colore è l'unica cosa su cui regolarsi.
 
+Con la bolla spenta, invece, uscire chiude la conversazione: un microfono che resta aperto dietro le altre app non è una funzione.
+
 ## Funzioni
 
-Conversazione continua a voce · scrittura, per quando parlare non si può · memoria di chi si è · bolla flottante che resta sopra le altre app · risposta parlata con voce naturale, selezionabile dall'app · più azioni con una sola richiesta · meteo · sveglie e timer nativi · eventi in calendario · promemoria (crea, elenca, annulla) · chiamate e messaggi WhatsApp per nome del contatto · navigazione · apertura di una ventina di app · fotocamera, Telegram, YouTube · gestione repository GitHub · riepilogo all'apertura con ora, meteo e impegni del giorno · memoria che sopravvive alla chiusura · monitor della batteria · pannello impostazioni con l'elenco di tutti i comandi.
+Conversazione continua a voce · **vede dalla fotocamera**, un fotogramma al secondo, mentre si parla · **si allega un'immagine** e si continua a farci domande · scrittura, per quando parlare non si può · memoria di chi si è, scritta a mano e ampliata da lui · bolla flottante che resta sopra le altre app · un congedo a voce che chiude l'app · lo si interrompe a metà frase · più azioni con una sola richiesta · meteo · sveglie e timer nativi · eventi in calendario · promemoria (crea, elenca, annulla) · chiamate e messaggi WhatsApp per nome del contatto · navigazione · apertura di una ventina di app · fotocamera, Telegram, YouTube · ricerca sul web · gestione repository GitHub · riepilogo all'apertura con ora, meteo e impegni del giorno, detto con la sua voce · monitor della batteria · pannello impostazioni con l'elenco di tutti i comandi.
+
+Ventuno azioni in tutto. L'interfaccia è un quadro strumenti che si muove come una cosa fisica: i pannelli velano il fondo e salgono al loro posto, la leva delle modalità si stira nel verso in cui va, i tasti si premono come superfici — e tutto quel vetro vive **solo durante il movimento**, perché è da ferma che una schermata si legge.
 
 La ricerca sul web passa da **DuckDuckGo**, che non chiede chiavi e non ha quote: restituisce brani di pagine, e la risposta la scrive il modello di chat già in uso. Dietro c'è la ricerca Google di Gemini — scriverebbe meglio, ma non rientra nel piano gratuito e risponde che la quota è esaurita — e più indietro ancora Groq Compound.
 
@@ -228,19 +262,21 @@ Per iniziare bisogna fare un fork di questo repository sul proprio account GitHu
 
 | Chiave | Dove | Costo | Serve per |
 |---|---|---|---|
-| Groq | [console.groq.com](https://console.groq.com) | Gratis | **Obbligatoria** — trascrizione e risposte |
-| Deepgram | [console.deepgram.com](https://console.deepgram.com) | Gratis, senza carta | Consigliata — la voce naturale. All'iscrizione si riceve un credito che vale milioni di caratteri e non scade |
-| Gemini | [aistudio.google.com](https://aistudio.google.com) | Gratis | Facoltativa — seconda voce, usata se Deepgram non è disponibile. La sua quota si esaurisce dopo circa sei risposte ravvicinate |
+| Gemini | [aistudio.google.com](https://aistudio.google.com) | Gratis | **Obbligatoria** — la conversazione stessa, il ragionamento e la vista dalla fotocamera. Senza, l'app resta senza la sua strada principale |
+| Groq | [console.groq.com](https://console.groq.com) | Gratis | **Obbligatoria** — trascrizione, e ragionamento di riserva per la modalità a comandi. 8000 token al minuto, di cui una sola richiesta ne spende quasi metà |
+| Deepgram | [console.deepgram.com](https://console.deepgram.com) | Gratis, senza carta | Facoltativa — la voce di riserva della sola modalità a comandi; la conversazione parla da sé. All'iscrizione si riceve un credito che vale milioni di caratteri e non scade |
 | Token GitHub | GitHub → Settings → Developer settings → Personal access tokens, ambito `repo` | Gratis | Facoltativo — solo per i comandi sui repository |
+
+La fotocamera e l'allegato non chiedono nessuna chiave in più: passano dalla connessione con Gemini che è già aperta.
 
 ### 3. Creare il progetto su Expo
 
 Bisogna registrarsi su [expo.dev](https://expo.dev) e creare un progetto. Poi, in **Project settings → Environment variables**, vanno aggiunte le chiavi come **Plain text**, per tutti gli ambienti:
 
 ```
-EXPO_PUBLIC_GROQ_API_KEY
-EXPO_PUBLIC_DEEPGRAM_API_KEY    (voce)
-EXPO_PUBLIC_GEMINI_API_KEY      (facoltativa)
+EXPO_PUBLIC_GEMINI_API_KEY      (la conversazione, il ragionamento, la fotocamera)
+EXPO_PUBLIC_GROQ_API_KEY        (trascrizione, ragionamento di riserva)
+EXPO_PUBLIC_DEEPGRAM_API_KEY    (voce di riserva, facoltativa)
 EXPO_PUBLIC_GITHUB_TOKEN_KEY    (facoltativo)
 ```
 
@@ -273,7 +309,7 @@ Due avvertenze. La firma usa la `debug.keystore` del progetto, che è una chiave
 
 ### 6. Primo avvio
 
-L'app chiederà i permessi per microfono, notifiche, calendario e rubrica. Vanno concessi quelli che interessano: quelli negati disattivano semplicemente la funzione corrispondente.
+L'app chiederà i permessi per microfono, fotocamera, notifiche, calendario e rubrica. Vanno concessi quelli che interessano: quelli negati disattivano semplicemente la funzione corrispondente. Quello della fotocamera viene chiesto solo la prima volta che si apre la vista.
 
 Poi basta dire *"la mia città è Bologna"*, oppure impostarla dal pannello impostazioni, così il riepilogo di apertura dà il meteo giusto.
 
@@ -296,6 +332,12 @@ Altre due cose che vale la pena sapere:
 - Le richieste che comportano azioni vogliono una temperatura propria. Con il valore predefinito il modello ripianifica ogni volta la stessa frase in modo diverso, e quale azione sopravviva a una catena diventa un sorteggio.
 - Un prompt di sistema costruito a livello di modulo è già fissato prima che qualunque cosa asincrona sia stata caricata. Qui incorporava la memoria dell'utente, che si legge da disco dopo il primo disegno della schermata: la costante si portava dietro una memoria vuota per tutta la vita del processo, mentre le impostazioni la mostravano correttamente. Il prompt va costruito dove si usa, non dove si importa il modulo.
 - Una scrittura che fallisce in silenzio è peggio di una che dà errore. Un ricordo tenuto in memoria dopo un salvataggio fallito funziona benissimo fino alla chiusura dell'app, e poi la perdita sembra un modello che dimentica invece di un disco che si è rifiutato.
+- Il video della conversazione passa dalla stessa connessione dell'audio: `realtimeInput.video` accanto a `realtimeInput.audio`, `image/jpeg`, un fotogramma al secondo, che è il ritmo consigliato da Google. Una foto del telefono è enorme rispetto a quello che serve a un modello — si chiede al dispositivo quali misure sa fare e si prende la più piccola sopra i 640 pixel, sotto cui smette di leggere le scritte — e si scatta una volta per volta, altrimenti un telefono lento accoda fotogrammi che descrivono un passato che nessuno ha chiesto.
+- Un'immagine allegata non è un fotogramma: mandata come turno `clientContent` con `inlineData`, resta nel filo della conversazione, quindi le domande successive la ritrovano.
+- Un riquadro scorrevole dentro un altro riquadro scorrevole non scorre affatto, su Android, senza `nestedScrollEnabled`: il gesto se lo prende quello esterno.
+- Copiare al tocco singolo rende il testo impossibile da selezionare: ogni tentativo di prendere una parola copia tutto. Si copia al doppio tocco.
+- `adjustResize` accorcia la finestra per fare posto alla tastiera, ma non sposta quello che si stava guardando. Un campo di testo in fondo a una pagina scorrevole va portato in vista da soli, con un ritardo breve perché la tastiera abbia già preso il suo spazio.
+- Un componente che avvolge qualcosa di già disposto non deve prendergli lo stile: `position: absolute`, `flex: 1` e i margini valgono rispetto al genitore, e spostarli di un nodo più in basso posiziona il figlio rispetto a un riquadro di dimensione zero — visibile dove ci si aspetta, e intoccabile, perché Android non consegna i tocchi fuori dai confini del genitore.
 - Le icone sono generate da `strumenti/icona.py`, che scrive i PNG a mano con `zlib`: i bordi si calcolano invece di campionarli, così un'icona da 48 pixel è pulita quanto una da 432. L'area sicura di un'icona adattiva è il cerchio centrale, un terzo del lato: fuori di lì ogni telefono taglia in modo diverso, e sotto una certa misura i dettagli fini vanno tolti o diventano sporcizia.
 
 ## Crediti

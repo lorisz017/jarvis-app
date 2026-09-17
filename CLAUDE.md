@@ -110,6 +110,9 @@ parla sopra, abbassata.**
 | `src/components/FoglioLiquido.jsx` | L'apertura dei pannelli: vetro sul fondo, foglio che sale |
 | `src/components/TastoLiquido.jsx` | Il tasto che si abbassa e si vela sotto il dito |
 | `src/components/Occhio.jsx` | La fotocamera al posto del radar, un fotogramma al secondo |
+| `src/components/Avviso.jsx` | L'avviso che si toglie toccando fuori |
+| `src/components/ResponseBox.jsx` | L'ultima risposta: scorre, si seleziona, si copia col doppio tocco |
+| `src/components/ActivityLog.jsx` | Il registro: segue la conversazione, si ferma se si risale |
 | `src/services/tools.jsx` | Le 21 azioni: schema per il modello ed esecuzione |
 | `src/services/ttsService.jsx` | La catena della voce e il pareggiamento del volume |
 | `src/services/edgeTtsService.jsx` | La voce di Edge |
@@ -409,26 +412,32 @@ Le regole che lo rendono utile invece che decorativo:
 Lo stato dettagliato sta in `STATO_FUNZIONI.md`; qui la sostanza.
 
 **Funziona e va lasciato stare:** la conversazione continua, la sua voce, le
-azioni concatenate, la ricerca, l'interruzione immediata, la bolla, e **la
-vista** — confermata al primo collaudo: legge le scritte, capisce il contesto
-e lo racconta con naturalezza. Il ritmo di un fotogramma al secondo e la
-misura sopra i 640 pixel erano due numeri scelti a tavolino e sono risultati
-giusti: non si toccano senza un motivo.
+azioni concatenate, la ricerca, l'interruzione immediata, la bolla, la **vista**
+dalla fotocamera e le **immagini allegate**.
+
+Sulla vista: il ritmo di un fotogramma al secondo e la misura sopra i 640
+pixel erano due numeri scelti a tavolino e sono risultati giusti al primo
+collaudo — legge le scritte, capisce il contesto e lo racconta con naturalezza.
+Non si toccano senza un motivo.
+
+Sul congedo, la regola che ha smesso di sbagliare è una domanda sola: **sta
+salutando te, o sta parlando di sé?** Allargare gli esempi allarga il sospetto
+e l'app comincia a chiudersi quando uno dice che è stanco. Nel dubbio non
+chiudere: chiudere per sbaglio interrompe tutto, non chiudere costa una frase.
 
 **Confermato sul telefono** (versione 3.0.0): la memoria personale in tutte e
 due le metà, il campo di testo dentro la conversazione, la voce spegnibile, il
-registro che segue la conversazione senza rubare lo scorrimento, il
 riconoscimento del creatore, l'icona nuova, la riservatezza delle istruzioni —
-che ha retto anche alle richieste di traverso — e i sei difetti della serata
-del collaudo.
+che ha retto anche alle richieste di traverso — i tasti e le pastiglie dopo la
+correzione del contenitore, i pannelli in vetro, il riepilogo d'apertura detto
+dalla conversazione con la sua voce, il congedo sullo scambio di saluti e sui
+commiati non espliciti, e **le immagini allegate** in tutte le loro parti:
+miniatura, invio con la domanda, domande successive sulla stessa immagine.
 
-**Confermato anche**: i tasti in alto e le tre pastiglie dopo la correzione
-del contenitore, i pannelli che si aprono col vetro, e il congedo — che chiude
-l'app davvero.
-
-**Da confermare**: il congedo su un commiato non esplicito ("a domani",
-"ciao") e sullo scambio di saluti — chiudeva tagliando la seconda frase — più
-il riepilogo d'apertura detto dalla conversazione con la sua voce.
+**Da confermare** (le correzioni dell'ultimo giro): che il congedo non chiuda
+più su "sono stanco, vado a letto io" — era diventato troppo zelante — che il
+riquadro della risposta scorra e si selezioni, che il registro non tagli più
+le risposte, e che la tastiera non copra il campo di testo.
 
 **Ancora aperto davvero:**
 
