@@ -121,6 +121,16 @@ L'ultima versione provata sul telefono e funzionante è sul ramo `funzionante`.
 
 **Scrivere dentro la conversazione** — il campo di testo resta anche in conversazione, per quando parlare non è possibile. Non apre un giro a parte: la frase scritta entra nella sessione aperta, con la stessa memoria, e la risposta torna a voce. Con la voce spenta la conversazione continua ad ascoltare e a capire, ma non parla: l'audio arriva e viene scartato, e resta la trascrizione a schermo.
 
+**Quattro cose della serata degli allegati** — l'allegato e la conferma toccando fuori sono risultati a posto; queste erano il contorno che non lo era.
+
+*Il riquadro della risposta non si poteva né scorrere né selezionare.* Due cause distinte. Su Android un riquadro scorrevole dentro un altro riquadro scorrevole **non scorre affatto** senza `nestedScrollEnabled`: il gesto se lo prende quello esterno, e una risposta lunga resta tagliata senza modo di tornare sopra. E il tocco singolo copiava tutto, quindi ogni tentativo di selezionare una parola faceva partire la copia dell'intera risposta. Ora copia il **doppio** tocco, il singolo non fa niente, e la selezione è libera.
+
+*Il registro tagliava le risposte ai cento caratteri.* Con i puntini di sospensione, per giunta: cioè proprio la parte che si sarebbe voluta rileggere. Il registro esiste per rileggere, quindi il taglio è sparito — per la lunghezza c'è lo scorrimento, che lì funzionava già — e adesso il testo si può anche selezionare.
+
+*La tastiera copriva il campo di testo.* Il manifest ha già `adjustResize`, quindi la finestra si accorcia davvero; solo che accorciarsi non sposta quello che si stava guardando, e il campo finiva sotto la tastiera. Ora toccarlo porta la pagina in fondo, con un ritardo breve perché la tastiera abbia già preso il suo spazio: spostarsi prima vuol dire spostarsi di quanto serviva un istante fa.
+
+*Il congedo era diventato troppo zelante:* "sono stanco, vado a letto io" chiudeva l'app. Allargare gli esempi aveva allargato anche il sospetto. Ora la regola è una domanda sola — **sta salutando te, o sta parlando di sé?** — con il criterio per i casi incerti scritto accanto: nel dubbio non chiudere, perché chiudere per sbaglio interrompe tutto mentre non chiudere costa una frase.
+
 **Il congedo tagliava la seconda frase** — "vai a dormire" funzionava, ma rispondendo "anche a te" l'app si chiudeva mentre lui ricominciava a parlare. Il congedo aspettava che smettesse di parlare **la prima volta**, e un commiato non è una frase sola: è uno scambio. Ora ogni volta che riprende a parlare il conto riparte, e si esce solo dopo due secondi di quiete vera, con un tetto di trenta secondi che serve solo a non restare appesi.
 
 Le formule diverse da "vai a dormire" non venivano riconosciute: lo strumento le elencava tutte, ma come esempi di un congedo esplicito. Ora la regola è detta al contrario — se ti sta salutando, sta chiudendo — con l'eccezione scritta accanto: parlare di sé ("sono stanco", "vado a letto io") non è congedare nessuno.

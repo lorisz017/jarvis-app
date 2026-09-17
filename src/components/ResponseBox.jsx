@@ -23,9 +23,21 @@ export default function ResponseBox({isLoading, displayedText, scrollRef}) {
         setSeguiIlFondo(distanza <= VICINO_AL_FONDO);
     };
 
-    const copyToClipboard = () => {
-        Clipboard.setStringAsync(displayedText);
-        Alert.alert('Signore', 'Risposta copiata negli appunti.');
+    // Copiare al primo tocco rendeva il testo impossibile da selezionare: ogni
+    // volta che si provava a prenderne un pezzo partiva la copia dell'intera
+    // risposta. Ora copia il **doppio** tocco; il tocco singolo non fa niente,
+    // così restano liberi sia la selezione sia lo scorrimento.
+    const ultimoTocco = useRef(0);
+
+    const forseCopia = () => {
+        const adesso = Date.now();
+        if (adesso - ultimoTocco.current < 300) {
+            ultimoTocco.current = 0;
+            Clipboard.setStringAsync(displayedText);
+            Alert.alert('Signore', 'Risposta copiata negli appunti.');
+            return;
+        }
+        ultimoTocco.current = adesso;
     };
 
     return (
@@ -37,8 +49,12 @@ export default function ResponseBox({isLoading, displayedText, scrollRef}) {
                 contentContainerStyle={styles.responseScrollViewContent}
                 onScroll={guarda}
                 scrollEventThrottle={80}
+                // Senza questo, su Android un riquadro scorrevole dentro un
+                // altro riquadro scorrevole non scorre affatto: il gesto se lo
+                // prende quello esterno e la risposta lunga resta tagliata.
+                nestedScrollEnabled
             >
-                <Text onPress={copyToClipboard} selectable style={styles.resp}>
+                <Text onPress={forseCopia} selectable style={styles.resp}>
                     {displayedText || (isLoading ? 'Sto pensando...' : 'In attesa dei suoi comandi, signore.')}
                 </Text>
             </ScrollView>

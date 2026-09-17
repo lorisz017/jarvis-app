@@ -219,6 +219,15 @@ pannello perennemente traslucido è un pannello che si fatica a leggere.
 - Su Android la sfocatura dentro una finestra modale non sempre prende quello
   che c'è sotto. Sotto al vetro resta perciò un velo scuro vero: se il vetro
   non si vede, il pannello si legge lo stesso.
+- **Un riquadro scorrevole dentro un altro non scorre**, su Android, senza
+  `nestedScrollEnabled`: il gesto se lo prende quello esterno e il contenuto
+  lungo resta tagliato senza modo di risalire.
+- **Copiare al tocco singolo impedisce di selezionare**: ogni tentativo di
+  prendere una parola fa partire la copia di tutto. Copia il doppio tocco.
+- La tastiera: il manifest ha `adjustResize`, quindi la finestra si accorcia —
+  ma accorciarsi **non sposta quello che si sta guardando**. Un campo di testo
+  in fondo a una pagina scorrevole va portato in vista da soli, con un ritardo
+  breve perché la tastiera abbia già preso il suo spazio.
 
 ## Cosa si può verificare prima di una build
 

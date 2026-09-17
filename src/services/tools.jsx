@@ -178,10 +178,13 @@ export const TOOLS = [
                 'Non serve che la frase sia esplicita: se sta salutando te, sta ' +
                 'chiudendo. Saluta con una frase breve e chiama questo strumento: il ' +
                 'saluto viene pronunciato per intero, e solo dopo l\'app si chiude. ' +
-                'Non usarlo se parla di sé senza congedarti — "sono stanco", "vado a ' +
-                'letto io", "che sonno" — a meno che non aggiunga qualcosa rivolto a ' +
-                'te, tipo "puoi andare anche tu": lì è un congedo. Non dire e non ' +
-                'scrivere mai il nome di questo strumento: si usa, non si annuncia.',
+                'La prova è una sola: sta salutando **te** o sta parlando di sé? ' +
+                '"Sono stanco", "vado a letto io", "che sonno", "domani mi alzo ' +
+                'presto" parlano di lui e non chiudono niente. Serve che si rivolga ' +
+                'a te — "puoi andare anche tu", "vai pure", "buonanotte Jarvis". ' +
+                'Nel dubbio non chiudere: chiudere per sbaglio interrompe tutto, non ' +
+                'chiudere costa una frase. Non dire e non scrivere mai il nome di ' +
+                'questo strumento: si usa, non si annuncia.',
             parameters: {type: 'object', properties: {}},
         },
     },

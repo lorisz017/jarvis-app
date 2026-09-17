@@ -101,6 +101,10 @@ export default function Home() {
     const [memoria, setMemoria] = useState({nota: '', ricordi: []});
 
     const scrollRef = useRef();
+    // La pagina intera. Serve per portarla in fondo quando si tocca il campo
+    // di testo: Android restringe la finestra per far posto alla tastiera, ma
+    // non sposta quello che si stava guardando, e il campo resta fuori vista.
+    const paginaRef = useRef();
     // Quale voce sta parlando adesso e quanto ha detto finora: serve a
     // ricomporre la risposta dai frammenti che arrivano a flusso.
     const turnoLiveRef = useRef({chi: null, testo: ''});
@@ -946,7 +950,11 @@ export default function Home() {
                 <Text style={styles.voiceToggleButtonText}>{isVoiceEnabled ? '🔊' : '🔇'}</Text>
             </TastoLiquido>
 
-            <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+            <ScrollView
+                ref={paginaRef}
+                contentContainerStyle={styles.scrollContent}
+                keyboardShouldPersistTaps="handled"
+            >
                 <Header/>
 
                 {isCommandModeEnabled ? (
@@ -1040,6 +1048,16 @@ export default function Home() {
                             placeholderTextColor="rgba(200, 244, 255, 0.35)"
                             onSubmitEditing={sendTypedMessage}
                             returnKeyType="send"
+                            // Con la tastiera aperta la finestra si accorcia e
+                            // il campo finisce sotto: si porta la pagina in
+                            // fondo, così si vede quello che si sta scrivendo
+                            // come in qualunque app di messaggi. Il ritardo
+                            // serve perché la tastiera abbia già preso il suo
+                            // spazio: spostarsi prima vuol dire spostarsi di
+                            // quanto serviva un istante fa.
+                            onFocus={() => {
+                                setTimeout(() => paginaRef.current?.scrollToEnd({animated: true}), 220);
+                            }}
                         />
                         <TastoLiquido style={styles.sendButton} onPress={sendTypedMessage}>
                             <Text style={styles.sendButtonText}>➤</Text>

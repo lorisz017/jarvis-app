@@ -51,15 +51,18 @@ export default function ActivityLog({chatHistory}) {
                 ) : (
                     entries.map((entry, index) => {
                         const isUser = entry.role === 'user';
+                        // Niente taglio ai cento caratteri: una risposta
+                        // troncata con i puntini è proprio quella che si
+                        // vorrebbe rileggere, e il registro esiste per
+                        // rileggere. Per la lunghezza c'è lo scorrimento.
                         const content = entry.content || '';
-                        const line = content.length > 100 ? `${content.slice(0, 100)}…` : content;
 
                         return (
-                            <Text key={index} style={styles.activityLogLine}>
+                            <Text key={index} selectable style={styles.activityLogLine}>
                                 <Text style={isUser ? styles.activityLogLabelUser : styles.activityLogLabelJarvis}>
                                     {isUser ? 'TU' : 'JARVIS'}:{' '}
                                 </Text>
-                                {line}
+                                {content}
                             </Text>
                         );
                     })
