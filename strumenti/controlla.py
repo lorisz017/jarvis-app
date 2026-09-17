@@ -63,10 +63,42 @@ def usati(sorgente):
     return {m.group(1) for m in re.finditer(r"<([A-Z][\w$]*)[\s/>.]", sorgente)}
 
 
+def costanti_mancanti(percorso):
+    """Nomi in maiuscolo usati in un file ma dichiarati da nessuna parte.
+
+    Un identificatore che non esiste non è un errore di compilazione: è una
+    variabile globale che al momento di leggerla non c'è, e l'app muore
+    all'avvio. Succede scrivendo uno stile nuovo che usa un colore con un nome
+    sbagliato, ed è invisibile fino all'apertura.
+    """
+    sorgente = open(percorso).read()
+
+    dichiarati = set(re.findall(r'\bconst\s+([A-Z][A-Z0-9_]*)\s*=', sorgente))
+    dichiarati |= _nella_graffa(' '.join(re.findall(r'import\s*\{([^}]*)\}', sorgente)))
+    dichiarati |= {m.group(1) for m in re.finditer(r'^import\s+([A-Za-z_$][\w$]*)', sorgente, re.M)}
+    # Nomi che arrivano dall'ambiente e non si dichiarano qui
+    dichiarati |= {'Math', 'JSON', 'Object', 'Array', 'String', 'Number', 'Boolean',
+                   'Date', 'Promise', 'Error', 'RegExp', 'Map', 'Set', 'NaN', 'Infinity'}
+
+    # Commenti e stringhe fuori: "HUD" dentro una frase non è un nome da
+    # cercare, e cercarlo vuol dire segnalare due righe di prosa a ogni giro.
+    codice = re.sub(r'/\*.*?\*/', ' ', sorgente, flags=re.S)
+    codice = re.sub(r'//[^\n]*', ' ', codice)
+    codice = re.sub(r"'(?:\\.|[^'\\])*'", "''", codice)
+    codice = re.sub(r'"(?:\\.|[^"\\])*"', '""', codice)
+    codice = re.sub(r'`(?:\\.|[^`\\])*`', '``', codice)
+
+    usati = set(re.findall(r'(?<![\w.])([A-Z][A-Z0-9_]{2,})(?![\w:])', codice))
+    return sorted(usati - dichiarati)
+
+
 def main():
     stili = set(re.findall(r'^\s{4}(\w+):\s*\{',
                            open('src/styles/mainStyles.jsx').read(), re.M))
     problemi = []
+
+    for nome in costanti_mancanti('src/styles/mainStyles.jsx'):
+        problemi.append(f'src/styles/mainStyles.jsx: {nome} non è dichiarato qui')
 
     for percorso in sorted(glob.glob('src/**/*.jsx', recursive=True)) + ['App.js', 'index.js']:
         try:

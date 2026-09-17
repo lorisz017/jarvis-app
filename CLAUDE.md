@@ -229,9 +229,12 @@ controllare niente:
   (`npx esbuild index.js --bundle --packages=external --loader:.js=jsx`)
   prende import rotti, funzioni che non esistono, stringhe non chiuse.
 - **`python3 strumenti/controlla.py`**, sempre, prima di dire che è pronto.
-  Fa i due controlli che il pacchetto **non** fa: che ogni componente usato
-  in JSX sia importato o definito nel file, e che ogni `styles.X` citato
-  esista in `mainStyles.jsx`.
+  Fa i tre controlli che il pacchetto **non** fa: che ogni componente usato
+  in JSX sia importato o definito nel file, che ogni `styles.X` citato esista
+  in `mainStyles.jsx`, e che ogni costante in maiuscolo usata negli stili sia
+  davvero dichiarata lì — un colore scritto col nome sbagliato non è un errore
+  di compilazione, è una variabile che al momento di leggerla non c'è, e l'app
+  muore all'apertura.
 
   Il primo è costato una build. `esbuild` compila benissimo un `<Pippo/>` che
   non esiste da nessuna parte — per lui è solo una variabile libera — e il

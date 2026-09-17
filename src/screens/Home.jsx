@@ -7,6 +7,7 @@ import {
     Animated,
     View,
     TextInput,
+    Image,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
@@ -21,6 +22,7 @@ import MicrophoneButton from '../components/MicrophoneButton';
 import ActivityLog from '../components/ActivityLog';
 import TastoLiquido from '../components/TastoLiquido';
 import Occhio from '../components/Occhio';
+import Avviso from '../components/Avviso';
 import ResponseBox from '../components/ResponseBox';
 import VoicePickerModal from '../components/VoicePickerModal';
 import SettingsModal from '../components/SettingsModal';
@@ -64,6 +66,11 @@ export default function Home() {
     const [displayedText, setDisplayedText] = useState('');
     // L'occhio: la fotocamera al posto del radar, dentro la conversazione.
     const [vistaAperta, setVistaAperta] = useState(false);
+    // L'immagine agganciata al campo di testo, in attesa di partire.
+    const [allegato, setAllegato] = useState(null);
+    // L'avviso che si chiude toccando fuori, al posto della finestra di
+    // sistema col suo tasto OK.
+    const [avviso, setAvviso] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [availableVoices, setAvailableVoices] = useState([]);
     const [selectedVoiceId, setSelectedVoiceId] = useState(undefined);
@@ -809,15 +816,88 @@ export default function Home() {
         if (statoLive !== 'spenta') fermaLive();
     };
 
+    // Un'immagine scelta dalla galleria. Non parte subito: si aggancia al
+    // campo di testo, così si può scrivere la domanda insieme — "questo cos'è"
+    // ha bisogno di tutte e due le cose nello stesso turno.
+    const scegliAllegato = async () => {
+        try {
+            const permesso = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (!permesso.granted) {
+                setAvviso({
+                    titolo: 'PERMESSO NEGATO',
+                    testo: 'Senza accesso alle immagini non posso allegarne una, signore.',
+                });
+                return;
+            }
+
+            const scelta = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                // La qualità serve a stare leggeri: un'immagine da tre megabyte
+                // impiega più tempo a partire di quanto lui ne impieghi a
+                // rispondere, e a lui non serve tutta quella definizione.
+                quality: 0.45,
+                base64: true,
+            });
+
+            if (scelta.canceled || !scelta.assets?.length) return;
+
+            const immagine = scelta.assets[0];
+            if (!immagine.base64) {
+                setAvviso({
+                    titolo: 'IMMAGINE NON LEGGIBILE',
+                    testo: 'Non sono riuscito a leggere quell\'immagine, signore.',
+                });
+                return;
+            }
+
+            setAllegato({
+                uri: immagine.uri,
+                base64: immagine.base64,
+                mimeType: immagine.mimeType || 'image/jpeg',
+            });
+        } catch (errore) {
+            setAvviso({titolo: 'ALLEGATO', testo: String(errore?.message || errore)});
+        }
+    };
+
     const sendTypedMessage = async () => {
         const message = typedText.trim();
-        if (!message) return;
+        if (!message && !allegato) return;
 
         // Stessa logica di interruzione voce usata dal microfono: scrivere
         // un nuovo messaggio mentre JARVIS sta ancora parlando lo interrompe.
         stopJarvisVoice();
         flushLiveAudio();
         setTypedText('');
+
+        // Un'immagine entra come turno vero della conversazione, quindi
+        // resta nel filo del discorso: le domande dopo la trovano ancora lì.
+        if (allegato) {
+            const inviata = sessioneLiveRef.current?.sendImage(
+                allegato.base64, allegato.mimeType, message
+            );
+
+            if (inviata) {
+                setAllegato(null);
+                setChatHistory((prev) => [...prev, {
+                    role: 'user',
+                    content: message ? `[immagine] ${message}` : '[immagine allegata]',
+                    live: true,
+                }]);
+                return;
+            }
+
+            // Senza conversazione aperta non c'è dove metterla: il giro a
+            // comandi manda testo e basta, e fingere il contrario vorrebbe
+            // dire farsi rispondere su un'immagine mai arrivata.
+            setAvviso({
+                titolo: 'SERVE LA CONVERSAZIONE',
+                testo: 'Le immagini entrano nella conversazione continua, signore: '
+                    + 'tocchi il radar per aprirla e me la rimandi.',
+            });
+            setTypedText(message);
+            return;
+        }
 
         // In conversazione la frase scritta entra nella sessione aperta
         // invece di aprire un giro a parte: stessa memoria, stessa voce.
@@ -930,10 +1010,28 @@ export default function Home() {
                         </Text>
                     ) : null}
 
+                    {allegato ? (
+                        <View style={styles.allegatoRiga}>
+                            <Image source={{uri: allegato.uri}} style={styles.allegatoMiniatura}/>
+                            <Text style={styles.allegatoTesto} numberOfLines={2}>
+                                Immagine pronta. Scriva la domanda e la mandi insieme.
+                            </Text>
+                            <TastoLiquido
+                                style={styles.allegatoVia}
+                                onPress={() => setAllegato(null)}
+                            >
+                                <Text style={styles.allegatoViaTesto}>✕</Text>
+                            </TastoLiquido>
+                        </View>
+                    ) : null}
+
                     <KeyboardAvoidingView
                         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                         style={styles.textInputRow}
                     >
+                        <TastoLiquido style={styles.attachButton} onPress={scegliAllegato}>
+                            <Text style={styles.sendButtonText}>📎</Text>
+                        </TastoLiquido>
                         <TextInput
                             style={styles.textInput}
                             value={typedText}
@@ -959,7 +1057,11 @@ export default function Home() {
                             onPress={() => {
                                 setChatHistory([buildSystemMessage()]);
                                 setDisplayedText('In attesa dei suoi comandi, signore.');
-                                Alert.alert('Chat cancellata', 'La cronologia della conversazione è stata azzerata.');
+                                setAllegato(null);
+                                setAvviso({
+                                    titolo: 'CHAT CANCELLATA',
+                                    testo: 'La cronologia della conversazione è stata azzerata, signore.',
+                                });
                             }}
                         >
                             <Text style={styles.pillButtonIcon}>🗑</Text>
@@ -984,6 +1086,13 @@ export default function Home() {
                     </View>
                 </View>
             </ScrollView>
+
+            <Avviso
+                visibile={Boolean(avviso)}
+                titolo={avviso?.titolo}
+                testo={avviso?.testo}
+                onChiudi={() => setAvviso(null)}
+            />
 
             <VoicePickerModal
                 isVisible={isVoicePickerVisible}

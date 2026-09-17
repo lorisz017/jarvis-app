@@ -191,6 +191,30 @@ export class LiveSession {
      * Un fotogramma al secondo: è quanto consiglia il modello, e di più
      * sarebbe soltanto banda buttata.
      */
+    /**
+     * Manda un'immagine dentro la conversazione, con una frase se c'è.
+     *
+     * Diversa dai fotogrammi della fotocamera: quelli passano e non restano,
+     * questa entra nel filo del discorso come un turno vero. Resta quindi
+     * nella memoria della sessione, e le domande successive — "e questo
+     * pezzo?", "cosa c'è scritto sotto?" — trovano ancora l'immagine lì.
+     */
+    sendImage(base64, mimeType = 'image/jpeg', testo = '') {
+        if (!base64 || !this.pronta) return false;
+
+        this._zittisci();
+
+        const parti = [{inlineData: {mimeType, data: base64}}];
+        const pulito = String(testo || '').trim();
+        if (pulito) parti.push({text: pulito});
+
+        this._invia({
+            clientContent: {turns: [{role: 'user', parts: parti}], turnComplete: true},
+        });
+
+        return true;
+    }
+
     sendFrame(base64) {
         if (!base64 || !this.pronta) return false;
         this._invia({realtimeInput: {video: {mimeType: MIME_FOTOGRAMMA, data: base64}}});

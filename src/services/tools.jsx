@@ -179,7 +179,9 @@ export const TOOLS = [
                 'chiudendo. Saluta con una frase breve e chiama questo strumento: il ' +
                 'saluto viene pronunciato per intero, e solo dopo l\'app si chiude. ' +
                 'Non usarlo se parla di sé senza congedarti — "sono stanco", "vado a ' +
-                'letto io", "che sonno" — né se ti chiede di mettere una sveglia.',
+                'letto io", "che sonno" — a meno che non aggiunga qualcosa rivolto a ' +
+                'te, tipo "puoi andare anche tu": lì è un congedo. Non dire e non ' +
+                'scrivere mai il nome di questo strumento: si usa, non si annuncia.',
             parameters: {type: 'object', properties: {}},
         },
     },
