@@ -699,12 +699,35 @@ export default function Home() {
         return () => iscrizione.remove();
     }, [isStateLoaded, isOverlayEnabled, apriConversazioneAllAvvio, modalita]);
 
+    // Aprire la conversazione non è un istante: ferma la registrazione, chiede
+    // il permesso, accende il servizio. Finché quella catena non è finita lo
+    // stato a schermo dice ancora "spenta" — lo stato si aggiorna al giro
+    // dopo — quindi un secondo tocco sul radar, o l'apertura automatica che
+    // capita nello stesso momento, trovava "spenta" e apriva una **seconda**
+    // sessione sopra la prima. Due sessioni suonano nello stesso altoparlante:
+    // due voci sovrapposte che si zittiscono a vicenda a metà parola.
+    //
+    // Per questo la difesa non può essere uno stato: un appunto si scrive e si
+    // rilegge nello stesso istante, ed è quello che serve qui.
+    const aperturaLiveRef = useRef(false);
+
     const toggleLive = async () => {
-        if (statoLive !== 'spenta') {
+        if (aperturaLiveRef.current) return;
+
+        if (statoLive !== 'spenta' || sessioneLiveRef.current) {
             fermaLive();
             return;
         }
 
+        aperturaLiveRef.current = true;
+        try {
+            await apriLive();
+        } finally {
+            aperturaLiveRef.current = false;
+        }
+    };
+
+    const apriLive = async () => {
         if (!isLiveSupported()) {
             Alert.alert(
                 'Non disponibile',

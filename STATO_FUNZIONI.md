@@ -125,6 +125,69 @@ L'ultima versione provata sul telefono e funzionante è sul ramo `funzionante`.
 
 ## Cosa resta aperto
 
+**L'audio che si accavallava su un OPPO** — questa correzione vive per ora sul
+ramo `claude/app-build-workflow-apk-r2mfw2`, da cui si compila la build di
+Andrea: è lì che il difetto si è visto, ed è lì che va provato prima di
+portarlo su `main`. Sullo Xiaomi il difetto non si era mai presentato.
+
+Il sintomo era uno — voci sovrapposte e parole tagliate di continuo — ma le
+cause erano quattro, indipendenti fra loro.
+
+*La cancellazione dell'eco non aveva niente da cancellare.* La registrazione
+usa la sorgente da telefonata proprio per averla, ma quel filtro lavora per
+sottrazione: toglie dal microfono il segnale che il telefono manda
+all'altoparlante, e per farlo deve sapere quale è. La riproduzione usciva come
+`USAGE_MEDIA`, cioè come musica, fuori dalla sessione di comunicazione: su un
+telefono che segue la specifica non entra nel riferimento, non viene
+sottratta, e la sua voce rientra intera dal microfono. L'interruzione locale la
+prende per qualcuno che parla e lo zittisce a ogni frase. Ora la traccia esce
+come `USAGE_VOICE_COMMUNICATION` con il telefono in `MODE_IN_COMMUNICATION`, i
+due filtri (eco e rumore) si agganciano esplicitamente alla sessione del
+microfono, e le due conseguenze del cambio sono gestite: l'uscita si forza
+sull'altoparlante interno — ma solo se non ci sono cuffie, che non si
+scavalcano — e il volume della linea voce, che su un telefono che non telefona
+mai può essere rimasto al minimo, si alza e si rimette come stava alla fine.
+
+*La soglia era un numero misurato su un telefono solo.* Quanto della propria
+voce rientri dipende dal telefono, non dall'app. Ora 0,04 è soltanto il
+pavimento: i primi sei decimi di secondo di ogni risposta si ascoltano senza
+interrompere — lì sta parlando solo lui, quindi quel livello **è** l'eco di
+quel telefono — e per il resto del turno serve il doppio di quel valore, con un
+tetto oltre il quale non si crede più che sia eco. Dove il filtro funziona la
+misura resta quasi zero e il comportamento è quello di prima; dove non
+funziona la soglia si alza da sé. Servono tre pezzi di fila invece di due
+(tre decimi di secondo): l'eco fa picchi brevi sulle consonanti, una persona
+che prende la parola no.
+
+*Interrompere svuotava l'altoparlante ma non il turno.* Il server continua a
+mandare l'audio che aveva già preparato, e quello arrivava dopo lo
+svuotamento: la voce ripartiva da sola un istante dopo essere stata zittita,
+con la parola in corso tagliata a metà. Era anche quello che rendeva inutile
+il tasto FERMA. Ora il resto di un turno interrotto si butta fino al segnale di
+fine turno, con una valvola di cinque secondi perché un segnale che non arriva
+non lasci l'app muta. E la scrittura nell'altoparlante avviene a fette da venti
+millesimi di secondo, così l'interruzione cade **dentro** il pezzo invece che
+dopo.
+
+*Si potevano aprire due conversazioni insieme.* Aprirne una è una catena di
+attese — fermare la registrazione, chiedere il permesso, accendere il servizio
+— e per tutta quella catena lo stato a schermo dice ancora "spenta": due tocchi
+sul radar, o un tocco più l'apertura automatica all'avvio, e le sessioni
+diventano due. Due sessioni scrivono nella stessa traccia nativa: due voci
+insieme, e l'interruzione di una zittisce anche l'altra. Su un telefono lento
+la finestra è più larga, quindi capita più spesso. Ora l'interfaccia ha una
+guardia che si legge nello stesso istante in cui si scrive, invece di
+affidarsi a uno stato che si aggiorna al giro dopo, e la garanzia sta nel
+servizio: aprire una sessione chiude quella di prima, e solo la sessione
+corrente può far uscire audio.
+
+Sopra tutto questo, l'app adesso **dice com'è fatto l'audio del telefono**: se
+la cancellazione dell'eco non è attiva o il telefono non è in modo
+conversazione, lo scrive nel registro all'apertura della sessione. Con
+`EXPO_PUBLIC_DIAGNOSTICA_AUDIO=1` scrive anche i numeri di ogni interruzione
+(livello, soglia, eco misurato) — serve per un telefono che non si ha in mano,
+dove indovinare costa una build a tentativo.
+
 **Scrivere dentro la conversazione** — il campo di testo resta anche in conversazione, per quando parlare non è possibile. Non apre un giro a parte: la frase scritta entra nella sessione aperta, con la stessa memoria, e la risposta torna a voce. Con la voce spenta la conversazione continua ad ascoltare e a capire, ma non parla: l'audio arriva e viene scartato, e resta la trascrizione a schermo.
 
 **Quattro cose della serata degli allegati** — l'allegato e la conferma toccando fuori sono risultati a posto; queste erano il contorno che non lo era.

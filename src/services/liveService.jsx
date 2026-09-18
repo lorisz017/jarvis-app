@@ -51,18 +51,85 @@ const VOCE = 'Charon';
 //
 // Qui la si riconosce sul posto, misurando quanto suona forte quello che
 // entra dal microfono mentre J.A.R.V.I.S. sta parlando. Serve prudenza: una
-// soglia troppo bassa e si interrompe da solo sentendo la propria voce. Due
-// difese — la registrazione usa la sorgente da telefonata, che porta la
-// cancellazione dell'eco, e non basta un singolo colpo: ci vogliono due
-// pezzi di fila sopra la soglia, cioè un quinto di secondo di voce vera.
+// soglia troppo bassa e si interrompe da solo sentendo la propria voce.
 //
 // La soglia è 0,04 e non di più: la voce vera ha un valore efficace molto più
 // basso di quanto sembri a orecchio, perché è fatta di picchi separati da
 // pause, mentre un suono continuo della stessa intensità misura il triplo.
 // Con 0,06 un parlato pacato non sarebbe bastato a interrompere, e non
 // interrompere è il difetto peggiore dei due.
+//
+// Ma 0,04 è un numero misurato su **un** telefono. Quanto della propria voce
+// rientri dal microfono non dipende dall'app: dipende da dove stanno
+// altoparlante e microfono, da quanto filtra il telefono, da quanto è alto il
+// volume. Dove ne rientra il doppio, una soglia fissa non è prudente né
+// imprudente: è sbagliata, e l'app si interrompe da sola a ogni frase — che è
+// esattamente quello che faceva su un OPPO mentre sullo Xiaomi non era mai
+// successo.
+//
+// Quindi la soglia non è più solo un numero: 0,04 resta il **pavimento**, e
+// sopra si misura quanto rientra davvero. I primi sei decimi di secondo di
+// ogni risposta servono ad ascoltare senza interrompere — in quel tratto si
+// sente solo lui, quindi quel livello **è** l'eco di questo telefono — e per
+// il resto del turno si interrompe solo al doppio di quel valore. Un telefono
+// che filtra bene misura quasi zero e si comporta come prima; uno che filtra
+// male alza la propria asticella da sé, invece di aspettare che qualcuno gli
+// cambi una costante.
+//
+// L'altra difesa non è un numero ma una forma: non basta un colpo solo, ci
+// vogliono tre pezzi di fila sopra la soglia, cioè tre decimi di secondo di
+// voce continua. L'eco fa picchi brevi sulle consonanti; una persona che
+// prende la parola no.
 const SOGLIA_VOCE = 0.04;
-const PEZZI_CONSECUTIVI = 2;
+const PEZZI_CONSECUTIVI = 3;
+
+/** Quanti pezzi, all'inizio di ogni risposta, si misurano senza interrompere. */
+const PEZZI_DI_ASCOLTO = 6;
+
+/** Di quanto la voce vera deve superare l'eco misurato. */
+const FATTORE_ECO = 2;
+
+/**
+ * Oltre questo livello non si crede più che sia eco.
+ *
+ * L'asticella sale con i picchi che non interrompono, e senza un tetto
+ * salirebbe a scalini: un parlato che cresce piano resta ogni volta appena
+ * sotto, alza l'asticella, e quella alza il gradino dopo. Finirebbe che sopra
+ * una certa intensità non si interrompe più niente. Nessun altoparlante di
+ * telefono rientra nel proprio microfono a questo volume: da qui in su è
+ * qualcuno che parla, e va ascoltato.
+ */
+const ECO_MASSIMO = 0.12;
+
+/**
+ * Quanto dell'eco misurato si porta nel turno dopo.
+ *
+ * Non si ricomincia da zero — è lo stesso telefono, e il primo pezzo del
+ * turno seguente arriverebbe senza difese — ma non si resta nemmeno fermi
+ * all'ultima misura: se il volume cala o la stanza cambia, la soglia deve
+ * poter tornare giù.
+ */
+const DECADIMENTO_ECO = 0.7;
+
+/**
+ * Oltre questo tempo, l'audio di un turno interrotto si suona comunque.
+ *
+ * Buttare il resto di un turno interrotto è giusto, ma dipende dall'arrivo
+ * del segnale di fine turno. Se quel segnale non arrivasse mai, senza questa
+ * valvola l'app resterebbe muta per sempre — e restare muti è un guasto
+ * peggiore di una coda di voce.
+ */
+const SCARTO_MASSIMO_MS = 5000;
+
+/**
+ * Con `EXPO_PUBLIC_DIAGNOSTICA_AUDIO=1` l'app scrive nel registro i numeri
+ * dell'audio: livello misurato, soglia del momento, stato dei filtri.
+ *
+ * Non è una spia da tenere accesa: serve quando qualcosa non va su un
+ * telefono che non si ha in mano, ed è il modo di farsi dire il motivo invece
+ * di tentare correzioni alla cieca.
+ */
+const DIAGNOSTICA = process.env.EXPO_PUBLIC_DIAGNOSTICA_AUDIO === '1';
 
 /** Quanto suona forte un pezzo di audio PCM a 16 bit. */
 function livello(base64) {
@@ -80,6 +147,26 @@ function livello(base64) {
     return Math.sqrt(somma / (fine / 2)) / 32768;
 }
 
+// === Una conversazione per volta ===
+//
+// L'altoparlante nativo è uno, e non sa di chi è l'audio che gli arriva. Due
+// sessioni aperte insieme scrivono nella stessa traccia: si sentono due voci
+// sovrapposte, e ognuna delle due zittisce l'altra a metà parola, perché
+// l'interruzione svuota la traccia di tutti.
+//
+// Non è un caso di scuola. Aprire la conversazione è una catena di attese —
+// fermare la registrazione, chiedere il permesso, accendere il servizio — e
+// finché non è finita lo stato a schermo dice ancora "spenta". Due tocchi sul
+// radar, o il tocco più l'apertura automatica all'avvio, e le sessioni
+// diventano due. Su un telefono lento la finestra è più larga, quindi capita
+// più spesso.
+//
+// L'interfaccia adesso si difende da sola (vedi Home.jsx), ma la garanzia sta
+// qui: aprire una sessione chiude quella di prima, e solo la sessione
+// corrente può far uscire audio. Un guasto nell'interfaccia può far perdere
+// una connessione; non può più far parlare due voci insieme.
+let sessioneCorrente = null;
+
 export const isLiveSupported = () => Boolean(audio && geminiApiKey);
 
 /**
@@ -92,6 +179,14 @@ export const isLiveSupported = () => Boolean(audio && geminiApiKey);
  */
 export function flushLiveAudio() {
     try {
+        // Se una conversazione è aperta, si passa da lei: svuotare soltanto
+        // la traccia nativa zittiva l'istante e nient'altro, perché i pezzi
+        // del turno interrotto continuavano ad arrivare dal server e la voce
+        // ripartiva da sola un attimo dopo.
+        if (sessioneCorrente) {
+            sessioneCorrente._zittisci();
+            return;
+        }
         audio?.flushPlayback();
     } catch (error) {
         console.warn('Interruzione della voce continua:', error);
@@ -143,6 +238,16 @@ export class LiveSession {
         this.chiusaVolutamente = false;
         this.staParlando = false;
         this.pezziSopraSoglia = 0;
+        // Quanto rientra dal microfono della sua stessa voce, su questo
+        // telefono: misurato all'inizio di ogni risposta, tenuto (sbiadito)
+        // da un turno all'altro.
+        this.ecoTurno = 0;
+        this.pezziAscoltati = 0;
+        // Un turno interrotto va buttato per intero: il server continua a
+        // mandare l'audio che aveva già preparato, e suonarlo è la voce che
+        // riprende da sola dopo essere stata zittita.
+        this.turnoScartato = false;
+        this.scartatoDa = 0;
         // Con la voce spenta la conversazione continua a funzionare, ma non
         // si sente: l'audio arriva e viene scartato invece che suonato, e
         // resta la trascrizione a schermo.
@@ -230,6 +335,17 @@ export class LiveSession {
         this.onStato('connessione');
         this.chiusaVolutamente = false;
 
+        // Chi c'era prima si chiude, sempre: due sessioni sullo stesso
+        // altoparlante sono due voci sovrapposte.
+        if (sessioneCorrente && sessioneCorrente !== this) {
+            try {
+                sessioneCorrente.stop();
+            } catch (error) {
+                console.warn('Chiusura della conversazione precedente:', error);
+            }
+        }
+        sessioneCorrente = this;
+
         try {
             await audio.startPlayback();
         } catch (error) {
@@ -257,6 +373,7 @@ export class LiveSession {
         this.socket.onclose = (evento) => {
             const eraPronta = this.pronta;
             this.pronta = false;
+            if (sessioneCorrente === this) sessioneCorrente = null;
             this._fermaMicrofono();
             audio?.stopPlayback();
 
@@ -337,6 +454,7 @@ export class LiveSession {
             this.pronta = true;
             this.onStato('attiva');
             this._avviaMicrofono();
+            this._riportaStatoAudio();
             return;
         }
 
@@ -345,10 +463,14 @@ export class LiveSession {
         if (contenuto?.interrupted) {
             // Se l'ha notato il server, si butta comunque quello che resta.
             this._zittisci();
+            // Per il server quel turno è finito qui: quello che arriva dopo
+            // appartiene alla risposta nuova, e va suonato.
+            this.turnoScartato = false;
         }
 
         if (contenuto?.turnComplete || contenuto?.generationComplete) {
             this.staParlando = false;
+            this.turnoScartato = false;
         }
 
         if (contenuto?.inputTranscription?.text) {
@@ -361,11 +483,40 @@ export class LiveSession {
 
         for (const parte of contenuto?.modelTurn?.parts || []) {
             const suono = parte.inlineData?.data;
-            if (suono && !this.muta) {
-                this.staParlando = true;
-                this.pezziSopraSoglia = 0;
-                audio?.playChunk(suono);
+            if (!suono || this.muta) continue;
+
+            // Una sessione superata non parla: se ne fosse restata una aperta,
+            // la sua voce si sovrapporrebbe a quella buona.
+            if (sessioneCorrente !== this) continue;
+
+            // Il resto di un turno interrotto non si suona. È la coda che il
+            // server aveva già preparato prima di sapere che gli si stava
+            // parlando sopra: suonarla vuol dire che la voce riparte da sola
+            // subito dopo essere stata zittita, e la parola in corso resta
+            // tagliata a metà. La valvola è il tempo: se il segnale di fine
+            // turno non arrivasse, dopo qualche secondo si suona comunque.
+            if (this.turnoScartato) {
+                if (Date.now() - this.scartatoDa < SCARTO_MASSIMO_MS) continue;
+                this.turnoScartato = false;
             }
+
+            // Comincia a parlare: riparte la misura dell'eco di questo turno,
+            // e con essa il conto dei pezzi sopra soglia.
+            //
+            // Il conto si azzerava a **ogni** pezzo che arrivava, e non doveva:
+            // quello che entra dal microfono e quello che arriva dal server
+            // sono due flussi indipendenti, e con pezzi in arrivo più frequenti
+            // del tempo richiesto per interrompere il conto non arrivava mai in
+            // fondo. Cioè l'interruzione non scattava proprio quando l'audio
+            // era più continuo — e non fermarsi quando gli si parla sopra è il
+            // difetto peggiore dei due.
+            if (!this.staParlando) {
+                this.staParlando = true;
+                this.pezziAscoltati = 0;
+                this.pezziSopraSoglia = 0;
+                this.ecoTurno *= DECADIMENTO_ECO;
+            }
+            audio?.playChunk(suono);
         }
 
         if (messaggio.toolCall?.functionCalls?.length) {
@@ -400,17 +551,11 @@ export class LiveSession {
 
         this.iscrizioneMicrofono = emettitore.addListener('jarvisAudioChunk', (base64) => {
             if (!this.pronta) return;
+            if (sessioneCorrente !== this) return;
 
             // Si misura solo mentre sta parlando: per il resto del tempo
             // sarebbe lavoro sprecato dieci volte al secondo.
-            if (this.staParlando) {
-                if (livello(base64) >= SOGLIA_VOCE) {
-                    this.pezziSopraSoglia += 1;
-                    if (this.pezziSopraSoglia >= PEZZI_CONSECUTIVI) this._zittisci();
-                } else {
-                    this.pezziSopraSoglia = 0;
-                }
-            }
+            if (this.staParlando) this._valutaInterruzione(base64);
 
             this._invia({
                 realtimeInput: {audio: {mimeType: MIME_INVIO, data: base64}},
@@ -420,10 +565,87 @@ export class LiveSession {
         audio.startCapture().catch((error) => this.onErrore(error));
     }
 
+    /**
+     * Decide se quello che entra dal microfono è qualcuno che prende la
+     * parola, o è lui che si sente.
+     *
+     * I primi pezzi di ogni risposta si ascoltano senza interrompere: in quel
+     * tratto sta parlando solo lui, quindi il livello misurato è l'eco di
+     * questo telefono, e diventa l'asticella per il resto del turno. Poi
+     * l'asticella continua a salire con i picchi che non interrompono, perché
+     * l'eco cresce sulle consonanti e non ha senso farsi ingannare due volte
+     * dalla stessa sillaba.
+     */
+    _valutaInterruzione(base64) {
+        const misura = livello(base64);
+        this.pezziAscoltati += 1;
+
+        if (this.pezziAscoltati <= PEZZI_DI_ASCOLTO) {
+            if (misura > this.ecoTurno) this.ecoTurno = misura;
+            return;
+        }
+
+        const soglia = Math.max(SOGLIA_VOCE, Math.min(this.ecoTurno, ECO_MASSIMO) * FATTORE_ECO);
+
+        if (misura < soglia) {
+            this.pezziSopraSoglia = 0;
+            if (misura > this.ecoTurno) this.ecoTurno = misura;
+            return;
+        }
+
+        this.pezziSopraSoglia += 1;
+        if (this.pezziSopraSoglia < PEZZI_CONSECUTIVI) return;
+
+        if (DIAGNOSTICA) {
+            this.onTesto({
+                chi: 'azione',
+                testo: `Interrotto: livello ${misura.toFixed(3)}, ` +
+                    `soglia ${soglia.toFixed(3)}, eco ${this.ecoTurno.toFixed(3)}`,
+            });
+        }
+
+        this._zittisci();
+    }
+
+    /**
+     * Dice una volta per sessione com'è fatto l'audio di questo telefono.
+     *
+     * Parla solo quando c'è qualcosa da sapere: se la cancellazione dell'eco
+     * non è attiva, quella riga è la differenza fra sapere perché si
+     * interrompe da solo e provare a indovinarlo da lontano.
+     */
+    async _riportaStatoAudio() {
+        if (!audio?.statoAudio) return;
+
+        try {
+            const stato = await audio.statoAudio();
+            if (!stato) return;
+            if (!DIAGNOSTICA && stato.ecoAttiva && stato.comunicazione) return;
+
+            const eco = stato.ecoAttiva
+                ? 'attiva'
+                : stato.ecoDisponibile ? 'disponibile ma non attiva' : 'non disponibile';
+
+            const pezzi = [
+                `eco ${eco}`,
+                `rumore ${stato.rumoreAttivo ? 'attivo' : 'no'}`,
+                `modo ${stato.comunicazione ? 'conversazione' : stato.modo}`,
+                `volume ${stato.volume}/${stato.volumeMassimo}`,
+            ];
+            if (stato.errore) pezzi.push(`errore: ${stato.errore}`);
+
+            this.onTesto({chi: 'azione', testo: `Audio: ${pezzi.join(', ')}`});
+        } catch (error) {
+            console.warn('Stato audio:', error);
+        }
+    }
+
     /** Zittisce subito quello che sta uscendo e dimentica il resto del turno. */
     _zittisci() {
         this.staParlando = false;
         this.pezziSopraSoglia = 0;
+        this.turnoScartato = true;
+        this.scartatoDa = Date.now();
         audio?.flushPlayback();
     }
 
@@ -441,6 +663,7 @@ export class LiveSession {
     stop() {
         this.chiusaVolutamente = true;
         this.pronta = false;
+        if (sessioneCorrente === this) sessioneCorrente = null;
         this._fermaMicrofono();
         audio?.stopPlayback();
 
