@@ -1,5 +1,6 @@
+import {chiave} from '../../services/chiaviService';
 export async function createGitHubRepo(options) {
-    const token = process.env.EXPO_PUBLIC_GITHUB_TOKEN_KEY;
+    const token = chiave('github');
 
     if (!token) {
         throw new Error('GitHub token not found.');

@@ -7,6 +7,7 @@ import TastoLiquido from './TastoLiquido';
 import {FEATURE_SECTIONS} from '../utils/features';
 import {getVoiceInfo, getUltimoErroreEdge} from '../services/ttsService';
 import {statoMemoria} from '../services/memoryService';
+import {statoChiavi, setChiave} from '../services/chiaviService';
 
 const APP_VERSION = '3.0.0';
 const GITHUB_PROFILE = 'https://github.com/lorisz017';
@@ -19,6 +20,67 @@ const TABS = [
     {key: 'features', label: 'FUNZIONI'},
     {key: 'about', label: 'INFO'},
 ];
+
+// Una chiave. Non mostra mai quella che c'è — né la propria né quella
+// arrivata con l'installazione — perché una chiave visibile è una chiave che
+// finisce in uno screenshot. Dice solo da dove viene e quanto è lunga.
+function RigaChiave({dati, onSalva}) {
+    const [valore, setValore] = useState('');
+    const [salvata, setSalvata] = useState(false);
+
+    const salva = async () => {
+        await onSalva(dati.id, valore);
+        setValore('');
+        setSalvata(true);
+        setTimeout(() => setSalvata(false), 2500);
+    };
+
+    const stato = dati.origine === 'tua'
+        ? `impostata da lei · ${dati.lunghezza} caratteri`
+        : dati.origine === 'installazione'
+            ? `inclusa in questa installazione · ${dati.lunghezza} caratteri`
+            : dati.necessaria ? 'MANCANTE — serve questa' : 'non impostata';
+
+    return (
+        <View style={styles.chiaveRiga}>
+            <View style={styles.chiaveIntestazione}>
+                <Text style={styles.chiaveNome}>{dati.nome}</Text>
+                <Text style={[
+                    styles.chiaveStato,
+                    dati.origine === 'mancante' && dati.necessaria && styles.chiaveStatoMancante,
+                ]}>
+                    {salvata ? 'salvata' : stato}
+                </Text>
+            </View>
+
+            <Text style={styles.settingsHint}>{dati.aCosaServe}</Text>
+
+            <View style={styles.chiaveCampoRiga}>
+                <TextInput
+                    style={styles.chiaveCampo}
+                    value={valore}
+                    onChangeText={setValore}
+                    placeholder={dati.origine === 'mancante' ? 'Incolli la chiave' : 'Incolli per sostituirla'}
+                    placeholderTextColor="rgba(200, 244, 255, 0.35)"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                />
+                <TastoLiquido
+                    style={[styles.chiaveSalva, !valore.trim() && styles.benvenutoTastoSpento]}
+                    onPress={salva}
+                    disabled={!valore.trim()}
+                    raggio={14}
+                >
+                    <Text style={styles.chiaveSalvaTesto}>SALVA</Text>
+                </TastoLiquido>
+            </View>
+
+            <TastoLiquido style={styles.chiaveDove} onPress={() => Linking.openURL(dati.dove)} raggio={12}>
+                <Text style={styles.chiaveDoveTesto}>Dove si prende →</Text>
+            </TastoLiquido>
+        </View>
+    );
+}
 
 function ToggleRow({label, value, onToggle}) {
     // Nell'istante in cui l'interruttore cambia, la pastiglia si gonfia appena
@@ -116,6 +178,7 @@ export default function SettingsModal({
     // Com'è andata al file, non cosa c'è dentro: senza questo, una scrittura
     // fallita si scopre solo riaprendo l'app e trovando il vuoto.
     const [diagnosi, setDiagnosi] = useState(null);
+    const [chiavi, setChiavi] = useState(statoChiavi);
     // Salvare solo quando si esce dalla casella non bastava: chiudendo il
     // pannello con un tocco, la casella non perde il fuoco e quello che era
     // stato scritto non veniva mai salvato. Ora si salva da solo poco dopo
@@ -144,6 +207,7 @@ export default function SettingsModal({
         setErroreVoce(getUltimoErroreEdge());
         onRileggiMemoria?.();
         setDiagnosi(statoMemoria());
+        setChiavi(statoChiavi());
     }, [isVisible, memoria]);
 
     // Il pannello si chiude: quello che è rimasto nella casella va salvato
@@ -202,6 +266,25 @@ export default function SettingsModal({
                                     value={isBriefingEnabled}
                                     onToggle={() => setIsBriefingEnabled(!isBriefingEnabled)}
                                 />
+
+                                <Text style={styles.settingsSectionTitle}>CHIAVI</Text>
+                                <Text style={styles.settingsHint}>
+                                    Restano su questo telefono e non passano da nessuna altra
+                                    parte. Quella che scrive qui ha la precedenza su quella
+                                    eventualmente inclusa nell'installazione; svuotando il
+                                    campo e salvando si torna a quest'ultima.
+                                </Text>
+
+                                {chiavi.map((dati) => (
+                                    <RigaChiave
+                                        key={dati.id}
+                                        dati={dati}
+                                        onSalva={async (id, valore) => {
+                                            await setChiave(id, valore);
+                                            setChiavi(statoChiavi());
+                                        }}
+                                    />
+                                ))}
 
                                 <Text style={styles.settingsSectionTitle}>MEMORIA</Text>
                                 <Text style={styles.settingsHint}>

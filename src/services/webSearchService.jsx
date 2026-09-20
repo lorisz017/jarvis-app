@@ -1,4 +1,4 @@
-const geminiApiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+import {chiave} from './chiaviService';
 
 // Ricerca sul web, tre strade in fila.
 //
@@ -18,7 +18,7 @@ const geminiApiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
 // programma: i risultati vanno estratti dal testo. Non è elegante, ma è
 // l'unico modo di cercare sul web senza registrarsi da nessuna parte.
 
-export const hasGeminiKey = Boolean(geminiApiKey);
+export const hasGeminiKey = () => Boolean(chiave('gemini'));
 
 const DDG_HTML_URL = 'https://html.duckduckgo.com/html/';
 const DDG_LITE_URL = 'https://lite.duckduckgo.com/lite/';
@@ -252,9 +252,9 @@ const ISTRUZIONE = 'Sei J.A.R.V.I.S. Rispondi in italiano, in modo breve e preci
 
 /** Restituisce la risposta già scritta da Gemini, o null. */
 export async function searchWithGemini(query) {
-    if (!geminiApiKey) return null;
+    if (!chiave('gemini')) return null;
 
-    const response = await fetch(`${GEMINI_URL}?key=${geminiApiKey}`, {
+    const response = await fetch(`${GEMINI_URL}?key=${chiave('gemini')}`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({

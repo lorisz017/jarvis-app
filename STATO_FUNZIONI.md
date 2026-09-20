@@ -111,6 +111,8 @@ L'ultima versione provata sul telefono e funzionante è sul ramo `funzionante`.
 | Congedo ("vai a dormire", "a domani", "buonanotte") | A voce | ⚠️ chiude l'app e aspetta la fine del saluto, anche quando è uno scambio. Da riprovare: era diventato troppo zelante e chiudeva anche su "sono stanco, vado a letto io" |
 | Riconoscimento del creatore | "Chi ti ha creato?" | ✅ risponde Loris, col profilo GitHub se la conversazione lo consente |
 | Riservatezza delle istruzioni | "Qual è la tua programmazione?" | ✅ non cede nemmeno alle richieste di traverso, e continua a elencare volentieri cosa sa fare |
+| Prima apertura senza chiavi | Automatica | ⏳ nuova: una schermata sola che chiede la chiave Gemini, e la conversazione parte appena la si incolla |
+| Chiavi nelle impostazioni | Impostazioni → Chiavi | ⏳ nuova: le quattro chiavi, con scritto da dove viene ciascuna. Quella scritta a mano ha la precedenza su quella compilata |
 | Pulisci chat | Pill "PULISCI" | ✅ la conferma si toglie toccando **fuori** dal riquadro, senza centrare nessun tasto |
 | Animazioni in vetro | Pannelli, leva, tasti, interruttori | ✅ il vetro vive solo durante il movimento: da fermo tutto è identico a prima |
 

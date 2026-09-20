@@ -23,6 +23,7 @@ import ActivityLog from '../components/ActivityLog';
 import TastoLiquido from '../components/TastoLiquido';
 import Occhio from '../components/Occhio';
 import Avviso from '../components/Avviso';
+import Benvenuto from '../components/Benvenuto';
 import ResponseBox from '../components/ResponseBox';
 import VoicePickerModal from '../components/VoicePickerModal';
 import SettingsModal from '../components/SettingsModal';
@@ -36,6 +37,7 @@ import {openApp, startNavigation} from '../services/appLauncher';
 import {callContact, sendWhatsAppToContact} from '../services/contactsService';
 import {loadState, saveState, DEFAULT_STATE} from '../services/storageService';
 import {LiveSession, isLiveSupported, flushLiveAudio} from '../services/liveService';
+import {caricaChiavi, mancaIlNecessario} from '../services/chiaviService';
 import {
     caricaMemoria,
     dimenticaRicordo,
@@ -71,6 +73,11 @@ export default function Home() {
     // L'avviso che si chiude toccando fuori, al posto della finestra di
     // sistema col suo tasto OK.
     const [avviso, setAvviso] = useState(null);
+    // Finché non si sa quali chiavi ci sono non si può decidere se mostrare
+    // il benvenuto: mostrarlo per un istante a chi le ha già sarebbe il modo
+    // peggiore di aprire l'app.
+    const [chiaviPronte, setChiaviPronte] = useState(false);
+    const [serveLaChiave, setServeLaChiave] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [availableVoices, setAvailableVoices] = useState([]);
     const [selectedVoiceId, setSelectedVoiceId] = useState(undefined);
@@ -144,6 +151,12 @@ export default function Home() {
     // aggiunti nel frattempo restano validi anche su una chat vecchia.
     useEffect(() => {
         (async () => {
+            // Le chiavi per prime: tutto il resto — la conversazione che si
+            // apre da sola, la voce, la ricerca — parte solo se c'è con cosa.
+            await caricaChiavi();
+            setServeLaChiave(mancaIlNecessario());
+            setChiaviPronte(true);
+
             // La memoria va letta prima della conversazione: il messaggio di
             // sistema la incorpora, e leggerla dopo vorrebbe dire partire
             // senza sapere niente di lui.
@@ -471,11 +484,16 @@ export default function Home() {
     const avvioLiveFattoRef = useRef(false);
     useEffect(() => {
         if (!isStateLoaded || avvioLiveFattoRef.current) return;
+        // Senza chiave non c'è niente da aprire, e provarci farebbe comparire
+        // un avviso dietro la schermata del benvenuto. Appena la chiave
+        // arriva questo effetto si rifà, e la conversazione parte da sola:
+        // il primo avvio finisce con lui che saluta, non con un'app ferma.
+        if (serveLaChiave) return;
         if (!apriConversazioneAllAvvio || modalita !== 'conversazione') return;
 
         avvioLiveFattoRef.current = true;
         toggleLive();
-    }, [isStateLoaded, apriConversazioneAllAvvio, modalita]);
+    }, [isStateLoaded, apriConversazioneAllAvvio, modalita, serveLaChiave]);
 
     // Trascinata sulla linguetta "Rimuovi": l'interruttore si spegne da solo,
     // altrimenti le impostazioni direbbero che la bolla è accesa mentre non
@@ -932,6 +950,19 @@ export default function Home() {
             setIsLoading,
         });
     };
+
+    // Da qui in poi non ci sono più hook, quindi si può uscire prima: finché
+    // non si sa cosa c'è non si disegna niente, e se manca la chiave si
+    // disegna solo la richiesta.
+    if (!chiaviPronte) return <View style={styles.container}/>;
+
+    if (serveLaChiave) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <Benvenuto onFatto={() => setServeLaChiave(false)}/>
+            </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView style={styles.container}>

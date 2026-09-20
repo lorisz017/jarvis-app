@@ -3,6 +3,7 @@ import {TOOLS, executeTool} from './tools';
 import {decodeUtf8} from '../utils/utf8';
 import {buildSystemMessage} from '../utils/constants';
 import {base64ToBytes} from '../utils/base64';
+import {chiave} from './chiaviService';
 
 // Conversazione a voce con Gemini, in tempo reale.
 //
@@ -23,7 +24,6 @@ import {base64ToBytes} from '../utils/base64';
 const audio = Platform.OS === 'android' ? NativeModules.JarvisAudio : null;
 const emettitore = audio ? new NativeEventEmitter(audio) : null;
 
-const geminiApiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
 
 const LIVE_MODEL = 'models/gemini-3.1-flash-live-preview';
 const LIVE_URL =
@@ -80,7 +80,7 @@ function livello(base64) {
     return Math.sqrt(somma / (fine / 2)) / 32768;
 }
 
-export const isLiveSupported = () => Boolean(audio && geminiApiKey);
+export const isLiveSupported = () => Boolean(audio && chiave('gemini'));
 
 /**
  * Zittisce subito la voce della conversazione, lasciando la sessione aperta.
@@ -237,7 +237,7 @@ export class LiveSession {
             return false;
         }
 
-        this.socket = new WebSocket(`${LIVE_URL}?key=${geminiApiKey}`);
+        this.socket = new WebSocket(`${LIVE_URL}?key=${chiave('gemini')}`);
         // Meglio i byte grezzi che un Blob: da un ArrayBuffer si decodifica
         // l'UTF-8 per conto proprio, che è l'unico modo per non perdere le
         // accentate per strada.

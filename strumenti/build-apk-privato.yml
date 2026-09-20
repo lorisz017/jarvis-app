@@ -1,0 +1,123 @@
+# Compila l'APK di jarvis-app dentro un repository PRIVATO.
+#
+# Questo file è l'unico contenuto necessario nel repository privato: il codice
+# viene scaricato ogni volta dal repository pubblico lorisz017/jarvis-app, che
+# essendo pubblico non richiede nessuna credenziale. Non c'è quindi niente da
+# tenere sincronizzato: compila sempre l'ultima versione di main.
+#
+# Perché privato: gli artifact di un repository pubblico sono scaricabili da
+# chiunque, e le chiavi API finiscono dentro l'APK. Qui l'APK lo vedi solo tu.
+#
+# Prima di usarlo, in questo repository privato:
+#   Settings > Secrets and variables > Actions > New repository secret
+#
+#   - EXPO_PUBLIC_GEMINI_API_KEY    la conversazione, il ragionamento, la
+#                                   vista dalla fotocamera. Con questa sola
+#                                   l'app funziona: è la sua strada normale.
+#   - EXPO_PUBLIC_GROQ_API_KEY      trascrizione e ragionamento della modalità
+#                                   a comandi, che è spenta di default. Senza,
+#                                   quella modalità non risponde; il resto sì.
+#   - EXPO_PUBLIC_DEEPGRAM_API_KEY  voce di riserva della sola modalità a
+#                                   comandi. In conversazione la voce è il
+#                                   modello stesso, quindi qui non serve.
+#   - EXPO_PUBLIC_GITHUB_TOKEN_KEY  solo per i tre comandi sui repository.
+#
+# Nessuna è obbligatoria per compilare: se ne manca una la build riesce lo
+# stesso e il registro dice quali sono arrivate — il nome, mai il valore.
+# È solo l'app, poi, a trovarsi senza.
+#
+# Per compilare: scheda Actions > "Build APK (privato)" > "Run workflow".
+# L'APK compare come artifact in fondo alla pagina della build.
+#
+# --- Per darlo a qualcun altro -----------------------------------------
+#
+# Serve solo questo file, in un repository **privato** suo (privato perché
+# le chiavi finiscono dentro l'APK, e gli artifact di un repository pubblico
+# se li scarica chiunque). Nel suo repository:
+#
+#   1. Add file > Create new file, e come nome:
+#          .github/workflows/build-apk.yml
+#      Le barre creano le cartelle da sole.
+#   2. Incollare questo file e confermare.
+#   3. Mettere il secret con la propria chiave Gemini.
+#   4. Actions > Build APK (privato) > Run workflow.
+#
+# Il codice non va copiato: lo scarica da qui a ogni build. Quindi per
+# aggiornarsi gli basta rilanciare il workflow — si ritrova l'ultima
+# versione di main senza dover toccare niente.
+
+name: Build APK (privato)
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch o commit da compilare'
+        required: false
+        default: 'main'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Scarica il codice dal repository pubblico
+        uses: actions/checkout@v4
+        with:
+          repository: lorisz017/jarvis-app
+          ref: ${{ inputs.ref }}
+
+      - name: Prepara Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.1'
+
+      - name: Prepara Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Installa le dipendenze
+        env:
+          # Husky serve solo ai controlli prima dei commit in locale: in CI
+          # non c'è niente da agganciare e la sua installazione fallirebbe.
+          HUSKY: 0
+        run: npm install --legacy-peer-deps
+
+      - name: Controlla le chiavi
+        env:
+          EXPO_PUBLIC_GROQ_API_KEY: ${{ secrets.EXPO_PUBLIC_GROQ_API_KEY }}
+          EXPO_PUBLIC_GEMINI_API_KEY: ${{ secrets.EXPO_PUBLIC_GEMINI_API_KEY }}
+          EXPO_PUBLIC_DEEPGRAM_API_KEY: ${{ secrets.EXPO_PUBLIC_DEEPGRAM_API_KEY }}
+          EXPO_PUBLIC_GITHUB_TOKEN_KEY: ${{ secrets.EXPO_PUBLIC_GITHUB_TOKEN_KEY }}
+        run: |
+          # Dice soltanto se la chiave c'e', mai quanto vale. Senza questo
+          # controllo una chiave mancante non fa fallire niente: la build
+          # riesce, e l'errore salta fuori solo una volta sul telefono.
+          for nome in EXPO_PUBLIC_GROQ_API_KEY EXPO_PUBLIC_GEMINI_API_KEY \
+                      EXPO_PUBLIC_DEEPGRAM_API_KEY EXPO_PUBLIC_GITHUB_TOKEN_KEY; do
+            if [ -n "${!nome}" ]; then
+              echo "$nome: presente"
+            else
+              echo "$nome: ASSENTE"
+            fi
+          done
+
+      - name: Compila l'APK
+        working-directory: android
+        env:
+          EXPO_PUBLIC_GROQ_API_KEY: ${{ secrets.EXPO_PUBLIC_GROQ_API_KEY }}
+          EXPO_PUBLIC_GEMINI_API_KEY: ${{ secrets.EXPO_PUBLIC_GEMINI_API_KEY }}
+          EXPO_PUBLIC_DEEPGRAM_API_KEY: ${{ secrets.EXPO_PUBLIC_DEEPGRAM_API_KEY }}
+          EXPO_PUBLIC_GITHUB_TOKEN_KEY: ${{ secrets.EXPO_PUBLIC_GITHUB_TOKEN_KEY }}
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Pubblica l'APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: jarvis-apk
+          path: android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error

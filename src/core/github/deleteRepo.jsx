@@ -1,5 +1,6 @@
+import {chiave} from '../../services/chiaviService';
 export async function deleteGitHubRepo(owner, repo) {
-    const token = process.env.EXPO_PUBLIC_GITHUB_TOKEN_KEY;
+    const token = chiave('github');
     if (!token) throw new Error('GitHub token not found.');
 
     const res = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {

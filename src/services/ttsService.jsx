@@ -2,6 +2,7 @@ import * as Speech from 'expo-speech';
 import * as FileSystem from 'expo-file-system/legacy';
 import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import { synthesizeWithEdge, VOCI_EDGE } from './edgeTtsService';
+import {chiave} from './chiaviService';
 
 // Nessuna di queste richieste aveva un limite di tempo. Dentro l'app un
 // blocco si vede: la risposta non arriva. Fuori, dalla bolla, non si vede
@@ -24,8 +25,6 @@ async function fetchVoce(url, opzioni = {}) {
         clearTimeout(scadenza);
     }
 }
-
-const deepgramApiKey = process.env.EXPO_PUBLIC_DEEPGRAM_API_KEY;
 
 const DEEPGRAM_URL = 'https://api.deepgram.com/v1/speak';
 const DEEPGRAM_MODELS_URL = 'https://api.deepgram.com/v1/models';
@@ -342,7 +341,7 @@ let availableVoiceNames = [];
 export const getVoiceInfo = () => ({
     selected: preferredEdgeVoice || VOCI_EDGE[0].id,
     available: VOCI_EDGE.map((v) => v.id),
-    hasKey: Boolean(deepgramApiKey),
+    hasKey: Boolean(chiave('deepgram')),
 });
 
 // Sceglie fra le voci già note: la preferita se c'è ancora, altrimenti la
@@ -373,7 +372,7 @@ async function resolveDeepgramVoice() {
 
     try {
         const response = await fetchVoce(DEEPGRAM_MODELS_URL, {
-            headers: { Authorization: `Token ${deepgramApiKey}` },
+            headers: { Authorization: `Token ${chiave('deepgram')}` },
         });
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -401,7 +400,7 @@ async function resolveDeepgramVoice() {
 // caratteri e non scade, quindi regge l'uso quotidiano — al contrario di
 // Gemini, che si esaurisce dopo pochi scambi ravvicinati.
 async function speakWithDeepgram(text) {
-    if (!deepgramApiKey) return false;
+    if (!chiave('deepgram')) return false;
 
     const voce = await resolveDeepgramVoice();
     if (!voce) return false;
@@ -414,7 +413,7 @@ async function speakWithDeepgram(text) {
     const response = await fetchVoce(`${DEEPGRAM_URL}?${parametri}`, {
         method: 'POST',
         headers: {
-            Authorization: `Token ${deepgramApiKey}`,
+            Authorization: `Token ${chiave('deepgram')}`,
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({ text }),

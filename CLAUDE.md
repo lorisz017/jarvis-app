@@ -120,6 +120,8 @@ parla sopra, abbassata.**
 | `src/services/deviceActions.jsx` | Sveglie, timer, meteo, calendario |
 | `src/services/overlayService.jsx` | Il ponte con la bolla nativa |
 | `src/services/memoryService.jsx` | La memoria personale: la nota e i ricordi |
+| `src/services/chiaviService.jsx` | Le chiavi API: quelle scritte a mano e quelle compilate dentro |
+| `src/components/Benvenuto.jsx` | Il primo avvio di chi non ha le chiavi nell'APK |
 | `src/utils/constants.jsx` | Il prompt di sistema, costruito con la memoria dentro |
 | `src/utils/sha256.jsx`, `base64.jsx` | Funzioni pure, verificate contro Node |
 | `android/.../overlay/` | Il codice nativo: bolla, servizio, audio a flusso |
@@ -282,9 +284,29 @@ sia mai stato provato.
 
 ## Le chiavi API
 
-**Non passano mai dalla conversazione.** Vanno solo nei Secrets del
-repository privato. Se serve una chiave nuova, si dice il nome del secret e
-dove registrarsi, mai il valore.
+**Non passano mai dalla conversazione.** Vanno nei Secrets del repository
+privato, oppure le scrive lui nell'app. Se serve una chiave nuova, si dice il
+nome del secret e dove registrarsi, mai il valore.
+
+**Due strade, e l'ordine conta.** `chiaviService.jsx` legge prima quella
+scritta a mano nell'app, poi quella compilata dentro l'APK. Chi si compila
+l'app da sé non si accorge di niente: le sue chiavi sono già dentro, l'app
+parte e non chiede nulla. Chi installa un APK senza chiavi vede al primo
+avvio **una schermata sola con un campo solo** — Gemini — e le altre tre le
+aggiunge da Impostazioni → Chiavi quando gli servono.
+
+Da qui discendono tre regole:
+
+- Nessun servizio legge più `process.env` per conto suo: lo fa solo
+  `chiaviService`, e lo fa **al momento dell'uso**. Una costante letta
+  all'importazione del modulo si fisserebbe prima che l'utente possa scrivere
+  la sua chiave.
+- Una chiave **non si mostra mai**, nemmeno la propria: le impostazioni
+  dicono da dove viene e quanti caratteri ha, non qual è. Una chiave visibile
+  è una chiave che finisce in uno screenshot.
+- Una chiave mancante non è un guasto da annunciare. Solo Gemini è
+  necessaria; Groq, Deepgram e GitHub servono a pezzi che sono spenti o
+  facoltativi, e chi non li usa non deve vedere avvisi su di loro.
 
 **Niente servizi che richiedono una fatturazione attiva**, nemmeno se il
 piano gratuito basterebbe e la carta non verrebbe mai addebitata. È una
@@ -298,6 +320,16 @@ Due repository, e servono a due cose diverse:
 |---|---|
 | `lorisz017/jarvis-app` (pubblico) | Il codice. Minuti illimitati, ma **nessuna chiave**: le build qui servono solo a verificare che compili |
 | `lorisz017/jarvis-app-build` (privato) | Le chiavi e l'APK vero. Scarica `main` dal pubblico, quindi non c'è niente da sincronizzare |
+
+Il workflow del repository privato ha una copia nel pubblico, in
+`strumenti/build-apk-privato.yml`: non gira lì — sta fuori da
+`.github/workflows/` apposta — e serve per **darlo a qualcun altro**. Chi lo
+vuole si crea un repository privato suo, incolla quel file in
+`.github/workflows/build-apk.yml` e mette la propria
+`EXPO_PUBLIC_GEMINI_API_KEY` nei secret: il codice non lo copia, lo scarica
+dal pubblico a ogni build, quindi per aggiornarsi gli basta rilanciare il
+workflow. Con la sola chiave Gemini l'app funziona tutta — resta fuori solo
+la modalità a comandi, che è spenta di default.
 
 Il giro è questo:
 

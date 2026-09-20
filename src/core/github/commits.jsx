@@ -1,9 +1,10 @@
+import {chiave} from '../../services/chiaviService';
 const BASE_URL = 'https://api.github.com';
 const OWNER = 'lorisz017';
 const REPO = 'jarvis-app';
 
 export async function getLatestCommits(limit = 5) {
-    const token = process.env.EXPO_PUBLIC_GITHUB_TOKEN_KEY;
+    const token = chiave('github');
 
     if (!token) {
         throw new Error('GitHub token not found. Please login first.');

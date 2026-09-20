@@ -13,6 +13,7 @@ import {TOOLS, executeTool} from './tools';
 import {searchWithDuckDuckGo, searchWithGemini, searchWebForTool, hasGeminiKey} from './webSearchService';
 import {bringAppToFront} from './overlayService';
 import {requestGeminiCompletion, hasGeminiChat} from './geminiChatService';
+import {chiave} from './chiaviService';
 import {aggiungiRicordo} from './memoryService';
 
 // Azioni che aprono la schermata di un'altra app. Dopo una di queste la
@@ -31,7 +32,6 @@ const AZIONI_CHE_APRONO_SCHERMATE = new Set([
     'open_youtube',
 ]);
 
-const groqApiKey = process.env.EXPO_PUBLIC_GROQ_API_KEY;
 
 const GROQ_BASE_URL = 'https://api.groq.com/openai/v1';
 const TRANSCRIPTION_MODEL = 'whisper-large-v3-turbo';
@@ -145,7 +145,7 @@ async function tornaInPrimoPiano() {
 // Entity Too Large". Groq resta sotto come riserva, e continua a occuparsi
 // della trascrizione, dove quel limite non si avvicina nemmeno.
 async function requestChatCompletion(model, messages, tools) {
-    if (hasGeminiChat) {
+    if (hasGeminiChat()) {
         try {
             return await requestGeminiCompletion(messages, tools);
         } catch (error) {
@@ -160,7 +160,7 @@ async function requestGroqCompletion(model, messages, tools) {
     const completion = await fetchConTimeout(`${GROQ_BASE_URL}/chat/completions`, {
         method: 'POST',
         headers: {
-            Authorization: `Bearer ${groqApiKey}`,
+            Authorization: `Bearer ${chiave('groq')}`,
             'Content-Type': 'application/json',
         },
         // Temperatura bassa quando ci sono azioni da eseguire: "a volte le fa e
@@ -187,9 +187,10 @@ async function requestGroqCompletion(model, messages, tools) {
     return responseData;
 }
 
-if (!groqApiKey) {
-    Alert.alert('Groq API Key Missing', 'Please set your Groq API key in app.json');
-}
+// Una chiave mancante non è più un guasto da annunciare all'avvio: Groq
+// serve alla sola modalità a comandi, che è spenta salvo richiesta. Chi apre
+// l'app con la sola chiave Gemini non deve vedere l'avviso di qualcosa che
+// non userà — e se gli servisse, la trova in Impostazioni → Chiavi.
 
 // Eliminare un repository è irreversibile: si chiede sempre conferma
 // esplicita, qualunque sia la strada da cui arriva la richiesta.
@@ -400,7 +401,7 @@ async function handleUserMessage(userMessage, {
                 }
             }
 
-            if (hasGeminiKey) {
+            if (hasGeminiKey()) {
                 try {
                     const risposta = await searchWithGemini(userMessage);
                     if (risposta) {
@@ -413,7 +414,7 @@ async function handleUserMessage(userMessage, {
                     searchDiagnostics.push(`Gemini: ${error.message}`);
                 }
             } else {
-                searchDiagnostics.push('Gemini: chiave EXPO_PUBLIC_GEMINI_API_KEY assente');
+                searchDiagnostics.push('Gemini: nessuna chiave impostata (Impostazioni → Chiavi)');
             }
         }
 
@@ -961,7 +962,7 @@ export const processAudioWithOpenAI = async ({
         const whisperResponse = await fetchConTimeout(`${GROQ_BASE_URL}/audio/transcriptions`, {
             method: 'POST',
             headers: {
-                Authorization: `Bearer ${groqApiKey}`,
+                Authorization: `Bearer ${chiave('groq')}`,
                 'Content-Type': 'multipart/form-data',
             },
             body: formData,

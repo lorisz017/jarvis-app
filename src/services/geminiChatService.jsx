@@ -13,13 +13,14 @@
 // fa da traduttore nei due sensi: fuori ha la stessa forma delle risposte di
 // Groq, così il resto dell'app non deve sapere chi sta rispondendo.
 
-const geminiApiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
+
+import {chiave} from './chiaviService';
 
 const CHAT_MODEL = 'gemini-flash-latest';
 const CHAT_URL =
     `https://generativelanguage.googleapis.com/v1beta/models/${CHAT_MODEL}:generateContent`;
 
-export const hasGeminiChat = Boolean(geminiApiKey);
+export const hasGeminiChat = () => Boolean(chiave('gemini'));
 
 // Gemini vuole i tipi in maiuscolo: "STRING" dove Groq scrive "string".
 function tipoGemini(tipo) {
@@ -142,7 +143,7 @@ function convertiRisposta(data) {
 }
 
 export async function requestGeminiCompletion(messages, tools, timeoutMs = 45000) {
-    if (!geminiApiKey) throw new Error('Nessuna chiave Gemini configurata');
+    if (!chiave('gemini')) throw new Error('Nessuna chiave Gemini configurata');
 
     const {contents, systemInstruction} = convertiMessaggi(messages);
     const corpo = {contents, generationConfig: {temperature: 0.2}};
@@ -156,7 +157,7 @@ export async function requestGeminiCompletion(messages, tools, timeoutMs = 45000
 
     let response;
     try {
-        response = await fetch(`${CHAT_URL}?key=${geminiApiKey}`, {
+        response = await fetch(`${CHAT_URL}?key=${chiave('gemini')}`, {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(corpo),
