@@ -226,13 +226,24 @@ pannello perennemente traslucido è un pannello che si fatica a leggere.
   non si vede, il pannello si legge lo stesso.
 - **Un riquadro scorrevole dentro un altro non scorre**, su Android, senza
   `nestedScrollEnabled`: il gesto se lo prende quello esterno e il contenuto
-  lungo resta tagliato senza modo di risalire.
+  lungo resta tagliato senza modo di risalire. Messo quello però si scorre in
+  due: il riquadro interno si muove e **la pagina sotto lo segue**. La pagina
+  va fermata da sé — `scrollEnabled` a falso appena il dito tocca il riquadro
+  — e basta che regga l'istante in cui Android decide chi prende il gesto:
+  da lì in poi il riquadro interno se lo tiene da solo fino al distacco. Il
+  rilascio non può dipendere dal tocco finale: quando il riquadro interno
+  prende il gesto, l'app riceve un annullamento e poi **non riceve più niente**,
+  quindi serve anche una sicura a tempo, se no la pagina resta bloccata.
 - **Copiare al tocco singolo impedisce di selezionare**: ogni tentativo di
   prendere una parola fa partire la copia di tutto. Copia il doppio tocco.
-- La tastiera: il manifest ha `adjustResize`, quindi la finestra si accorcia —
-  ma accorciarsi **non sposta quello che si sta guardando**. Un campo di testo
-  in fondo a una pagina scorrevole va portato in vista da soli, con un ritardo
-  breve perché la tastiera abbia già preso il suo spazio.
+- La tastiera: il manifest ha `adjustResize`, **e non serve a niente**. Il tema
+  è `Theme.EdgeToEdge` e da lì in poi la finestra non si accorcia più: la
+  tastiera si apre *sopra* l'applicazione, che resta immobile, e il campo di
+  testo sparisce sotto. Lo spazio va fatto a mano — si ascolta
+  `keyboardDidShow`, si aggiunge in fondo alla pagina un margine alto quanto la
+  tastiera e ci si sposta. E ci vuole una riserva: se l'evento non arriva, lo
+  spazio si prende a stima (~42% dell'altezza dello schermo), perché un campo
+  di testo invisibile è peggio di un po' di spazio di troppo.
 
 ## Cosa si può verificare prima di una build
 
@@ -473,11 +484,15 @@ correzione del contenitore, i pannelli in vetro, il riepilogo d'apertura detto
 dalla conversazione con la sua voce, il congedo sullo scambio di saluti e sui
 commiati non espliciti, e **le immagini allegate** in tutte le loro parti:
 miniatura, invio con la domanda, domande successive sulla stessa immagine.
+Confermato anche il giro successivo: il congedo non si chiude più su "sono
+stanco, vado a letto io", il riquadro della risposta scorre e si seleziona, e
+il registro non taglia più le risposte.
 
-**Da confermare** (le correzioni dell'ultimo giro): che il congedo non chiuda
-più su "sono stanco, vado a letto io" — era diventato troppo zelante — che il
-riquadro della risposta scorra e si selezioni, che il registro non tagli più
-le risposte, e che la tastiera non copra il campo di testo.
+**Da confermare** (le correzioni dell'ultimo giro): che scorrere dentro il
+riquadro della risposta o dentro il registro non si trascini dietro tutta la
+pagina, e che la tastiera lasci vedere il campo di testo — la prima correzione
+non aveva funzionato perché partiva da una premessa sbagliata su
+`adjustResize`, vedi la riga sulla tastiera più sopra.
 
 **Ancora aperto davvero:**
 

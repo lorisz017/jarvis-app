@@ -5,7 +5,7 @@ import {styles} from '../styles/mainStyles';
 
 const VICINO_AL_FONDO = 30;
 
-export default function ResponseBox({isLoading, displayedText, scrollRef}) {
+export default function ResponseBox({isLoading, displayedText, scrollRef, onGesto}) {
     const mio = useRef();
     const riquadro = scrollRef || mio;
     // Come per il registro: mentre la risposta arriva a flusso il riquadro la
@@ -40,8 +40,16 @@ export default function ResponseBox({isLoading, displayedText, scrollRef}) {
         ultimoTocco.current = adesso;
     };
 
+    // Scorrere qui dentro non deve trascinarsi dietro la pagina: appena il
+    // dito tocca il riquadro la pagina sotto si ferma, e riprende quando il
+    // dito si stacca o quando il riquadro ha finito di scorrere.
     return (
-        <View style={styles.thirdCon}>
+        <View
+            style={styles.thirdCon}
+            onTouchStart={() => onGesto?.(true)}
+            onTouchEnd={() => onGesto?.(false)}
+            onTouchCancel={() => onGesto?.(false)}
+        >
             {isLoading && <ActivityIndicator size="large" color="#00ff00" style={{marginTop: 10}}/>}
             <ScrollView
                 ref={riquadro}
@@ -49,6 +57,9 @@ export default function ResponseBox({isLoading, displayedText, scrollRef}) {
                 contentContainerStyle={styles.responseScrollViewContent}
                 onScroll={guarda}
                 scrollEventThrottle={80}
+                onScrollBeginDrag={() => onGesto?.(true)}
+                onScrollEndDrag={() => onGesto?.(false)}
+                onMomentumScrollEnd={() => onGesto?.(false)}
                 // Senza questo, su Android un riquadro scorrevole dentro un
                 // altro riquadro scorrevole non scorre affatto: il gesto se lo
                 // prende quello esterno e la risposta lunga resta tagliata.

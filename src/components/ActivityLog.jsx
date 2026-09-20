@@ -6,7 +6,7 @@ import {styles} from '../styles/mainStyles';
 // scorrendo con un dito non ci si ferma mai al pixel esatto.
 const VICINO_AL_FONDO = 40;
 
-export default function ActivityLog({chatHistory}) {
+export default function ActivityLog({chatHistory, onGesto}) {
     const scrollRef = useRef();
     // Finché si sta guardando il fondo, il registro segue la conversazione da
     // solo. Appena si risale a rileggere qualcosa deve restare fermo: essere
@@ -35,8 +35,16 @@ export default function ActivityLog({chatHistory}) {
         setSeguiIlFondo(distanza <= VICINO_AL_FONDO);
     };
 
+    // Scorrere qui dentro non deve trascinarsi dietro la pagina: appena il
+    // dito tocca il riquadro la pagina sotto si ferma, e riprende quando il
+    // dito si stacca o quando il riquadro ha finito di scorrere.
     return (
-        <View style={styles.activityLogContainer}>
+        <View
+            style={styles.activityLogContainer}
+            onTouchStart={() => onGesto?.(true)}
+            onTouchEnd={() => onGesto?.(false)}
+            onTouchCancel={() => onGesto?.(false)}
+        >
             <Text style={styles.activityLogTitle}>REGISTRO ATTIVITÀ</Text>
             <ScrollView
                 ref={scrollRef}
@@ -45,6 +53,9 @@ export default function ActivityLog({chatHistory}) {
                 showsVerticalScrollIndicator
                 onScroll={guarda}
                 scrollEventThrottle={80}
+                onScrollBeginDrag={() => onGesto?.(true)}
+                onScrollEndDrag={() => onGesto?.(false)}
+                onMomentumScrollEnd={() => onGesto?.(false)}
             >
                 {entries.length === 0 ? (
                     <Text style={styles.activityLogEmpty}>Nessuna attività, in attesa dei suoi comandi.</Text>

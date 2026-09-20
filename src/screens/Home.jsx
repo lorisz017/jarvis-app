@@ -8,8 +8,8 @@ import {
     View,
     TextInput,
     Image,
-    KeyboardAvoidingView,
-    Platform,
+    Keyboard,
+    Dimensions,
     ScrollView,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
@@ -108,10 +108,64 @@ export default function Home() {
     const [memoria, setMemoria] = useState({nota: '', ricordi: []});
 
     const scrollRef = useRef();
-    // La pagina intera. Serve per portarla in fondo quando si tocca il campo
-    // di testo: Android restringe la finestra per far posto alla tastiera, ma
-    // non sposta quello che si stava guardando, e il campo resta fuori vista.
+    // La pagina intera. Serve per portarla in fondo quando si apre la
+    // tastiera, e per tenerla ferma mentre si scorre dentro un riquadro.
     const paginaRef = useRef();
+    // Quanto spazio si prende la tastiera, e se la pagina deve restare ferma
+    // perché il dito sta scorrendo dentro uno dei due riquadri.
+    const [tastiera, setTastiera] = useState(0);
+    const tastieraRef = useRef(0);
+    const [paginaFerma, setPaginaFerma] = useState(false);
+    const rilascioRef = useRef(null);
+
+    // Quando la tastiera non si annuncia, il suo spazio si stima: meglio un
+    // po' troppo che un campo di testo invisibile.
+    const stimaTastiera = () => Math.round(Dimensions.get('window').height * 0.42);
+
+    const aggiornaTastiera = (altezza) => {
+        tastieraRef.current = altezza;
+        setTastiera(altezza);
+    };
+
+    // Il dito è entrato in un riquadro scorrevole: la pagina sotto si ferma,
+    // altrimenti si muovono tutte e due insieme. Basta che regga l'istante in
+    // cui Android decide chi prende il gesto — da lì in poi ci pensa il
+    // riquadro interno, che si tiene il gesto fino a quando si stacca il dito.
+    const bloccaPagina = (ferma) => {
+        clearTimeout(rilascioRef.current);
+        setPaginaFerma(ferma);
+        // Sicura: se l'evento che libera la pagina non arrivasse, una pagina
+        // che non scorre più sarebbe molto peggio del problema di partenza.
+        if (ferma) rilascioRef.current = setTimeout(() => setPaginaFerma(false), 6000);
+    };
+
+    // Il tema dell'app è a schermo intero (`Theme.EdgeToEdge`), e da lì in poi
+    // `adjustResize` **non accorcia più la finestra**: la tastiera si apre
+    // sopra l'applicazione, che resta ferma, e il campo di testo finisce
+    // nascosto sotto. Lo spazio va quindi fatto a mano — si misura la tastiera
+    // e lo si aggiunge in fondo alla pagina.
+    useEffect(() => {
+        const su = Keyboard.addListener('keyboardDidShow', (evento) => {
+            const alta = evento?.endCoordinates?.height || 0;
+            aggiornaTastiera(alta > 0 ? alta : stimaTastiera());
+        });
+        const giu = Keyboard.addListener('keyboardDidHide', () => aggiornaTastiera(0));
+        return () => {
+            su.remove();
+            giu.remove();
+        };
+    }, []);
+
+    // Fatto lo spazio bisogna anche andarci: la pagina è più alta di prima, ma
+    // si sta ancora guardando il punto di prima.
+    useEffect(() => {
+        if (tastiera <= 0) return undefined;
+        const fra = setTimeout(() => paginaRef.current?.scrollToEnd({animated: true}), 80);
+        return () => clearTimeout(fra);
+    }, [tastiera]);
+
+    useEffect(() => () => clearTimeout(rilascioRef.current), []);
+
     // Quale voce sta parlando adesso e quanto ha detto finora: serve a
     // ricomporre la risposta dai frammenti che arrivano a flusso.
     const turnoLiveRef = useRef({chi: null, testo: ''});
@@ -983,8 +1037,12 @@ export default function Home() {
 
             <ScrollView
                 ref={paginaRef}
-                contentContainerStyle={styles.scrollContent}
+                contentContainerStyle={[
+                    styles.scrollContent,
+                    tastiera > 0 ? {paddingBottom: tastiera + 24} : null,
+                ]}
                 keyboardShouldPersistTaps="handled"
+                scrollEnabled={!paginaFerma}
             >
                 <Header/>
 
@@ -1030,12 +1088,13 @@ export default function Home() {
                 />
                 )}
 
-                <ActivityLog chatHistory={chatHistory}/>
+                <ActivityLog chatHistory={chatHistory} onGesto={bloccaPagina}/>
 
                 <ResponseBox
                     isLoading={isLoading}
                     displayedText={displayedText}
                     scrollRef={scrollRef}
+                    onGesto={bloccaPagina}
                 />
 
                 <View style={styles.controlsContainer}>
@@ -1064,10 +1123,7 @@ export default function Home() {
                         </View>
                     ) : null}
 
-                    <KeyboardAvoidingView
-                        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                        style={styles.textInputRow}
-                    >
+                    <View style={styles.textInputRow}>
                         <TastoLiquido style={styles.attachButton} onPress={scegliAllegato}>
                             <Text style={styles.sendButtonText}>📎</Text>
                         </TastoLiquido>
@@ -1079,21 +1135,22 @@ export default function Home() {
                             placeholderTextColor="rgba(200, 244, 255, 0.35)"
                             onSubmitEditing={sendTypedMessage}
                             returnKeyType="send"
-                            // Con la tastiera aperta la finestra si accorcia e
-                            // il campo finisce sotto: si porta la pagina in
-                            // fondo, così si vede quello che si sta scrivendo
-                            // come in qualunque app di messaggi. Il ritardo
-                            // serve perché la tastiera abbia già preso il suo
-                            // spazio: spostarsi prima vuol dire spostarsi di
-                            // quanto serviva un istante fa.
+                            // Riserva: se la tastiera non si è annunciata — e
+                            // sotto edge-to-edge può succedere — lo spazio si
+                            // prende lo stesso, a stima. Meglio un po' troppo
+                            // che un campo di testo invisibile.
                             onFocus={() => {
-                                setTimeout(() => paginaRef.current?.scrollToEnd({animated: true}), 220);
+                                setTimeout(() => {
+                                    if (!tastieraRef.current) aggiornaTastiera(stimaTastiera());
+                                    paginaRef.current?.scrollToEnd({animated: true});
+                                }, 320);
                             }}
+                            onBlur={() => aggiornaTastiera(0)}
                         />
                         <TastoLiquido style={styles.sendButton} onPress={sendTypedMessage}>
                             <Text style={styles.sendButtonText}>➤</Text>
                         </TastoLiquido>
-                    </KeyboardAvoidingView>
+                    </View>
 
                     <View style={styles.actionRow}>
                         <TastoLiquido style={styles.pillButton} onPress={() => setIsVoicePickerVisible(true)}>
