@@ -118,10 +118,19 @@ turno molto più in fretta di quanto lo si ascolti, e quando smette di mandare
 ce ne sono ancora secondi da sentire. Si stima dai byte consegnati
 all'altoparlante.
 
+Ma attenzione a non rifare il giro sbagliato: **sull'OPPO il pavimento non era
+il problema.** La riga di diagnosi ha detto che l'eco lì è cancellabile e che
+l'app non si era interrotta nemmeno una volta, e quella risposta ha chiuso la
+teoria della soglia in dieci secondi. Il difetto era il **modo audio**: uscita
+dichiarata come musica invece che come voce, quindi cancellazione dell'eco
+senza niente da cancellare e suono instradato nella capsula dell'orecchio.
+
 Quello che serve per capirci qualcosa sta in **Impostazioni → Info**: se la
-cancellazione dell'eco esiste su quel telefono, quanto si sente parlare, e
-quante interruzioni hanno deciso l'app e il server. **Prima di toccare una
-soglia si guarda lì.**
+cancellazione dell'eco esiste su quel telefono e se è mai stata accesa, il
+modo audio e dove esce il suono, il volume delle telefonate, i pezzi visti dal
+microfono e quelli di voce, e quante interruzioni hanno deciso l'app e il
+server. **Prima di toccare una soglia si guarda lì**, e si legge tutta la
+riga: il primo giro è stato sprecato guardandone solo metà.
 
 ### Dove sta cosa
 
