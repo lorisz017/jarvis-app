@@ -475,12 +475,10 @@ export default function SettingsModal({
                                     {voce
                                         ? [
                                             `Conversazioni aperte: ${voce.sessioni}.`,
-                                            `Modo audio: ${voce.motore?.modo || 'sconosciuto'}. Microfono ${
+                                            `Microfono ${
                                                 voce.motore?.microfonoAcceso ? 'acceso' : 'fermo'
                                             }, altoparlante ${
                                                 voce.motore?.altoparlanteAcceso ? 'acceso' : 'fermo'
-                                            }, volume ${voce.motore?.volume ?? '?'} su ${
-                                                voce.motore?.volumeMassimo ?? '?'
                                             }.`,
                                             `Pezzi da quando l'app è aperta: ${voce.pezziMicrofono} dal microfono, ${
                                                 voce.pezziVoce

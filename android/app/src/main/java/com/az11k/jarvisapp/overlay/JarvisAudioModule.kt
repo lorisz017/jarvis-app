@@ -1,9 +1,7 @@
 package com.az11k.jarvisapp.overlay
 
-import android.content.Context
 import android.media.AudioAttributes
 import android.media.AudioFormat
-import android.media.AudioManager
 import android.media.AudioRecord
 import android.media.AudioTrack
 import android.media.MediaRecorder
@@ -53,12 +51,6 @@ class JarvisAudioModule(private val contesto: ReactApplicationContext) :
 
     private var registratore: AudioRecord? = null
     private var inAscolto = false
-
-    // Serve solo a **raccontare** com'è messo il telefono, in Impostazioni →
-    // Info. Non cambia niente: il modo audio lo decide il resto dell'app.
-    private val gestoreAudio: AudioManager? by lazy {
-        contesto.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
-    }
 
     private var altoparlante: AudioTrack? = null
     private val codaRiproduzione = Executors.newSingleThreadExecutor()
@@ -137,35 +129,19 @@ class JarvisAudioModule(private val contesto: ReactApplicationContext) :
         promise.resolve(true)
     }
 
-    private fun nomeDelModo(modo: Int): String = when (modo) {
-        AudioManager.MODE_NORMAL -> "normale"
-        AudioManager.MODE_IN_COMMUNICATION -> "conversazione"
-        AudioManager.MODE_IN_CALL -> "telefonata"
-        AudioManager.MODE_RINGTONE -> "suoneria"
-        else -> "altro ($modo)"
-    }
-
     /**
-     * Com'è messo il telefono adesso, per la scheda Info.
+     * Microfono e altoparlante: accesi o fermi.
      *
-     * Si limita a guardare: microfono e altoparlante accesi o no, in che modo
-     * audio sta il telefono e a che volume. Serve a rispondere da lontano a
-     * domande che da qui non si possono verificare, senza toccare niente.
+     * Due bit soli, ma sono quelli che distinguono "non risponde" da
+     * "risponde e non si sente": un altoparlante fermo mentre la
+     * conversazione è aperta vuol dire che qualcuno l'ha rilasciato di sotto,
+     * e quella è una diagnosi, non un'impressione.
      */
     @ReactMethod
     fun diagnosticaAudio(promise: Promise) {
         val mappa = Arguments.createMap()
-        val gestore = gestoreAudio
         mappa.putBoolean("microfonoAcceso", inAscolto)
         mappa.putBoolean("altoparlanteAcceso", altoparlante != null)
-        mappa.putString("modo", if (gestore == null) "sconosciuto" else nomeDelModo(gestore.mode))
-        try {
-            mappa.putInt("volume", gestore?.getStreamVolume(AudioManager.STREAM_MUSIC) ?: -1)
-            mappa.putInt("volumeMassimo", gestore?.getStreamMaxVolume(AudioManager.STREAM_MUSIC) ?: -1)
-        } catch (e: Exception) {
-            mappa.putInt("volume", -1)
-            mappa.putInt("volumeMassimo", -1)
-        }
         promise.resolve(mappa)
     }
 

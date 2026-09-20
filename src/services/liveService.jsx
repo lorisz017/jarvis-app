@@ -332,9 +332,13 @@ export class LiveSession {
             const eraPronta = this.pronta;
             this.pronta = false;
             this.fineVoce = 0;
-            if (sessioneCorrente === this) sessioneCorrente = null;
             this._fermaMicrofono();
-            audio?.stopPlayback();
+            // Come sopra: l'altoparlante non è suo se nel frattempo ne è nata
+            // un'altra.
+            if (sessioneCorrente === this) {
+                sessioneCorrente = null;
+                audio?.stopPlayback();
+            }
 
             // Quando il server rifiuta qualcosa non manda un errore: chiude e
             // basta, e il motivo sta tutto nel codice di chiusura e nella
@@ -530,7 +534,8 @@ export class LiveSession {
     _fermaMicrofono() {
         this.iscrizioneMicrofono?.remove();
         this.iscrizioneMicrofono = null;
-        audio?.stopCapture();
+        // Stesso ragionamento dell'altoparlante: il microfono è uno solo.
+        if (sessioneCorrente === this) audio?.stopCapture();
     }
 
     _invia(oggetto) {
@@ -542,9 +547,18 @@ export class LiveSession {
         this.chiusaVolutamente = true;
         this.pronta = false;
         this.fineVoce = 0;
-        if (sessioneCorrente === this) sessioneCorrente = null;
         this._fermaMicrofono();
-        audio?.stopPlayback();
+        // **L'altoparlante è uno solo, e lo si spegne solo se è il proprio.**
+        // Una sessione superata che lo rilascia lo toglie di sotto a quella
+        // viva, e da lì in poi i pezzi di voce arrivano e vengono buttati:
+        // il testo compare, il modello risponde, e non si sente più niente
+        // finché non si esce e si rientra — che è l'unico modo per farne
+        // nascere uno nuovo. Era esattamente il "non si sente l'audio
+        // all'inizio".
+        if (sessioneCorrente === this) {
+            sessioneCorrente = null;
+            audio?.stopPlayback();
+        }
 
         try {
             this.socket?.close();

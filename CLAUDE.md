@@ -127,8 +127,16 @@ sbagliato e ha fatto un danno peggiore — 741 pezzi su 1783 mai arrivati al
 modello, cioè frasi col buco in mezzo, che per chi ascolta a flusso sono due
 frasi. Anche quello è stato tolto. **Il microfono va sul filo sempre.**
 
-Era tutt'altro: **erano due conversazioni aperte insieme.** Vedi la trappola
-sulla serratura fatta con uno stato di React, più sotto.
+Era tutt'altro: **erano due conversazioni aperte insieme** — e da lì discende
+anche l'altro sintomo, quello che sembrava scollegato: *"all'inizio non si
+sente l'audio, poi esco e rientro e si sente"*. Il microfono e l'altoparlante
+nativi sono **uno solo per tutta l'app**. Quando una sessione superata viene
+fermata, rilascia l'altoparlante **di sotto a quella viva**: da lì in poi i
+pezzi di voce arrivano e vengono buttati, il testo compare, il modello
+risponde, e non si sente niente. Uscire e rientrare funzionava perché ne
+faceva nascere uno nuovo. Perciò: **una sessione rilascia microfono e
+altoparlante solo se sono ancora suoi.** Vedi anche la trappola sulla
+serratura fatta con uno stato di React, più sotto.
 
 La morale, che vale oltre questo caso: i numeri in **Impostazioni → Info**
 hanno chiuso due teorie in dieci secondi l'una, e ogni volta la risposta
