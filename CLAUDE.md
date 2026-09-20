@@ -246,6 +246,18 @@ Ognuna di queste è costata almeno una build, alcune parecchie:
   l'effetto è che non si sente niente. Da lì in poi il volume non è più quello
   dei video ma quello delle telefonate, e se sta a zero l'app sembra muta pur
   essendo tutto acceso: va riportato anche quello.
+- **Una serratura fatta con uno stato di React non chiude niente.** Aprire la
+  conversazione passa per una funzione che aspetta — il permesso della bolla,
+  l'altoparlante, la connessione — e in tutto quel tratto lo stato a schermo
+  dice ancora "spenta". Su un telefono lento quell'attesa dura abbastanza
+  perché un secondo tocco, o un altro pezzo dell'app che la apre da sé, ne
+  faccia partire **un'altra**: due microfoni sullo stesso filo e **due voci
+  nello stesso altoparlante**, mescolate pezzo per pezzo. Chi guarda vede la
+  richiesta sentita due volte e un discorso incomprensibile, e pensa all'audio.
+  La serratura va chiusa **subito**, con un riferimento, e chi possiede la
+  risorsa — il servizio della conversazione — deve rifiutarsi di averne due.
+  E le richiamate di una sessione superata vanno ignorate: la sua chiusura,
+  arrivando dopo, spegne quella viva.
 - **Un conteggio a zero non è una diagnosi**, è un'ambiguità: può voler dire
   "il fenomeno non è successo" oppure "quel pezzo di codice non è mai girato".
   Ogni numero mostrato vuole accanto il numero che distingue i due casi — i

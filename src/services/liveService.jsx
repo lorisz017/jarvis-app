@@ -107,6 +107,11 @@ const BYTE_AL_SECONDO = 24000 * 2;
 // voler dire sia "l'eco non c'è" sia "quel pezzo di codice non è mai girato",
 // e sono diagnosi opposte.
 const conteggi = {
+    // Quante conversazioni sono state aperte da quando l'app è accesa. Se
+    // questo numero cresce senza che si sia riaperta la conversazione, ce n'è
+    // più di una viva insieme — ed è il difetto peggiore di tutti, perché due
+    // voci finiscono nello stesso altoparlante.
+    sessioni: 0,
     pezziMicrofono: 0,
     pezziVoce: 0,
     interruzioniLocali: 0,
@@ -315,6 +320,20 @@ export class LiveSession {
             return false;
         }
 
+        // **Una sola conversazione per volta.** Non è una precauzione
+        // teorica: aprire la conversazione passa per una funzione che aspetta
+        // il permesso della bolla e la connessione, e finché aspetta lo stato
+        // a schermo dice ancora "spenta". Su un telefono lento quell'attesa
+        // dura abbastanza perché un secondo tocco — o un altro pezzo dell'app
+        // che apre la conversazione da sé — ne faccia partire un'altra. Da lì
+        // in poi ci sono due microfoni sullo stesso filo e **due voci nello
+        // stesso altoparlante**, mescolate pezzo per pezzo: la richiesta
+        // sentita due volte, le parole vecchie sopra le nuove, il discorso
+        // incomprensibile. Su un telefono veloce la finestra è troppo stretta
+        // perché succeda, ed è per questo che si vedeva solo altrove.
+        if (sessioneCorrente && sessioneCorrente !== this) sessioneCorrente.stop();
+
+        conteggi.sessioni += 1;
         this.onStato('connessione');
         this.chiusaVolutamente = false;
         sessioneCorrente = this;
@@ -571,6 +590,8 @@ export class LiveSession {
     stop() {
         this.chiusaVolutamente = true;
         this.pronta = false;
+        this.fineVoce = 0;
+        if (sessioneCorrente === this) sessioneCorrente = null;
         this._fermaMicrofono();
         audio?.stopPlayback();
 

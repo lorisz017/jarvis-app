@@ -189,6 +189,13 @@ export default function Home() {
     // trascritta daccapo come se fosse nuova.
     const ultimoAudioRef = useRef(null);
     const sessioneLiveRef = useRef(null);
+    // `statoLive` è uno stato di React: fra il momento in cui si chiede di
+    // aprire la conversazione e quello in cui lo stato cambia passano tutte le
+    // attese di `toggleLive` — il permesso della bolla, l'altoparlante, la
+    // connessione. In quel tratto lo schermo dice ancora "spenta", e un
+    // secondo tocco ne apre un'altra. Questa è una serratura che si chiude
+    // **subito**, senza aspettare un ridisegno.
+    const avvioInCorsoRef = useRef(false);
     // Vero se il servizio in primo piano è stato avviato apposta per la
     // conversazione, e va quindi spento quando finisce.
     const servizioPerLiveRef = useRef(false);
@@ -755,7 +762,11 @@ export default function Home() {
                 // si riaccenderebbe da sé una cosa che lui aveva spento.
                 if (chiusaPerUscitaRef.current) {
                     chiusaPerUscitaRef.current = false;
-                    if (apriConversazioneAllAvvio && modalita === 'conversazione') toggleLive();
+                    if (
+                        apriConversazioneAllAvvio
+                        && modalita === 'conversazione'
+                        && !sessioneLiveRef.current
+                    ) toggleLive();
                 }
                 return;
             }
@@ -772,7 +783,10 @@ export default function Home() {
     }, [isStateLoaded, isOverlayEnabled, apriConversazioneAllAvvio, modalita]);
 
     const toggleLive = async () => {
-        if (statoLive !== 'spenta') {
+        // Un'apertura è già per strada: il secondo tocco non ne apre un'altra.
+        if (avvioInCorsoRef.current) return;
+
+        if (statoLive !== 'spenta' || sessioneLiveRef.current) {
             fermaLive();
             return;
         }
@@ -804,6 +818,10 @@ export default function Home() {
         const sessione = new LiveSession({
             contesto: contestoAzioni(),
             onStato: (stato, dettagli) => {
+                // Se nel frattempo ne è nata un'altra, questa è una sessione
+                // superata: la sua chiusura non deve spegnere quella viva né
+                // cancellarne il riferimento.
+                if (sessioneLiveRef.current && sessioneLiveRef.current !== sessione) return;
                 setStatoLive(stato === 'chiusa' ? 'spenta' : stato);
                 if (stato === 'chiusa') {
                     sessioneLiveRef.current = null;
@@ -821,6 +839,7 @@ export default function Home() {
                 }
             },
             onTesto: ({chi, testo}) => {
+                if (sessioneLiveRef.current && sessioneLiveRef.current !== sessione) return;
                 if (!testo?.trim()) return;
                 // Le trascrizioni arrivano a pezzi mentre si parla: si
                 // accodano all'ultima riga se è della stessa voce, invece di
@@ -854,6 +873,7 @@ export default function Home() {
                 if (chi === 'azione') setMemoria({...getMemoria()});
             },
             onErrore: (errore) => {
+                if (sessioneLiveRef.current && sessioneLiveRef.current !== sessione) return;
                 console.warn('Conversazione continua:', errore);
                 // Anche nel registro, non solo in una finestra: la finestra si
                 // chiude con un tocco e il motivo sparisce, e senza quel
@@ -869,7 +889,12 @@ export default function Home() {
 
         sessione.setMuta(!isVoiceEnabled);
         sessioneLiveRef.current = sessione;
-        await sessione.start();
+        avvioInCorsoRef.current = true;
+        try {
+            await sessione.start();
+        } finally {
+            avvioInCorsoRef.current = false;
+        }
     };
 
     // Se si chiude l'app la sessione va chiusa: resterebbe il microfono

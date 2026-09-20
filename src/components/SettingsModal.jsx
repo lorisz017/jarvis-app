@@ -493,6 +493,7 @@ export default function SettingsModal({
                                             `Volume della conversazione: ${voce.motore?.volume ?? '?'} su ${
                                                 voce.motore?.volumeMassimo ?? '?'
                                             }.`,
+                                            `Conversazioni aperte: ${voce.sessioni}.`,
                                             `Pezzi da quando l'app è aperta: ${voce.pezziMicrofono} dal microfono, ${
                                                 voce.pezziVoce
                                             } di voce.`,
