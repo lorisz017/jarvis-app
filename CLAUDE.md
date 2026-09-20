@@ -261,6 +261,27 @@ Ognuna di queste è costata almeno una build, alcune parecchie:
   risorsa — il servizio della conversazione — deve rifiutarsi di averne due.
   E le richiamate di una sessione superata vanno ignorate: la sua chiusura,
   arrivando dopo, spegne quella viva.
+
+  **"Subito" vuol dire prima della prima attesa, non prima dell'ultima.** Al
+  primo tentativo la serratura era chiusa appena prima di aprire la
+  connessione, cioè *dopo* l'attesa del permesso della bolla: lasciava aperta
+  esattamente la finestra che doveva chiudere, e il difetto si è ripresentato
+  identico. Va presa come prima istruzione dopo i controlli, con tutto il
+  resto dentro un `try`/`finally` che la riapre.
+
+  E serve anche il verso opposto: **una chiusura arrivata mentre l'apertura
+  era per strada deve invalidarla.** Un contatore che sale a ogni chiusura
+  basta — chi si è avviato con il numero vecchio si ferma da sé. Senza,
+  nasce una sessione *dopo* la chiusura e resta in ascolto mentre
+  l'interfaccia dice "tocchi per parlare".
+- **Uscire dall'app per una propria azione non è uscire dall'app.** Impostare
+  una sveglia apre l'orologio, quindi una catena di diciassette sveglie fa
+  uscire e rientrare l'app diciassette volte. Se ogni uscita chiude la
+  conversazione e ogni rientro ne apre una, si smonta e rimonta tutto
+  diciassette volte di fila, ed è lì che ogni corsa viene a galla. Mentre le
+  azioni girano, l'uscita si ignora — l'app torna davanti da sola — con un
+  ricontrollo dopo qualche secondo, perché se invece è rimasta fuori davvero
+  il microfono non può restare acceso.
 - **Un conteggio a zero non è una diagnosi**, è un'ambiguità: può voler dire
   "il fenomeno non è successo" oppure "quel pezzo di codice non è mai girato".
   Ogni numero mostrato vuole accanto il numero che distingue i due casi — i

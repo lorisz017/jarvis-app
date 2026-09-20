@@ -36,7 +36,7 @@ import {setNativeAlarm, setNativeTimer, getWeatherByCity, createCalendarEvent} f
 import {openApp, startNavigation} from '../services/appLauncher';
 import {callContact, sendWhatsAppToContact} from '../services/contactsService';
 import {loadState, saveState, DEFAULT_STATE} from '../services/storageService';
-import {LiveSession, isLiveSupported, flushLiveAudio} from '../services/liveService';
+import {LiveSession, isLiveSupported, flushLiveAudio, azioniInCorso} from '../services/liveService';
 import {caricaChiavi, mancaIlNecessario} from '../services/chiaviService';
 import {
     caricaMemoria,
@@ -196,6 +196,12 @@ export default function Home() {
     // secondo tocco ne apre un'altra. Questa è una serratura che si chiude
     // **subito**, senza aspettare un ridisegno.
     const avvioInCorsoRef = useRef(false);
+    // Sale a ogni chiusura. Un avvio che era già per strada quando la
+    // conversazione è stata chiusa porta con sé il numero vecchio, e da lì si
+    // riconosce che è superato: senza questo, una sessione nata **dopo** la
+    // chiusura resta in ascolto mentre l'interfaccia dice "tocchi per parlare".
+    const giroLiveRef = useRef(0);
+    const ricontrolloUscitaRef = useRef(null);
     // Vero se il servizio in primo piano è stato avviato apposta per la
     // conversazione, e va quindi spento quando finisce.
     const servizioPerLiveRef = useRef(false);
@@ -736,6 +742,7 @@ export default function Home() {
     });
 
     const fermaLive = () => {
+        giroLiveRef.current += 1;
         sessioneLiveRef.current?.stop();
         sessioneLiveRef.current = null;
         setStatoLive('spenta');
@@ -772,14 +779,36 @@ export default function Home() {
             }
 
             if (isOverlayEnabled) return;
-            if (!sessioneLiveRef.current) return;
+            if (!sessioneLiveRef.current && !avvioInCorsoRef.current) return;
+
+            // L'app può uscire **per una propria azione**: impostare una
+            // sveglia apre l'orologio, e una catena di sveglie la fa uscire e
+            // rientrare una volta per sveglia. Lì l'uscita non è una scelta di
+            // chi usa l'app, e chiudere e riaprire la conversazione a ogni
+            // giro vuol dire smontarla e rimontarla dieci volte di fila. Si
+            // ricontrolla poco dopo, perché se invece l'app è rimasta fuori
+            // davvero il microfono non può restare acceso.
+            if (azioniInCorso()) {
+                clearTimeout(ricontrolloUscitaRef.current);
+                ricontrolloUscitaRef.current = setTimeout(() => {
+                    if (AppState.currentState === 'active') return;
+                    if (isOverlayEnabled || !sessioneLiveRef.current) return;
+                    chiusaPerUscitaRef.current = true;
+                    setVistaAperta(false);
+                    fermaLive();
+                }, 8000);
+                return;
+            }
 
             chiusaPerUscitaRef.current = true;
             setVistaAperta(false);
             fermaLive();
         });
 
-        return () => iscrizione.remove();
+        return () => {
+            iscrizione.remove();
+            clearTimeout(ricontrolloUscitaRef.current);
+        };
     }, [isStateLoaded, isOverlayEnabled, apriConversazioneAllAvvio, modalita]);
 
     const toggleLive = async () => {
@@ -799,99 +828,120 @@ export default function Home() {
             return;
         }
 
-        // Le due modalità non possono usare il microfono insieme.
-        stopJarvisVoice();
-        if (staRegistrandoRef.current) await stopRecording();
-
-        // Il servizio in primo piano va acceso prima di cominciare, se non lo
-        // è già. È quello che tiene vivo il processo quando si esce dall'app e
-        // che mantiene il permesso del microfono: senza, la conversazione
-        // funziona finché l'app è aperta e poi resta appesa. Il cerchio non si
-        // mostra — quello dipende dall'interruttore delle impostazioni.
-        if (!isOverlayEnabled && isOverlaySupported() && (await hasOverlayPermission())) {
-            if (await showOverlay()) {
-                setOverlayVisible(false);
-                servizioPerLiveRef.current = true;
-            }
-        }
-
-        const sessione = new LiveSession({
-            contesto: contestoAzioni(),
-            onStato: (stato, dettagli) => {
-                // Se nel frattempo ne è nata un'altra, questa è una sessione
-                // superata: la sua chiusura non deve spegnere quella viva né
-                // cancellarne il riferimento.
-                if (sessioneLiveRef.current && sessioneLiveRef.current !== sessione) return;
-                setStatoLive(stato === 'chiusa' ? 'spenta' : stato);
-                if (stato === 'chiusa') {
-                    sessioneLiveRef.current = null;
-                    // Senza una conversazione i fotogrammi non hanno dove
-                    // andare: tenere la fotocamera accesa sarebbe solo una
-                    // spia rossa che non serve a niente.
-                    setVistaAperta(false);
-                    // La leva torna indietro solo se la sessione è **caduta**,
-                    // e solo se la modalità a comandi esiste: spostarla dopo
-                    // uno stop chiesto da lui lasciava il radar in mano ai
-                    // comandi, e il tocco successivo — quello per riprendere a
-                    // parlare — apriva una registrazione invece della
-                    // conversazione. Da fuori sembrava che non rispondesse più.
-                    if (!dettagli?.volontaria && isCommandModeEnabled) setModalita('comandi');
-                }
-            },
-            onTesto: ({chi, testo}) => {
-                if (sessioneLiveRef.current && sessioneLiveRef.current !== sessione) return;
-                if (!testo?.trim()) return;
-                // Le trascrizioni arrivano a pezzi mentre si parla: si
-                // accodano all'ultima riga se è della stessa voce, invece di
-                // riempire il registro di frammenti.
-                setChatHistory((prev) => {
-                    const ruolo = chi === 'utente' ? 'user' : 'assistant';
-                    const ultimo = prev[prev.length - 1];
-                    if (chi !== 'azione' && ultimo?.role === ruolo && ultimo.live) {
-                        const aggiornato = {...ultimo, content: `${ultimo.content}${testo}`};
-                        return [...prev.slice(0, -1), aggiornato];
-                    }
-                    return [...prev, {role: ruolo, content: testo, live: true}];
-                });
-                // Il riquadro sopra il registro mostra l'ultima risposta
-                // **intera**. Le trascrizioni arrivano parola per parola: se
-                // ognuna sostituisse la precedente resterebbe a schermo solo
-                // l'ultima, che è esattamente come si comportava.
-                if (chi !== 'utente') {
-                    if (turnoLiveRef.current.chi !== chi) {
-                        turnoLiveRef.current = {chi, testo: ''};
-                    }
-                    turnoLiveRef.current.testo += testo;
-                    setDisplayedText(turnoLiveRef.current.testo);
-                } else {
-                    // Ha ripreso la parola: la risposta che segue è nuova.
-                    turnoLiveRef.current = {chi: null, testo: ''};
-                }
-                // Se l'azione era un'annotazione, la sezione Memoria deve
-                // mostrarla adesso: è l'unico modo per vedere subito se la
-                // scrittura è arrivata a destinazione.
-                if (chi === 'azione') setMemoria({...getMemoria()});
-            },
-            onErrore: (errore) => {
-                if (sessioneLiveRef.current && sessioneLiveRef.current !== sessione) return;
-                console.warn('Conversazione continua:', errore);
-                // Anche nel registro, non solo in una finestra: la finestra si
-                // chiude con un tocco e il motivo sparisce, e senza quel
-                // motivo non si capisce perché la conversazione sia morta.
-                setChatHistory((prev) => [
-                    ...prev,
-                    {role: 'assistant', content: `Conversazione continua: ${errore.message}`},
-                ]);
-                Alert.alert('Conversazione continua', errore.message);
-                fermaLive();
-            },
-        });
-
-        sessione.setMuta(!isVoiceEnabled);
-        sessioneLiveRef.current = sessione;
+        // **Da qui in poi si aspetta**, e finché si aspetta lo stato a schermo
+        // dice ancora "spenta". La serratura va chiusa adesso, prima della
+        // prima attesa: chiuderla più avanti — com'era — lascia aperta proprio
+        // la finestra che doveva chiudere.
         avvioInCorsoRef.current = true;
+        const mioGiro = giroLiveRef.current;
+
         try {
+            // Le due modalità non possono usare il microfono insieme.
+            stopJarvisVoice();
+            if (staRegistrandoRef.current) await stopRecording();
+
+            // Il servizio in primo piano va acceso prima di cominciare, se non lo
+            // è già. È quello che tiene vivo il processo quando si esce dall'app e
+            // che mantiene il permesso del microfono: senza, la conversazione
+            // funziona finché l'app è aperta e poi resta appesa. Il cerchio non si
+            // mostra — quello dipende dall'interruttore delle impostazioni.
+            if (!isOverlayEnabled && isOverlaySupported() && (await hasOverlayPermission())) {
+                if (await showOverlay()) {
+                    setOverlayVisible(false);
+                    servizioPerLiveRef.current = true;
+                }
+            }
+
+            // Chiusa mentre si aspettava: non se ne apre una.
+            if (mioGiro !== giroLiveRef.current) return;
+
+            const sessione = new LiveSession({
+                contesto: contestoAzioni(),
+                onStato: (stato, dettagli) => {
+                    // Se nel frattempo è stata chiusa o ne è nata un'altra, questa
+                    // è una sessione superata: quello che dice non deve toccare
+                    // quella viva. Il confronto è sul giro e non solo sul
+                    // riferimento, perché fra una chiusura e l'apertura successiva
+                    // il riferimento è vuoto e da solo non distinguerebbe niente.
+                    if (mioGiro !== giroLiveRef.current) return;
+                    if (sessioneLiveRef.current && sessioneLiveRef.current !== sessione) return;
+                    setStatoLive(stato === 'chiusa' ? 'spenta' : stato);
+                    if (stato === 'chiusa') {
+                        sessioneLiveRef.current = null;
+                        // Senza una conversazione i fotogrammi non hanno dove
+                        // andare: tenere la fotocamera accesa sarebbe solo una
+                        // spia rossa che non serve a niente.
+                        setVistaAperta(false);
+                        // La leva torna indietro solo se la sessione è **caduta**,
+                        // e solo se la modalità a comandi esiste: spostarla dopo
+                        // uno stop chiesto da lui lasciava il radar in mano ai
+                        // comandi, e il tocco successivo — quello per riprendere a
+                        // parlare — apriva una registrazione invece della
+                        // conversazione. Da fuori sembrava che non rispondesse più.
+                        if (!dettagli?.volontaria && isCommandModeEnabled) setModalita('comandi');
+                    }
+                },
+                onTesto: ({chi, testo}) => {
+                    if (mioGiro !== giroLiveRef.current) return;
+                    if (sessioneLiveRef.current && sessioneLiveRef.current !== sessione) return;
+                    if (!testo?.trim()) return;
+                    // Le trascrizioni arrivano a pezzi mentre si parla: si
+                    // accodano all'ultima riga se è della stessa voce, invece di
+                    // riempire il registro di frammenti.
+                    setChatHistory((prev) => {
+                        const ruolo = chi === 'utente' ? 'user' : 'assistant';
+                        const ultimo = prev[prev.length - 1];
+                        if (chi !== 'azione' && ultimo?.role === ruolo && ultimo.live) {
+                            const aggiornato = {...ultimo, content: `${ultimo.content}${testo}`};
+                            return [...prev.slice(0, -1), aggiornato];
+                        }
+                        return [...prev, {role: ruolo, content: testo, live: true}];
+                    });
+                    // Il riquadro sopra il registro mostra l'ultima risposta
+                    // **intera**. Le trascrizioni arrivano parola per parola: se
+                    // ognuna sostituisse la precedente resterebbe a schermo solo
+                    // l'ultima, che è esattamente come si comportava.
+                    if (chi !== 'utente') {
+                        if (turnoLiveRef.current.chi !== chi) {
+                            turnoLiveRef.current = {chi, testo: ''};
+                        }
+                        turnoLiveRef.current.testo += testo;
+                        setDisplayedText(turnoLiveRef.current.testo);
+                    } else {
+                        // Ha ripreso la parola: la risposta che segue è nuova.
+                        turnoLiveRef.current = {chi: null, testo: ''};
+                    }
+                    // Se l'azione era un'annotazione, la sezione Memoria deve
+                    // mostrarla adesso: è l'unico modo per vedere subito se la
+                    // scrittura è arrivata a destinazione.
+                    if (chi === 'azione') setMemoria({...getMemoria()});
+                },
+                onErrore: (errore) => {
+                    if (mioGiro !== giroLiveRef.current) return;
+                    if (sessioneLiveRef.current && sessioneLiveRef.current !== sessione) return;
+                    console.warn('Conversazione continua:', errore);
+                    // Anche nel registro, non solo in una finestra: la finestra si
+                    // chiude con un tocco e il motivo sparisce, e senza quel
+                    // motivo non si capisce perché la conversazione sia morta.
+                    setChatHistory((prev) => [
+                        ...prev,
+                        {role: 'assistant', content: `Conversazione continua: ${errore.message}`},
+                    ]);
+                    Alert.alert('Conversazione continua', errore.message);
+                    fermaLive();
+                },
+            });
+
+            sessione.setMuta(!isVoiceEnabled);
+            sessioneLiveRef.current = sessione;
             await sessione.start();
+
+            // Chiusa mentre si collegava: va fermata adesso, se no resta in
+            // ascolto con l'interfaccia che dice di no.
+            if (mioGiro !== giroLiveRef.current) {
+                sessione.stop();
+                if (sessioneLiveRef.current === sessione) sessioneLiveRef.current = null;
+            }
         } finally {
             avvioInCorsoRef.current = false;
         }

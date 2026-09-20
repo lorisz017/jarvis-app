@@ -132,6 +132,21 @@ export const isLiveSupported = () => Boolean(audio && chiave('gemini'));
 // L'unica sessione aperta in questo momento, se ce n'è una.
 let sessioneCorrente = null;
 
+// Quante azioni sono in esecuzione adesso.
+//
+// Serve fuori di qui: impostare una sveglia apre l'orologio, cioè **fa uscire
+// l'app**, e una catena di diciassette sveglie la fa uscire e rientrare
+// diciassette volte. Se ogni uscita chiudesse la conversazione e ogni rientro
+// ne aprisse una nuova, si smonterebbe e rimonterebbe tutto diciassette volte
+// di fila — ed è esattamente la prova che ha fatto saltare fuori ogni difetto
+// di questo giro. Mentre la catena gira, l'uscita non è una scelta di chi usa
+// l'app: è una conseguenza dell'azione, e l'app torna davanti da sola.
+let azioniAperte = 0;
+
+export function azioniInCorso() {
+    return azioniAperte > 0;
+}
+
 export function flushLiveAudio() {
     try {
         // Passando dalla sessione si azzera anche il conto di quanto le resta
@@ -458,21 +473,28 @@ export class LiveSession {
 
     async _eseguiAzioni(chiamate) {
         const risposte = [];
+        azioniAperte += 1;
 
-        for (const chiamata of chiamate) {
-            let esito;
-            try {
-                esito = await executeTool(chiamata.name, chiamata.args || {}, this.contesto);
-            } catch (error) {
-                esito = `Non sono riuscito a completare "${chiamata.name}": ${error.message}`;
+        try {
+            for (const chiamata of chiamate) {
+                let esito;
+                try {
+                    esito = await executeTool(chiamata.name, chiamata.args || {}, this.contesto);
+                } catch (error) {
+                    esito = `Non sono riuscito a completare "${chiamata.name}": ${error.message}`;
+                }
+
+                this.onTesto({chi: 'azione', testo: esito});
+                risposte.push({
+                    id: chiamata.id,
+                    name: chiamata.name,
+                    response: {risultato: esito},
+                });
             }
-
-            this.onTesto({chi: 'azione', testo: esito});
-            risposte.push({
-                id: chiamata.id,
-                name: chiamata.name,
-                response: {risultato: esito},
-            });
+        } finally {
+            // Se questo conto restasse su per un'eccezione, l'app non
+            // chiuderebbe più la conversazione uscendo: peggio del difetto.
+            azioniAperte = Math.max(0, azioniAperte - 1);
         }
 
         this._invia({toolResponse: {functionResponses: risposte}});
