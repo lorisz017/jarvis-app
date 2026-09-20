@@ -103,6 +103,11 @@ export default function Home() {
     // 'comandi' | 'conversazione'. La conversazione è la modalità normale:
     // l'altra c'è ancora, ma va chiesta dalle impostazioni.
     const [modalita, setModalita] = useState('conversazione');
+    // Letta da dentro le azioni, che si portano dietro la funzione con cui
+    // parlano: presa dallo stato, resterebbe quella del momento in cui la
+    // conversazione è stata aperta.
+    const modalitaRef = useRef('conversazione');
+    modalitaRef.current = modalita;
     const [isCommandModeEnabled, setIsCommandModeEnabled] = useState(false);
     const [apriConversazioneAllAvvio, setApriConversazioneAllAvvio] = useState(true);
     const [memoria, setMemoria] = useState({nota: '', ricordi: []});
@@ -319,9 +324,15 @@ export default function Home() {
     };
 
     const speak = async (text) => {
-        // Voce disattivata: mostra comunque il testo, come farebbe la TTS,
-        // ma senza riprodurre audio.
-        if (!isVoiceEnabled) {
+        // **In conversazione la voce sintetizzata non parla mai.** Qui a
+        // parlare è il modello, con la propria voce: la catena della sintesi
+        // appartiene alla modalità a comandi e basta. Le azioni però
+        // confermano quello che hanno fatto passando di qui — "Apro YouTube,
+        // signore" — e senza questo controllo si sentivano **due voci
+        // insieme**, la sua e quella di sistema, sovrapposte.
+        //
+        // Il testo resta: è la stessa cosa che fa la voce spenta.
+        if (!isVoiceEnabled || modalitaRef.current === 'conversazione') {
             setDisplayedText(text);
             scrollRef?.current?.scrollToEnd({animated: true});
             return;

@@ -585,10 +585,13 @@ Lo stato dettagliato sta in `STATO_FUNZIONI.md`; qui la sostanza.
 azioni concatenate, la ricerca, l'interruzione immediata, la bolla, la **vista**
 dalla fotocamera e le **immagini allegate**.
 
-Sulle catene: la prova più dura fatta finora è stata **sette sveglie a ogni ora
-dalle 9 alle 15 più un timer, in una richiesta sola** — su un telefono che non
-è il suo. Le ha messe tutte e sette, più il timer, senza saltarne una. Quella
-parte non è più in discussione.
+Sulle catene: la prova più dura è **diciassette sveglie a mezz'ora fra le 9 e
+le 17 in una richiesta sola**, poi rifatta ogni quarto d'ora e ogni dieci
+minuti — su un telefono che non è il suo. Le ha messe tutte, ogni volta.
+Quella parte non è più in discussione. Una volta sola, al primo tentativo, ne
+aveva fatte alcune doppie e altre slittate di un minuto: **non è mai più
+successo in decine di prove, e lui ha detto esplicitamente di non intervenire.**
+Sta scritto qui perché non venga "corretto" da solo un giorno.
 
 Sulla vista: il ritmo di un fotogramma al secondo e la misura sopra i 640
 pixel erano due numeri scelti a tavolino e sono risultati giusti al primo
@@ -612,18 +615,20 @@ Confermato anche il giro successivo: il congedo non si chiude più su "sono
 stanco, vado a letto io", il riquadro della risposta scorre e si seleziona, e
 il registro non taglia più le risposte.
 
-**Da confermare** (le correzioni dell'ultimo giro, tutte mai provate):
+**Confermato nella 3.2.0**, sui telefoni che non sono il suo: una conversazione
+sola anche dopo le catene lunghe, l'audio che si sente al primo tentativo,
+l'interruzione parlandogli sopra, lo scorrimento dei riquadri con la pagina
+ferma, e la tastiera che lascia vedere il campo di testo. Il numero
+*Conversazioni aperte* in Info conta le aperture **dall'avvio dell'app**, non
+quelle vive adesso: 4 dopo una serata di prove è normale, quello che
+preoccuperebbe è vederlo salire di molti colpi dopo **una** catena.
 
-- che **una conversazione sola** resti una sola anche dopo una catena di
-  sveglie, che fa uscire e rientrare l'app una volta per sveglia — è la prova
-  che fa saltare fuori il difetto. Il numero da guardare è *Conversazioni
-  aperte* in Info;
-- che **l'audio si senta al primo tentativo**, senza uscire e rientrare per
-  «forzarlo»;
-- che scorrere dentro il riquadro della risposta o dentro il registro **non si
-  trascini dietro la pagina**, e che la pagina scorra ancora toccando fuori;
-- che la **tastiera** lasci vedere il campo di testo — la prima correzione era
-  partita da una premessa sbagliata su `adjustResize`.
+**Da confermare** (la 3.2.0):
+
+- che in conversazione **non si senta più la voce di sistema** sopra la sua,
+  quando un'azione conferma quello che ha fatto;
+- che le impostazioni riordinate stiano in piedi, con le chiavi in fondo sotto
+  *Configurazione*.
 
 **Ancora aperto davvero:**
 

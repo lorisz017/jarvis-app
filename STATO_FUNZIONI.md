@@ -1,4 +1,4 @@
-# Stato delle funzioni — J.A.R.V.I.S. 3.0.0
+# Stato delle funzioni — J.A.R.V.I.S. 3.2.0
 
 Legenda:
 
@@ -7,9 +7,11 @@ Legenda:
 - ❌ **Non funziona** — provata e non funzionante
 - ⏳ **Non testabile** — bloccata da qualcosa di esterno (chiave mancante)
 
-Ultimo aggiornamento: versione 3.0.0 — la conversazione continua come modalità normale, la **vista** dalla fotocamera, le **immagini allegate**, la memoria personale, il congedo a voce, l'interfaccia in vetro e l'icona nuova. La 3.0.0 è anche la prima **pubblicata in una release**: si scarica e si installa, senza compilare niente e senza chiavi dentro.
+Ultimo aggiornamento: **versione 3.2.0**, ed è una versione di riparazioni. Tutto il lavoro è stato sui telefoni che non sono quello di sviluppo, dove è uscito il difetto più difficile del progetto — la conversazione che si apriva due volte — insieme all'audio muto all'avvio e alla voce che si accavallava. Il racconto completo è in fondo, vicoli ciechi compresi.
 
-Dopo la 3.0.0 il lavoro si è spostato sui telefoni che non sono quello di sviluppo, ed è lì che è uscito il difetto più difficile del progetto: la conversazione che si apriva due volte. Il racconto completo è in fondo.
+**Confermato su tre telefoni**: diciassette sveglie a mezz'ora fra le 9 e le 17, poi ogni quarto d'ora, poi ogni dieci minuti, sempre tutte; una sola conversazione; l'audio che si sente al primo tentativo; l'interruzione parlandogli sopra; lo scorrimento dei riquadri e la tastiera che lascia vedere il campo.
+
+La 3.0.0 era la prima **pubblicata in una release**: si scarica e si installa, senza compilare niente e senza chiavi dentro. La 3.2.0 prende il suo posto.
 
 L'ultima versione provata sul telefono e funzionante è sul ramo `funzionante`.
 
@@ -54,9 +56,10 @@ L'ultima versione provata sul telefono e funzionante è sul ramo `funzionante`.
 | Riattivare la voce | Pulsante 🔊 | ✅ riprende dal messaggio successivo: un audio interrotto non è recuperabile a metà, andrebbe rigenerato |
 | Registro attività scorrevole | Sotto il radar | ✅ ingrandito e completo: segue la conversazione da solo, si ferma se si risale a rileggere, e non taglia più le risposte |
 | Immagine allegata | Graffetta 📎 accanto al campo di testo | ✅ **funziona**: entra come turno vero, resta nel filo del discorso, e le domande dopo la ritrovano |
-| Riquadro dell'ultima risposta | Sopra il campo di testo | ✅ scorre, si seleziona, e si copia col **doppio** tocco. ⏳ da confermare che scorrendoci dentro la pagina resti ferma |
-| Tastiera che non copre il campo | Toccando il campo di testo | ⏳ la prima correzione non funzionava: partiva dall'idea che la finestra si accorciasse, e sotto un tema a schermo intero non succede. Rifatta, mai provata |
-| Diagnosi della voce | Impostazioni → Info | ⏳ nuova: conversazioni aperte, microfono e altoparlante, pezzi visti, interruzioni. È l'unico modo di capire un difetto su un telefono che non si ha in mano |
+| Riquadro dell'ultima risposta | Sopra il campo di testo | ✅ scorre, si seleziona, si copia col **doppio** tocco, e scorrendoci dentro la pagina resta ferma |
+| Tastiera che non copre il campo | Toccando il campo di testo | ✅ la prima correzione non funzionava: partiva dall'idea che la finestra si accorciasse, e sotto un tema a schermo intero non succede. Rifatta e confermata |
+| Diagnosi della voce | Impostazioni → Info | ✅ conversazioni aperte, microfono e altoparlante, pezzi visti, interruzioni. È l'unico modo di capire un difetto su un telefono che non si ha in mano, e ha chiuso due teorie sbagliate in dieci secondi l'una |
+| Voce di sistema in conversazione | — | ✅ tolta: in conversazione parla solo il modello. Le azioni confermano a schermo, non a voce — prima si sentivano due voci insieme quando un'azione diceva "apro YouTube" |
 
 ## Azioni
 

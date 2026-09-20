@@ -10,7 +10,7 @@ import {statoMemoria} from '../services/memoryService';
 import {statoChiavi, setChiave} from '../services/chiaviService';
 import {statisticheLive, diagnosticaAudio} from '../services/liveService';
 
-const APP_VERSION = '3.0.0';
+const APP_VERSION = '3.2.0';
 const GITHUB_PROFILE = 'https://github.com/lorisz017';
 const GITHUB_REPO = 'https://github.com/lorisz017/jarvis-app';
 const UPSTREAM_REPO = 'https://github.com/az11k-dev/jarvis-app';
@@ -261,6 +261,31 @@ export default function SettingsModal({
                     <ScrollView style={styles.settingsScroll}>
                         {activeTab === 'settings' && (
                             <View>
+                                <Text style={styles.settingsSectionTitle}>BOLLA FLOTTANTE</Text>
+                                <ToggleRow
+                                    label="Resta sopra le altre app"
+                                    value={isOverlayEnabled}
+                                    onToggle={onToggleOverlay}
+                                />
+                                <Text style={styles.settingsHint}>
+                                    Uscendo dall&apos;app resta un cerchio sullo schermo. Un tocco apre
+                                    lì la conversazione continua: si parla e basta, senza rientrare. Una
+                                    pressione lunga riapre l&apos;app. Si trascina dove serve, e
+                                    trascinandola sulla linguetta in basso si toglie. Android chiede un
+                                    permesso a parte la prima volta.
+                                </Text>
+
+                                <Text style={styles.settingsSectionTitle}>CONVERSAZIONE</Text>
+                                <ToggleRow
+                                    label="Aprila all'avvio"
+                                    value={apriConversazioneAllAvvio}
+                                    onToggle={onToggleApriAllAvvio}
+                                />
+                                <Text style={styles.settingsHint}>
+                                    Con questa accesa si apre l&apos;app e si parla, senza toccare
+                                    niente. Spenta, la conversazione si apre toccando il cerchio.
+                                </Text>
+
                                 <Text style={styles.settingsSectionTitle}>RIEPILOGO DI APERTURA</Text>
                                 <Text style={styles.settingsHint}>
                                     Città usata per il meteo del riepilogo che ascolta all&apos;avvio.
@@ -278,24 +303,72 @@ export default function SettingsModal({
                                     onToggle={() => setIsBriefingEnabled(!isBriefingEnabled)}
                                 />
 
-                                <Text style={styles.settingsSectionTitle}>CHIAVI</Text>
+                                <Text style={styles.settingsSectionTitle}>VOCE</Text>
+                                <ToggleRow
+                                    label="Risposta vocale"
+                                    value={isVoiceEnabled}
+                                    onToggle={onToggleVoice}
+                                />
                                 <Text style={styles.settingsHint}>
-                                    Restano su questo telefono e non passano da nessuna altra
-                                    parte. Quella che scrive qui ha la precedenza su quella
-                                    eventualmente inclusa nell'installazione; svuotando il
-                                    campo e salvando si torna a quest'ultima.
+                                    Con la voce spenta J.A.R.V.I.S. risponde solo a schermo, anche in
+                                    conversazione: continua ad ascoltare e a capire, ma non parla.
                                 </Text>
 
-                                {chiavi.map((dati) => (
-                                    <RigaChiave
-                                        key={dati.id}
-                                        dati={dati}
-                                        onSalva={async (id, valore) => {
-                                            await setChiave(id, valore);
-                                            setChiavi(statoChiavi());
-                                        }}
-                                    />
-                                ))}
+                                {isCommandModeEnabled ? (
+                                <>
+                                <Text style={styles.settingsSectionTitle}>VOCE NATURALE</Text>
+                                {erroreVoce ? (
+                                    <Text style={styles.settingsHint}>
+                                        Ultimo tentativo con la voce principale non riuscito:{' '}
+                                        {erroreVoce}. Sta parlando la voce di riserva.
+                                    </Text>
+                                ) : null}
+                                {voiceInfo.available.length ? (
+                                    <>
+                                        <Text style={styles.settingsHint}>
+                                            Tocchi una voce per usarla: cambia dalla frase successiva.
+                                            Se questa voce non fosse raggiungibile, J.A.R.V.I.S. scende
+                                            da solo su quella di riserva senza restare muto.
+                                        </Text>
+                                        {voiceInfo.available.map((nome) => {
+                                            const inUso = nome === voiceInfo.selected;
+                                            return (
+                                                <TouchableOpacity
+                                                    key={nome}
+                                                    style={[styles.voiceItem, inUso && styles.selectedVoiceItem]}
+                                                    onPress={() => {
+                                                        onSelectVoice(nome);
+                                                        setVoiceInfo(getVoiceInfo());
+                                                    }}
+                                                >
+                                                    <Text style={styles.voiceText}>
+                                                        {inUso ? '● ' : '   '}
+                                                        {nome.replace(/^it-IT-|Neural$|MultilingualNeural$/g, '')}
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            );
+                                        })}
+                                    </>
+                                ) : (
+                                    <Text style={styles.settingsHint}>
+                                        Nessuna voce disponibile: si usa quella di sistema.
+                                    </Text>
+                                )}
+                                </>
+                                ) : null}
+                                <Text style={styles.settingsSectionTitle}>MODALITÀ COMANDI</Text>
+                                <ToggleRow
+                                    label="Mostra la modalità a comandi"
+                                    value={isCommandModeEnabled}
+                                    onToggle={onToggleCommandMode}
+                                />
+                                <Text style={styles.settingsHint}>
+                                    È il modo precedente: si registra una frase, viene trascritta e il
+                                    modello risponde a comandi. Funziona, ma è più lento e capisce
+                                    meno — la conversazione sente la voce, non un testo ripulito.
+                                    Accendendola compare una leva in cima alla schermata per passare
+                                    dall&apos;una all&apos;altra.
+                                </Text>
 
                                 <Text style={styles.settingsSectionTitle}>MEMORIA</Text>
                                 <Text style={styles.settingsHint}>
@@ -353,98 +426,26 @@ export default function SettingsModal({
                                     </Text>
                                 ) : null}
 
-                                <Text style={styles.settingsSectionTitle}>CONVERSAZIONE</Text>
-                                <ToggleRow
-                                    label="Aprila all'avvio"
-                                    value={apriConversazioneAllAvvio}
-                                    onToggle={onToggleApriAllAvvio}
-                                />
+                                <Text style={styles.settingsSectionTitle}>CONFIGURAZIONE</Text>
                                 <Text style={styles.settingsHint}>
-                                    Con questa accesa si apre l&apos;app e si parla, senza toccare
-                                    niente. Spenta, la conversazione si apre toccando il cerchio.
+                                    Le chiavi dei servizi. Restano su questo telefono e non
+                                    passano da nessuna altra parte. Quella che scrive qui ha la
+                                    precedenza su quella eventualmente inclusa
+                                    nell&apos;installazione; svuotando il campo e salvando si
+                                    torna a quest&apos;ultima.
                                 </Text>
 
-                                <Text style={styles.settingsSectionTitle}>MODALITÀ COMANDI</Text>
-                                <ToggleRow
-                                    label="Mostra la modalità a comandi"
-                                    value={isCommandModeEnabled}
-                                    onToggle={onToggleCommandMode}
-                                />
-                                <Text style={styles.settingsHint}>
-                                    È il modo precedente: si registra una frase, viene trascritta e il
-                                    modello risponde a comandi. Funziona, ma è più lento e capisce
-                                    meno — la conversazione sente la voce, non un testo ripulito.
-                                    Accendendola compare una leva in cima alla schermata per passare
-                                    dall&apos;una all&apos;altra.
-                                </Text>
+                                {chiavi.map((dati) => (
+                                    <RigaChiave
+                                        key={dati.id}
+                                        dati={dati}
+                                        onSalva={async (id, valore) => {
+                                            await setChiave(id, valore);
+                                            setChiavi(statoChiavi());
+                                        }}
+                                    />
+                                ))}
 
-                                <Text style={styles.settingsSectionTitle}>BOLLA FLOTTANTE</Text>
-                                <ToggleRow
-                                    label="Resta sopra le altre app"
-                                    value={isOverlayEnabled}
-                                    onToggle={onToggleOverlay}
-                                />
-                                <Text style={styles.settingsHint}>
-                                    Uscendo dall&apos;app resta un cerchio sullo schermo. Un tocco apre
-                                    lì la conversazione continua: si parla e basta, senza rientrare. Una
-                                    pressione lunga riapre l&apos;app. Si trascina dove serve, e
-                                    trascinandola sulla linguetta in basso si toglie. Android chiede un
-                                    permesso a parte la prima volta.
-                                </Text>
-
-                                <Text style={styles.settingsSectionTitle}>VOCE</Text>
-                                <ToggleRow
-                                    label="Risposta vocale"
-                                    value={isVoiceEnabled}
-                                    onToggle={onToggleVoice}
-                                />
-                                <Text style={styles.settingsHint}>
-                                    Con la voce spenta J.A.R.V.I.S. risponde solo a schermo, anche in
-                                    conversazione: continua ad ascoltare e a capire, ma non parla.
-                                </Text>
-
-                                {isCommandModeEnabled ? (
-                                <>
-                                <Text style={styles.settingsSectionTitle}>VOCE NATURALE</Text>
-                                {erroreVoce ? (
-                                    <Text style={styles.settingsHint}>
-                                        Ultimo tentativo con la voce principale non riuscito:{' '}
-                                        {erroreVoce}. Sta parlando la voce di riserva.
-                                    </Text>
-                                ) : null}
-                                {voiceInfo.available.length ? (
-                                    <>
-                                        <Text style={styles.settingsHint}>
-                                            Tocchi una voce per usarla: cambia dalla frase successiva.
-                                            Se questa voce non fosse raggiungibile, J.A.R.V.I.S. scende
-                                            da solo su quella di riserva senza restare muto.
-                                        </Text>
-                                        {voiceInfo.available.map((nome) => {
-                                            const inUso = nome === voiceInfo.selected;
-                                            return (
-                                                <TouchableOpacity
-                                                    key={nome}
-                                                    style={[styles.voiceItem, inUso && styles.selectedVoiceItem]}
-                                                    onPress={() => {
-                                                        onSelectVoice(nome);
-                                                        setVoiceInfo(getVoiceInfo());
-                                                    }}
-                                                >
-                                                    <Text style={styles.voiceText}>
-                                                        {inUso ? '● ' : '   '}
-                                                        {nome.replace(/^it-IT-|Neural$|MultilingualNeural$/g, '')}
-                                                    </Text>
-                                                </TouchableOpacity>
-                                            );
-                                        })}
-                                    </>
-                                ) : (
-                                    <Text style={styles.settingsHint}>
-                                        Nessuna voce disponibile: si usa quella di sistema.
-                                    </Text>
-                                )}
-                                </>
-                                ) : null}
                             </View>
                         )}
 
