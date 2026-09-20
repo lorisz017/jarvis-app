@@ -107,11 +107,17 @@ e non supera mai 0,25, perché non poter interrompere è il difetto peggiore dei
 due. Dove l'eco è cancellato il pavimento crolla in un decimo di secondo e
 comanda la soglia fissa, cioè tutto si comporta come prima.
 
-Per lo stesso motivo, **mentre parla lui il microfono non va sul filo**: se
-l'eco non è cancellato, quello che arriverebbe al modello è la sua stessa
-voce, e il modello risponde a sé stesso. Si tiene da parte mezzo secondo
-scarso, e lo si manda tutto insieme appena si riconosce un'interruzione vera,
-così non si perdono le prime parole di chi parla.
+**Il microfono va sul filo sempre, anche mentre parla lui — e non si torna
+indietro.** Per un giro è stato trattenuto, per non far sentire al modello la
+propria voce: era la correzione giusta per il problema sbagliato, e ha fatto
+un danno peggiore di quello che risolveva. Chi parla sopra non viene
+riconosciuto subito — ci vogliono due pezzi sopra soglia — e quel pezzo di
+frase finiva nel nulla. Il modello riceveva l'inizio della richiesta, poi un
+buco, poi la coda, e **per chi ascolta a flusso una frase col buco in mezzo
+sono due frasi**: da lì la richiesta sentita due volte, la risposta breve
+interrotta subito, e il resto accavallato. Sentirsi parlare non è più un
+rischio da coprire così: con il modo conversazione la cancellazione dell'eco
+funziona davvero.
 
 E "sta parlando" vuol dire **l'altoparlante**, non il server: Gemini manda un
 turno molto più in fretta di quanto lo si ascolti, e quando smette di mandare

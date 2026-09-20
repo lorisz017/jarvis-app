@@ -91,11 +91,6 @@ const SOGLIA_MASSIMA = 0.25;
 // di quanto salga.
 const PAVIMENTO_INIZIALE = 0.05;
 
-// Quanto microfono si tiene da parte mentre J.A.R.V.I.S. parla: mezzo secondo
-// scarso, che è quello che si perderebbe delle prime parole di chi lo
-// interrompe.
-const PEZZI_ARRETRATI = 4;
-
 // Quanti byte al secondo escono dall'altoparlante: 24 kHz a 16 bit.
 const BYTE_AL_SECONDO = 24000 * 2;
 
@@ -114,10 +109,10 @@ const BYTE_AL_SECONDO = 24000 * 2;
 const conteggi = {
     pezziMicrofono: 0,
     pezziVoce: 0,
-    pezziTrattenuti: 0,
     interruzioniLocali: 0,
     interruzioniServer: 0,
     pavimentoEco: 0,
+    piccoEco: 0,
 };
 
 export function statisticheLive() {
@@ -225,8 +220,10 @@ export class LiveSession {
         this.fineVoce = 0;
         this.pezziSopraSoglia = 0;
         this.pavimentoEco = PAVIMENTO_INIZIALE;
-        // Il microfono degli ultimi istanti, tenuto da parte mentre parla lui.
-        this.arretrato = [];
+        // Il più forte che l'app si è sentita parlare addosso: dice a colpo
+        // d'occhio se la cancellazione dell'eco sta tenendo. La media da sola
+        // non basta, perché scende a zero fra una parola e l'altra.
+        this.piccoEco = 0;
         // Con la voce spenta la conversazione continua a funzionare, ma non
         // si sente: l'audio arriva e viene scartato invece che suonato, e
         // resta la trascrizione a schermo.
@@ -457,7 +454,6 @@ export class LiveSession {
             const suono = parte.inlineData?.data;
             if (suono && !this.muta) {
                 conteggi.pezziVoce += 1;
-                if (!this.staParlando) this.arretrato = [];
                 // Quanto dura questo pezzo, una volta suonato. Da base64 a
                 // byte si scende di un quarto.
                 const durata = ((suono.length * 3) / 4 / BYTE_AL_SECONDO) * 1000;
@@ -518,33 +514,34 @@ export class LiveSession {
                 const peso = forza > this.pavimentoEco ? SALITA_ECO : DISCESA_ECO;
                 this.pavimentoEco = this.pavimentoEco * (1 - peso) + forza * peso;
                 conteggi.pavimentoEco = this.pavimentoEco;
-
-                if (this.pezziSopraSoglia < PEZZI_CONSECUTIVI) {
-                    // Mentre parla lui il microfono non va sul filo. Se la
-                    // cancellazione dell'eco non tiene, quello che arriverebbe
-                    // al modello è la sua stessa voce: si interrompe da solo,
-                    // risponde a sé stesso, e quello che si sente è un discorso
-                    // che si accavalla. Si tiene da parte, e se poi si scopre
-                    // che a parlare era davvero qualcuno, glielo si manda
-                    // tutto insieme senza perdere le prime parole.
-                    conteggi.pezziTrattenuti += 1;
-                    this.arretrato.push(base64);
-                    if (this.arretrato.length > PEZZI_ARRETRATI) this.arretrato.shift();
-                    return;
+                if (forza > this.piccoEco) {
+                    this.piccoEco = forza;
+                    conteggi.piccoEco = forza;
                 }
 
-                conteggi.interruzioniLocali += 1;
-                // Si prende prima di zittire, che lo svuota.
-                const daMandare = this.arretrato;
-                this._zittisci();
-
-                for (const vecchio of daMandare) {
-                    this._invia({
-                        realtimeInput: {audio: {mimeType: MIME_INVIO, data: vecchio}},
-                    });
+                if (this.pezziSopraSoglia >= PEZZI_CONSECUTIVI) {
+                    conteggi.interruzioniLocali += 1;
+                    this._zittisci();
                 }
             }
 
+            // Il microfono va sul filo **sempre**, anche mentre parla lui.
+            //
+            // Per un giro è stato trattenuto, per evitare che il modello
+            // sentisse la propria voce. Era la correzione giusta per il
+            // problema sbagliato, e ha fatto un danno peggiore: chi parla
+            // sopra non viene zittito subito ogni volta — ci vogliono due
+            // pezzi sopra soglia — e quel pezzo di frase finiva nel nulla.
+            // Il modello riceveva l'inizio della richiesta, poi un buco, poi
+            // la coda: e una frase con un buco in mezzo, per chi ascolta a
+            // flusso, sono **due frasi**. Da lì la richiesta sentita due
+            // volte, la risposta breve interrotta subito e il resto che si
+            // accavalla.
+            //
+            // Sentirsi parlare non è più un rischio: con il modo
+            // conversazione la cancellazione dell'eco funziona davvero, e la
+            // riga di diagnosi lo conferma — quanto l'app si sente parlare
+            // sta a zero.
             this._invia({
                 realtimeInput: {audio: {mimeType: MIME_INVIO, data: base64}},
             });
@@ -557,7 +554,6 @@ export class LiveSession {
     _zittisci() {
         this.fineVoce = 0;
         this.pezziSopraSoglia = 0;
-        this.arretrato = [];
         audio?.flushPlayback();
     }
 

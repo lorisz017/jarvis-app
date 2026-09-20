@@ -495,10 +495,12 @@ export default function SettingsModal({
                                             }.`,
                                             `Pezzi da quando l'app è aperta: ${voce.pezziMicrofono} dal microfono, ${
                                                 voce.pezziVoce
-                                            } di voce, ${voce.pezziTrattenuti} trattenuti mentre parlava.`,
+                                            } di voce.`,
                                             `Quanto si sente parlare: ${
                                                 Math.round((voce.pavimentoEco || 0) * 1000)
-                                            } su mille.`,
+                                            } su mille, con un picco di ${
+                                                Math.round((voce.piccoEco || 0) * 1000)
+                                            }.`,
                                             `Interruzioni: ${voce.interruzioniLocali} decise dall'app, ${
                                                 voce.interruzioniServer
                                             } dal server.`,
