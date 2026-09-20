@@ -64,33 +64,6 @@ const VOCE = 'Charon';
 const SOGLIA_VOCE = 0.04;
 const PEZZI_CONSECUTIVI = 2;
 
-// Ma una soglia fissa presuppone che il telefono cancelli l'eco. Parecchi non
-// lo fanno — e non sono i telefoni vecchi, è proprio una cosa che cambia da
-// modello a modello — e lì l'app si sente parlare forte quanto una persona:
-// si interrompe da sola a ogni parola che dice, e quello che se ne sente è
-// una voce a scatti che salta avanti.
-//
-// Il rimedio è misurare **quanto forte l'app sente sé stessa** su questo
-// telefono e alzare la soglia di conseguenza. Dove l'eco è cancellato il
-// pavimento resta quasi a zero e comanda la soglia fissa, come prima; dove
-// non lo è, il pavimento sale e con lui la soglia.
-const MARGINE_ECO = 2.5;
-// Sale piano e scende in fretta: un pavimento che sale di colpo si porterebbe
-// dietro anche la voce vera, e da lì in poi non si interromperebbe più niente.
-const SALITA_ECO = 0.12;
-const DISCESA_ECO = 0.35;
-// Oltre questa soglia non si sale comunque: un telefono che si sente urlare
-// addosso alzerebbe l'asticella fino a rendere impossibile interromperlo, e
-// non poter interrompere è il difetto peggiore dei due.
-const SOGLIA_MASSIMA = 0.25;
-// E si parte prudenti invece che da zero: partendo da zero, su un telefono che
-// non cancella l'eco le prime parole di ogni sessione sono già abbastanza per
-// far scattare l'interruzione, prima che il pavimento abbia avuto il tempo di
-// accorgersi di dov'è. Dove l'eco è cancellato questo valore scende da sé nel
-// giro di un decimo di secondo, perché il pavimento scende molto più in fretta
-// di quanto salga.
-const PAVIMENTO_INIZIALE = 0.05;
-
 // Quanti byte al secondo escono dall'altoparlante: 24 kHz a 16 bit.
 const BYTE_AL_SECONDO = 24000 * 2;
 
@@ -116,8 +89,6 @@ const conteggi = {
     pezziVoce: 0,
     interruzioniLocali: 0,
     interruzioniServer: 0,
-    pavimentoEco: 0,
-    piccoEco: 0,
 };
 
 export function statisticheLive() {
@@ -224,11 +195,6 @@ export class LiveSession {
         // generazione voleva dire credere finita una frase ancora a metà.
         this.fineVoce = 0;
         this.pezziSopraSoglia = 0;
-        this.pavimentoEco = PAVIMENTO_INIZIALE;
-        // Il più forte che l'app si è sentita parlare addosso: dice a colpo
-        // d'occhio se la cancellazione dell'eco sta tenendo. La media da sola
-        // non basta, perché scende a zero fra una parola e l'altra.
-        this.piccoEco = 0;
         // Con la voce spenta la conversazione continua a funzionare, ma non
         // si sente: l'audio arriva e viene scartato invece che suonato, e
         // resta la trascrizione a schermo.
@@ -518,29 +484,14 @@ export class LiveSession {
             // Si misura solo mentre sta parlando: per il resto del tempo
             // sarebbe lavoro sprecato dieci volte al secondo.
             if (this.staParlando) {
-                const forza = livello(base64);
-                const soglia = Math.min(
-                    SOGLIA_MASSIMA,
-                    Math.max(SOGLIA_VOCE, this.pavimentoEco * MARGINE_ECO)
-                );
-
-                if (forza >= soglia) {
+                if (livello(base64) >= SOGLIA_VOCE) {
                     this.pezziSopraSoglia += 1;
+                    if (this.pezziSopraSoglia >= PEZZI_CONSECUTIVI) {
+                        conteggi.interruzioniLocali += 1;
+                        this._zittisci();
+                    }
                 } else {
                     this.pezziSopraSoglia = 0;
-                }
-
-                const peso = forza > this.pavimentoEco ? SALITA_ECO : DISCESA_ECO;
-                this.pavimentoEco = this.pavimentoEco * (1 - peso) + forza * peso;
-                conteggi.pavimentoEco = this.pavimentoEco;
-                if (forza > this.piccoEco) {
-                    this.piccoEco = forza;
-                    conteggi.piccoEco = forza;
-                }
-
-                if (this.pezziSopraSoglia >= PEZZI_CONSECUTIVI) {
-                    conteggi.interruzioniLocali += 1;
-                    this._zittisci();
                 }
             }
 

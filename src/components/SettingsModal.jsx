@@ -474,34 +474,17 @@ export default function SettingsModal({
                                 <Text style={styles.aboutText}>
                                     {voce
                                         ? [
-                                            `Eco: ${
-                                                voce.motore?.ecoDisponibile
-                                                    ? (voce.motore?.ecoAttiva ? 'cancellato' : 'disponibile, mai acceso')
-                                                    : 'non cancellabile su questo telefono'
-                                            }.`,
-                                            `Rumore: ${
-                                                voce.motore?.rumoreDisponibile
-                                                    ? (voce.motore?.rumoreAttiva ? 'ridotto' : 'disponibile, mai acceso')
-                                                    : 'non riducibile'
-                                            }.`,
-                                            `Modo audio: ${voce.motore?.modo || 'sconosciuto'}, uscita ${
-                                                voce.motore?.inCassa ? 'sulla cassa' : 'non sulla cassa'
-                                            }.`,
-                                            `Microfono ${voce.motore?.microfonoAcceso ? 'acceso' : 'fermo'}, altoparlante ${
+                                            `Conversazioni aperte: ${voce.sessioni}.`,
+                                            `Modo audio: ${voce.motore?.modo || 'sconosciuto'}. Microfono ${
+                                                voce.motore?.microfonoAcceso ? 'acceso' : 'fermo'
+                                            }, altoparlante ${
                                                 voce.motore?.altoparlanteAcceso ? 'acceso' : 'fermo'
-                                            }.`,
-                                            `Volume della conversazione: ${voce.motore?.volume ?? '?'} su ${
+                                            }, volume ${voce.motore?.volume ?? '?'} su ${
                                                 voce.motore?.volumeMassimo ?? '?'
                                             }.`,
-                                            `Conversazioni aperte: ${voce.sessioni}.`,
                                             `Pezzi da quando l'app è aperta: ${voce.pezziMicrofono} dal microfono, ${
                                                 voce.pezziVoce
                                             } di voce.`,
-                                            `Quanto si sente parlare: ${
-                                                Math.round((voce.pavimentoEco || 0) * 1000)
-                                            } su mille, con un picco di ${
-                                                Math.round((voce.piccoEco || 0) * 1000)
-                                            }.`,
                                             `Interruzioni: ${voce.interruzioniLocali} decise dall'app, ${
                                                 voce.interruzioniServer
                                             } dal server.`,

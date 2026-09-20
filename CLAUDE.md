@@ -93,50 +93,47 @@ conversazione il radar apre e chiude la sessione.
 
 Interrompere J.A.R.V.I.S. mentre parla non aspetta che se ne accorga il
 server: l'app misura quanto entra dal microfono e si zittisce da sola. La
-soglia parte da 0,04 perché la voce vera misura molto meno di quanto sembri a
-orecchio, ed è protetta da due pezzi consecutivi sopra soglia.
+soglia sta a 0,04 perché la voce vera misura molto meno di quanto sembri a
+orecchio, ed è protetta da due pezzi consecutivi sopra soglia più la
+cancellazione dell'eco della sorgente da telefonata. **Se dovesse
+interrompersi da solo, la soglia va alzata; se non si ferma quando gli si
+parla sopra, abbassata.**
 
-Sotto la soglia fissa però c'è un **pavimento**, e il motivo è una cosa
-scoperta a caro prezzo: **non tutti i telefoni cancellano l'eco**, e non è una
-questione di età — cambia da modello a modello. Dove non lo cancellano l'app
-si sente parlare forte quanto una persona, si interrompe a ogni parola che
-dice e la voce esce a scatti, saltando avanti. Il pavimento misura quanto
-forte l'app sente sé stessa su *quel* telefono e alza la soglia di
-conseguenza: sale piano (0,12), scende in fretta (0,35), parte prudente a 0,05
-e non supera mai 0,25, perché non poter interrompere è il difetto peggiore dei
-due. Dove l'eco è cancellato il pavimento crolla in un decimo di secondo e
-comanda la soglia fissa, cioè tutto si comporta come prima.
+"Sta parlando" vuol dire però **l'altoparlante**, non il server: Gemini manda
+un turno molto più in fretta di quanto lo si ascolti, e quando smette di
+mandare ce ne sono ancora secondi da sentire. Si stima dai byte consegnati
+all'altoparlante, e anche il congedo si regola su quello — prima poteva
+chiudere l'app a metà frase.
 
-**Il microfono va sul filo sempre, anche mentre parla lui — e non si torna
-indietro.** Per un giro è stato trattenuto, per non far sentire al modello la
-propria voce: era la correzione giusta per il problema sbagliato, e ha fatto
-un danno peggiore di quello che risolveva. Chi parla sopra non viene
-riconosciuto subito — ci vogliono due pezzi sopra soglia — e quel pezzo di
-frase finiva nel nulla. Il modello riceveva l'inizio della richiesta, poi un
-buco, poi la coda, e **per chi ascolta a flusso una frase col buco in mezzo
-sono due frasi**: da lì la richiesta sentita due volte, la risposta breve
-interrotta subito, e il resto accavallato. Sentirsi parlare non è più un
-rischio da coprire così: con il modo conversazione la cancellazione dell'eco
-funziona davvero.
+### La sera in cui la voce si accavallava, e cosa NON era
 
-E "sta parlando" vuol dire **l'altoparlante**, non il server: Gemini manda un
-turno molto più in fretta di quanto lo si ascolti, e quando smette di mandare
-ce ne sono ancora secondi da sentire. Si stima dai byte consegnati
-all'altoparlante.
+Su un OPPO e su un telefono più vecchio la voce usciva incomprensibile: la
+richiesta sentita due volte, parole vecchie sopra le nuove. Sullo Xiaomi non
+succedeva. Sono state percorse due strade sbagliate prima di quella giusta, e
+**non vanno ripercorse**:
 
-Ma attenzione a non rifare il giro sbagliato: **sull'OPPO il pavimento non era
-il problema.** La riga di diagnosi ha detto che l'eco lì è cancellabile e che
-l'app non si era interrotta nemmeno una volta, e quella risposta ha chiuso la
-teoria della soglia in dieci secondi. Il difetto era il **modo audio**: uscita
-dichiarata come musica invece che come voce, quindi cancellazione dell'eco
-senza niente da cancellare e suono instradato nella capsula dell'orecchio.
+- *Che quei telefoni non cancellassero l'eco*, e l'app si sentisse parlare.
+  Smentita dalla riga di diagnosi: l'eco lì è cancellabile e le interruzioni
+  decise dall'app erano zero.
+- *Che fosse il modo audio* — uscita dichiarata come musica invece che come
+  voce. Provata per una build: il telefono è finito in modo conversazione con
+  l'uscita forzata sulla cassa, la riga diceva "eco cancellato"… e il difetto
+  era identico. Tolto tutto: cambiava il volume di riferimento (quello delle
+  telefonate invece dei video) senza risolvere niente.
 
-Quello che serve per capirci qualcosa sta in **Impostazioni → Info**: se la
-cancellazione dell'eco esiste su quel telefono e se è mai stata accesa, il
-modo audio e dove esce il suono, il volume delle telefonate, i pezzi visti dal
-microfono e quelli di voce, e quante interruzioni hanno deciso l'app e il
-server. **Prima di toccare una soglia si guarda lì**, e si legge tutta la
-riga: il primo giro è stato sprecato guardandone solo metà.
+Nel mezzo è stato anche **trattenuto il microfono** mentre lui parlava, per
+non fargli sentire la propria voce: era la correzione giusta per il problema
+sbagliato e ha fatto un danno peggiore — 741 pezzi su 1783 mai arrivati al
+modello, cioè frasi col buco in mezzo, che per chi ascolta a flusso sono due
+frasi. Anche quello è stato tolto. **Il microfono va sul filo sempre.**
+
+Era tutt'altro: **erano due conversazioni aperte insieme.** Vedi la trappola
+sulla serratura fatta con uno stato di React, più sotto.
+
+La morale, che vale oltre questo caso: i numeri in **Impostazioni → Info**
+hanno chiuso due teorie in dieci secondi l'una, e ogni volta la risposta
+stava nella parte della riga che non si stava guardando. **Prima di toccare
+una soglia si guarda lì, e si legge tutta la riga.**
 
 ### Dove sta cosa
 
@@ -233,19 +230,6 @@ Ognuna di queste è costata almeno una build, alcune parecchie:
   l'una e l'altra, e svuotamento e arresto si fanno **sullo stesso thread che
   scrive**. Per l'arresto non è nemmeno una questione di suono: rilasciare la
   traccia mentre qualcuno ci scrive dentro è un modo di far cadere l'app.
-- La sorgente da telefonata **chiede** la cancellazione dell'eco, non la
-  garantisce: va attaccata a mano alla sessione di registrazione
-  (`AcousticEchoCanceler`, `NoiseSuppressor`). Quello che il telefono sa fare
-  davvero va **chiesto e riportato**, non dato per scontato.
-- Ma attaccarla non basta: **in modo audio normale non ha niente da
-  cancellare.** Il motore audio non sa che quello che esce dall'altoparlante e
-  quello che entra dal microfono sono la stessa conversazione finché non glielo
-  si dice — `MODE_IN_COMMUNICATION` e uscita `USAGE_VOICE_COMMUNICATION`. Ed è
-  anche una questione di instradamento: in modo conversazione l'uscita va
-  forzata **sulla cassa**, se no finisce nella capsula dell'orecchio e
-  l'effetto è che non si sente niente. Da lì in poi il volume non è più quello
-  dei video ma quello delle telefonate, e se sta a zero l'app sembra muta pur
-  essendo tutto acceso: va riportato anche quello.
 - **Una serratura fatta con uno stato di React non chiude niente.** Aprire la
   conversazione passa per una funzione che aspetta — il permesso della bolla,
   l'altoparlante, la connessione — e in tutto quel tratto lo stato a schermo
