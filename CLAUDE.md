@@ -331,6 +331,14 @@ dal pubblico a ogni build, quindi per aggiornarsi gli basta rilanciare il
 workflow. Con la sola chiave Gemini l'app funziona tutta — resta fuori solo
 la modalità a comandi, che è spenta di default.
 
+**La release pubblica** è la terza strada, e per chi non è lui è la prima:
+`.github/workflows/rilascio.yml` compila l'APK **senza passargli nessun
+secret** e lo allega a una release con il numero di versione. Si lancia a
+mano, si scrive la versione, e il workflow si ferma se quella versione non è
+la stessa che sta in `build.gradle` — una release che dice 3.1 contenendo la
+3.0 è peggio che non pubblicarla. Chi scarica non compila niente: installa e
+incolla la sua chiave Gemini al primo avvio.
+
 Il giro è questo:
 
 1. Le modifiche si scrivono su **`main`**.

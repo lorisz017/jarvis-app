@@ -1,0 +1,116 @@
+# Pubblica l'APK nelle Release, perché nessuno debba compilarselo.
+#
+# È la strada normale per chiunque non sia lo sviluppatore: si scarica un
+# file dalla pagina Releases e si installa. La chiave Gemini si incolla al
+# primo avvio, dentro l'app.
+#
+# L'APK che esce da qui **non contiene nessuna chiave**: le chiavi arrivano
+# solo dai Secrets, e qui non se ne passa nessuno apposta. È questo che lo
+# rende pubblicabile — un APK con le chiavi dentro sarebbe un regalo a
+# chiunque lo scarichi.
+#
+# Si lancia a mano: Actions > "Pubblica una release" > "Run workflow", e si
+# scrive la versione (per esempio 3.0.0). Il numero diventa il tag e il nome
+# della release.
+
+name: Pubblica una release
+
+on:
+  workflow_dispatch:
+    inputs:
+      versione:
+        description: 'Versione da pubblicare, senza la v (es. 3.0.0)'
+        required: true
+      note:
+        description: 'Cosa cambia in questa versione'
+        required: false
+        default: ''
+
+permissions:
+  # Serve per creare la release e allegarci l'APK.
+  contents: write
+
+jobs:
+  rilascio:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Scarica il codice
+        uses: actions/checkout@v4
+
+      - name: Prepara Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.1'
+
+      - name: Prepara Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Installa le dipendenze
+        env:
+          HUSKY: 0
+        run: npm install --legacy-peer-deps
+
+      - name: Controlla che la versione combaci
+        env:
+          VERSIONE: ${{ inputs.versione }}
+        run: |
+          # La versione che finisce nell'APK è quella in build.gradle: se non
+          # è la stessa scritta qui, la release direbbe una cosa e l'app ne
+          # mostrerebbe un'altra. Meglio fermarsi adesso.
+          nel_gradle=$(grep -o 'versionName "[^"]*"' android/app/build.gradle | cut -d'"' -f2)
+          echo "richiesta: $VERSIONE"
+          echo "in build.gradle: $nel_gradle"
+
+          if [ "$VERSIONE" != "$nel_gradle" ]; then
+            echo "::error::La versione richiesta ($VERSIONE) non è quella dell'APK ($nel_gradle)."
+            exit 1
+          fi
+
+      - name: Compila l'APK senza chiavi
+        working-directory: android
+        run: |
+          # Nessun secret qui dentro: quello che esce va a tutti.
+          chmod +x ./gradlew
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Dai un nome al file
+        env:
+          VERSIONE: ${{ inputs.versione }}
+        run: |
+          origine=$(find android/app/build/outputs/apk/release -name '*.apk' | head -n 1)
+
+          if [ -z "$origine" ]; then
+            echo "::error::Nessun APK prodotto."
+            exit 1
+          fi
+
+          mkdir -p rilascio
+          cp "$origine" "rilascio/jarvis-$VERSIONE.apk"
+          ls -lh rilascio
+
+      - name: Pubblica la release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ inputs.versione }}
+          name: J.A.R.V.I.S. ${{ inputs.versione }}
+          files: rilascio/jarvis-${{ inputs.versione }}.apk
+          body: |
+            ## Come si installa
+
+            1. Scarichi `jarvis-${{ inputs.versione }}.apk` qui sotto.
+            2. Android avviserà che l'origine è sconosciuta: è normale per
+               un'app che non passa da uno store.
+            3. Al primo avvio l'app chiede **una sola chiave**, quella di
+               Gemini: si prende gratis su
+               [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
+               e resta su questo telefono.
+
+            Le altre chiavi — Groq, Deepgram, GitHub — sono facoltative e
+            servono solo alla modalità a comandi e ai comandi sui repository.
+            Si aggiungono quando servono, da Impostazioni → Chiavi.
+
+            ${{ inputs.note }}

@@ -94,11 +94,11 @@ The other three are **optional**, and nothing asks for them until you want what 
 
 The camera and the picture attachment need no key of their own: they travel down the Gemini connection that is already open.
 
-### 2. Get the APK
+### 2. Download the APK
 
-Open the **Actions** tab of this repository, pick **Build APK Android**, press **Run workflow**, and wait about ten minutes. The APK appears as an artifact at the bottom of the run's page. (On a fork, Actions must be enabled once under Settings → Actions.)
+From the [**Releases**](../../releases) page. One file, nothing to compile, nothing to sign up for. A new one is published here at every version.
 
-That APK contains **no keys at all**, which is exactly what makes it safe to pass around.
+That APK contains **no keys at all**, which is exactly what makes it safe to hand out — and why it asks you for one the first time it opens.
 
 ### 3. Install and paste the key
 
@@ -106,9 +106,13 @@ Android will warn you about installing from an unknown source; that is expected 
 
 The other three, if you ever want them, live in **Settings → Chiavi**. What you type there is kept on the phone and nowhere else.
 
-### Building with the keys inside instead
+### Building it yourself, if you want to
 
-If you would rather have the keys compiled in — so the app never asks, on any phone you install it on — use `strumenti/build-apk-privato.yml`. Put it in a **private** repository of your own as `.github/workflows/build-apk.yml`, add your keys under Settings → Secrets and variables → Actions with the names above, and run it. It does not copy the code: it fetches this repository on every build, so re-running it is how you update.
+Neither of these is necessary — the release above is the normal way — but both exist.
+
+To build the same key-less APK from source: **Actions** tab, **Build APK Android**, **Run workflow**, about ten minutes, and the APK appears as an artifact at the bottom of the run's page. (On a fork, Actions has to be enabled once under Settings → Actions.)
+
+To have the keys compiled in instead, so the app never asks on any phone you install it on — so the app never asks, on any phone you install it on — use `strumenti/build-apk-privato.yml`. Put it in a **private** repository of your own as `.github/workflows/build-apk.yml`, add your keys under Settings → Secrets and variables → Actions with the names above, and run it. It does not copy the code: it fetches this repository on every build, so re-running it is how you update.
 
 It must be private. The keys end up inside that APK, and a public repository's artifacts can be downloaded by anyone.
 
@@ -250,11 +254,11 @@ Le altre tre sono **facoltative**, e nessuno le chiede finché non si vuole quel
 
 La fotocamera e l'allegato non chiedono nessuna chiave in più: passano dalla connessione con Gemini che è già aperta.
 
-### 2. Ottenere l'APK
+### 2. Scaricare l'APK
 
-Scheda **Actions** di questo repository, workflow **Build APK Android**, tasto **Run workflow**, e una decina di minuti di attesa. L'APK compare come artifact in fondo alla pagina della build. (Su un fork le Actions vanno abilitate una volta, in Settings → Actions.)
+Dalla pagina [**Releases**](../../releases). Un file, niente da compilare, niente registrazioni. A ogni versione ne compare uno nuovo.
 
-Quell'APK **non contiene nessuna chiave**, ed è esattamente ciò che lo rende passabile a chiunque.
+Quell'APK **non contiene nessuna chiave**, ed è esattamente ciò che lo rende distribuibile — ed è anche il motivo per cui una chiave la chiede al primo avvio.
 
 ### 3. Installare e incollare la chiave
 
@@ -262,9 +266,13 @@ Android avvisa che si sta installando da una sorgente sconosciuta: è normale pe
 
 Le altre tre, se un giorno servissero, stanno in **Impostazioni → Chiavi**. Quello che si scrive lì resta sul telefono e da nessun'altra parte.
 
-### Compilarlo invece con le chiavi dentro
+### Compilarselo da sé, volendo
 
-Chi preferisce avere le chiavi già compilate — così l'app non chiede niente, su qualunque telefono la si installi — usa `strumenti/build-apk-privato.yml`. Va messo in un repository **privato** proprio, come `.github/workflows/build-apk.yml`, con le chiavi in Settings → Secrets and variables → Actions sotto i nomi qui sopra. Il codice non lo copia: scarica questo repository a ogni build, quindi rilanciarlo è il modo di aggiornarsi.
+Nessuna delle due cose è necessaria — la release qui sopra è la strada normale — ma esistono tutte e due.
+
+Per compilare lo stesso APK senza chiavi partendo dal codice: scheda **Actions**, workflow **Build APK Android**, tasto **Run workflow**, una decina di minuti, e l'APK compare come artifact in fondo alla pagina. (Su un fork le Actions vanno abilitate una volta, in Settings → Actions.)
+
+Per avere invece le chiavi già compilate dentro, così l'app non chiede niente su nessun telefono, si usa `strumenti/build-apk-privato.yml`. Va messo in un repository **privato** proprio, come `.github/workflows/build-apk.yml`, con le chiavi in Settings → Secrets and variables → Actions sotto i nomi qui sopra. Il codice non lo copia: scarica questo repository a ogni build, quindi rilanciarlo è il modo di aggiornarsi.
 
 Privato è obbligatorio: le chiavi finiscono dentro quell'APK, e gli artifact di un repository pubblico se li scarica chiunque.
 
