@@ -62,18 +62,27 @@ A live status list of what works, and what does not, is kept in [`STATO_FUNZIONI
 
 ### Tested on
 
-The project is in its early stages and has so far been tested on a single
-device: a **Xiaomi 17 running Android 17**. Everything marked as working is
-confirmed there and nowhere else yet.
+Most of what is marked as working here is confirmed on a **Xiaomi 17 running
+Android 17**, the phone this is developed on. Recently an **OPPO and an older
+handset**, both on earlier versions of Android, joined it — they are where the
+key-less APK gets tried, which is the one anybody downloading a release
+installs.
 
-This matters more than it might seem. The device actions — alarms, timers,
-opening other apps — work by handing an intent to whatever app on the phone
-handles it, and both the manufacturer's customisations and which apps are
-installed change the outcome. On a different phone the clock app may interpret
-the same request differently, an app may not answer the URL scheme this project
-expects, or a permission may be requested at another moment. So if something
-misbehaves elsewhere, it is likely a difference in the device rather than a
-fault in the code. Reports from other devices are welcome.
+That addition is worth mentioning, because it taught this project its most
+expensive lesson: **the serious defects all showed up there, not on the
+development phone.** Not because those phones are worse, but because they are
+slower, and a window of time too narrow to matter on a fast phone matters a
+great deal on a slow one. The worst bug in the project's history — the
+conversation opening twice over — was invisible on the fast phone and
+reproducible on the other two.
+
+There is a second reason a different phone behaves differently. The device
+actions — alarms, timers, opening other apps — work by handing an intent to
+whatever app on the phone handles it, and both the manufacturer's
+customisations and which apps are installed change the outcome. So if
+something misbehaves elsewhere, it may be a difference in the device rather
+than a fault in the code. Reports from other devices are welcome — they are
+how the bugs above were found.
 
 ## Setting it up
 
@@ -144,7 +153,9 @@ Two more things worth knowing:
 - Keys are read at the moment of use, never at import: `chiaviService` looks first at what the user typed in the app and then at what was compiled in. A constant captured when a module loads would be fixed before anyone could type anything, and the key entered on the first run would never take effect.
 - Live video rides the same socket as live audio: `realtimeInput.video` beside `realtimeInput.audio`, `image/jpeg`, one frame a second, which is the rate Google recommends. A phone's photo is enormous next to what a model needs — ask the device which picture sizes it can produce and take the smallest above 640 pixels, below which it stops reading signs — and take one shot at a time, or a slow phone queues frames describing a past nobody asked about.
 - An attached picture is not a frame: sent as a `clientContent` turn with `inlineData`, it stays in the conversation's thread, so follow-up questions still find it.
-- Not every phone cancels the echo, and it is not an age thing — it changes from model to model. The call-style recording source *asks* for cancellation, it does not guarantee it: attach `AcousticEchoCanceler` and `NoiseSuppressor` to the recording session by hand, and report what the device actually provides instead of assuming it. Where it is missing, the app hears itself as loudly as a person, interrupts itself at every word and the voice comes out in skips. The barge-in threshold therefore has a floor under it — how loudly this phone hears itself — and while the assistant speaks the microphone does not go on the wire at all, or the model answers its own voice.
+- A lock made out of component state does not lock anything. Opening the live conversation goes through a function that waits — a permission, the speaker, a socket — and for all of that stretch the state on screen still says "off", so a guard reading it lets a second opening through. On a slow phone that window is wide enough for a second tap, or for another part of the app that opens it by itself, to start a second session: two microphones on one wire and two voices into one speaker, interleaved chunk by chunk. What that looks like from outside is a request heard twice and speech nobody can follow — which sends you hunting through the audio code for a week. Take the lock synchronously with a ref, have whatever owns the resource refuse to hold two, and ignore the callbacks of a superseded session: its close, arriving late, otherwise turns off the live one.
+- The native microphone and the native speaker are one each for the whole app, so whoever stops them has to ask first whether they are still theirs. A superseded session releasing the speaker takes it out from under the live one, and from then on the chunks of voice arrive and are dropped in silence: transcript on screen, model answering, nothing to hear — and leaving the app and coming back "fixes" it, because that builds a new one. This applies to any shared native resource.
+- A counter reading zero is not a diagnosis, it is an ambiguity: it can mean the thing never happened, or that the code never ran. Those are opposite conclusions. Every number worth showing needs the number beside it that tells the two apart. Two theories about this app's audio were each closed in ten seconds by a diagnostics line in the settings panel, after days of guessing — on a phone that is not in your hands, a reported number is the only evidence there is.
 - Flushing an `AudioTrack` from one thread while another sits inside a blocking write is a race: the chunk already handed over comes out anyway, afterwards, which sounds like old words on top of new ones. Write in 40 ms slices that re-check whether they are still wanted, and flush and stop on the writing thread itself. For stop it is not even about sound: releasing a track while something is still writing into it is a way to drop the app.
 - A scrollable box inside another scrollable box does not scroll at all on Android without `nestedScrollEnabled` — the outer one takes the gesture. Add it and you then scroll two things at once: the inner box moves and the page follows it. The page has to stop itself — `scrollEnabled` false the moment a finger lands on the box — and it only has to hold for the instant Android decides who owns the gesture. The release cannot wait for the final touch: once the inner box takes over, the app gets a cancel and then nothing at all, so a time-based safety is needed or the page stays frozen.
 - Copying on a single tap makes text impossible to select: every attempt to grab a word copies the whole thing. Copy on the double tap.
@@ -223,19 +234,26 @@ L'elenco aggiornato di cosa funziona, e cosa no, è in [`STATO_FUNZIONI.md`](./S
 
 ### Su cosa è stato provato
 
-Il progetto è nelle sue prime fasi ed è stato finora provato su **un solo
-dispositivo: uno Xiaomi 17 con Android 17**. Tutto ciò che risulta funzionante
-è confermato lì e, per ora, da nessun'altra parte.
+Quasi tutto ciò che qui risulta funzionante è confermato su uno **Xiaomi 17 con
+Android 17**, che è il telefono su cui si sviluppa. Da poco si sono aggiunti un
+**OPPO e un telefono più vecchio**, con versioni di Android precedenti: sono
+quelli su cui si prova l'APK senza chiavi, cioè quello che installa chi scarica
+una release.
 
-Non è un dettaglio da poco. Le azioni sul dispositivo — sveglie, timer,
-apertura di altre app — funzionano passando una richiesta all'app del telefono
-che se ne occupa, e il risultato cambia sia con le personalizzazioni del
-produttore sia con le app installate. Su un altro telefono l'app Orologio
-potrebbe interpretare diversamente la stessa richiesta, un'applicazione
-potrebbe non rispondere allo schema di collegamento previsto qui, o un permesso
-potrebbe essere chiesto in un altro momento. Quindi, se altrove qualcosa non
-funziona, è probabile che dipenda dal dispositivo più che da un difetto del
-codice. Segnalazioni da altri telefoni sono benvenute.
+Vale la pena dirlo, perché è la lezione più costosa di questo progetto: **i
+difetti seri sono usciti tutti là, non sul telefono di sviluppo.** Non perché
+quei telefoni siano scadenti, ma perché sono più lenti, e una finestra
+temporale troppo stretta per contare su un telefono veloce conta eccome su uno
+lento. Il difetto peggiore mai trovato qui — la conversazione che si apriva due
+volte — era invisibile sul telefono veloce e si riproduceva sugli altri due.
+
+C'è poi un secondo motivo per cui un altro telefono si comporta diversamente.
+Le azioni sul dispositivo — sveglie, timer, apertura di altre app — funzionano
+passando una richiesta all'app del telefono che se ne occupa, e il risultato
+cambia sia con le personalizzazioni del produttore sia con le app installate.
+Quindi, se altrove qualcosa non funziona, può dipendere dal dispositivo più che
+da un difetto del codice. Segnalazioni da altri telefoni sono benvenute: è così
+che i difetti qui sopra sono stati trovati.
 
 ## Come metterlo in funzione
 
@@ -306,7 +324,9 @@ Altre due cose che vale la pena sapere:
 - Le chiavi si leggono al momento dell'uso, mai all'importazione: `chiaviService` guarda prima quella scritta nell'app e poi quella compilata dentro. Una costante presa al caricamento del modulo sarebbe fissata prima che chiunque possa scrivere qualcosa, e la chiave inserita al primo avvio non entrerebbe mai in vigore.
 - Il video della conversazione passa dalla stessa connessione dell'audio: `realtimeInput.video` accanto a `realtimeInput.audio`, `image/jpeg`, un fotogramma al secondo, che è il ritmo consigliato da Google. Una foto del telefono è enorme rispetto a quello che serve a un modello — si chiede al dispositivo quali misure sa fare e si prende la più piccola sopra i 640 pixel, sotto cui smette di leggere le scritte — e si scatta una volta per volta, altrimenti un telefono lento accoda fotogrammi che descrivono un passato che nessuno ha chiesto.
 - Un'immagine allegata non è un fotogramma: mandata come turno `clientContent` con `inlineData`, resta nel filo della conversazione, quindi le domande successive la ritrovano.
-- Non tutti i telefoni cancellano l'eco, e non è una questione di età: cambia da modello a modello. La sorgente da telefonata *chiede* la cancellazione, non la garantisce — vanno attaccati a mano alla sessione di registrazione `AcousticEchoCanceler` e `NoiseSuppressor`, e quello che il telefono sa fare davvero va chiesto e riportato invece che dato per scontato. Dove manca, l'app si sente parlare forte quanto una persona, si interrompe a ogni parola che dice e la voce esce a scatti. Per questo la soglia dell'interruzione ha sotto un pavimento — quanto forte l'app sente sé stessa su quel telefono — e mentre l'assistente parla il microfono non va sul filo, altrimenti il modello risponde alla propria voce.
+- Una serratura fatta con uno stato del componente non chiude niente. Aprire la conversazione passa per una funzione che aspetta — un permesso, l'altoparlante, la connessione — e in tutto quel tratto lo stato a schermo dice ancora "spenta", quindi un controllo che legge quello lascia passare una seconda apertura. Su un telefono lento quella finestra è abbastanza larga perché un secondo tocco, o un altro pezzo dell'app che la apre da sé, faccia partire una seconda sessione: due microfoni sullo stesso filo e due voci nello stesso altoparlante, mescolate pezzo per pezzo. Da fuori si vede la richiesta sentita due volte e un discorso incomprensibile — e si passa una settimana a cercare nel codice dell'audio. La serratura va presa subito con un riferimento, chi possiede la risorsa deve rifiutarsi di averne due, e le richiamate di una sessione superata vanno ignorate: la sua chiusura, arrivando dopo, spegne quella viva.
+- Il microfono e l'altoparlante nativi sono uno solo per tutta l'app, quindi chi li spegne deve prima chiedersi se sono ancora suoi. Una sessione superata che rilascia l'altoparlante lo toglie di sotto a quella viva, e da lì in poi i pezzi di voce arrivano e vengono buttati in silenzio: testo a schermo, modello che risponde, niente da sentire — e uscire dall'app e rientrare «risolve», perché ne fa nascere uno nuovo. Vale per qualunque risorsa nativa condivisa.
+- Un conteggio a zero non è una diagnosi, è un'ambiguità: può voler dire che il fenomeno non è successo, oppure che quel codice non è mai girato. Sono conclusioni opposte. Ogni numero che vale la pena mostrare vuole accanto il numero che distingue i due casi. Due teorie sull'audio di quest'app sono state chiuse in dieci secondi l'una da una riga di diagnosi nelle impostazioni, dopo giorni passati a indovinare: su un telefono che non si ha in mano, un numero riportato è l'unica prova che esiste.
 - Svuotare una `AudioTrack` da un thread mentre un altro ci sta scrivendo è una corsa: il pezzo già consegnato esce lo stesso, dopo, e si sentono parole vecchie sopra le nuove. Si scrive a fette di 40 ms ricontrollando fra l'una e l'altra, e svuotamento e arresto si fanno sullo stesso thread che scrive. Per l'arresto non è nemmeno una questione di suono: rilasciare la traccia mentre qualcuno ci scrive dentro è un modo di far cadere l'app.
 - Un riquadro scorrevole dentro un altro riquadro scorrevole non scorre affatto, su Android, senza `nestedScrollEnabled`: il gesto se lo prende quello esterno. Messo quello, però, si scorre in due: il riquadro interno si muove e la pagina sotto lo segue. La pagina va fermata da sé — `scrollEnabled` a falso appena il dito tocca il riquadro — e basta che regga l'istante in cui Android decide chi prende il gesto. Il rilascio non può dipendere dal tocco finale: quando il riquadro interno prende il gesto l'app riceve un annullamento e poi più niente, quindi serve anche una sicura a tempo, se no la pagina resta bloccata.
 - Copiare al tocco singolo rende il testo impossibile da selezionare: ogni tentativo di prendere una parola copia tutto. Si copia al doppio tocco.

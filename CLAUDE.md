@@ -143,6 +143,17 @@ hanno chiuso due teorie in dieci secondi l'una, e ogni volta la risposta
 stava nella parte della riga che non si stava guardando. **Prima di toccare
 una soglia si guarda lì, e si legge tutta la riga.**
 
+Quella riga adesso dice quattro cose, e ognuna si è guadagnata il posto:
+
+- **Conversazioni aperte** — deve dire 1. Se dice di più, ne sono nate altre e
+  il difetto è tornato.
+- **Microfono e altoparlante** — accesi o fermi. Un altoparlante *fermo* a
+  conversazione aperta è la differenza fra "non risponde" e "risponde e non si
+  sente".
+- **Pezzi dal microfono e di voce** — distinguono "non è successo" da "quel
+  codice non è mai girato".
+- **Interruzioni decise dall'app e dal server.**
+
 ### Dove sta cosa
 
 | File | Cosa fa |
@@ -253,7 +264,12 @@ Ognuna di queste è costata almeno una build, alcune parecchie:
 - **Un conteggio a zero non è una diagnosi**, è un'ambiguità: può voler dire
   "il fenomeno non è successo" oppure "quel pezzo di codice non è mai girato".
   Ogni numero mostrato vuole accanto il numero che distingue i due casi — i
-  pezzi visti dal microfono, quelli di voce, quelli trattenuti.
+  pezzi visti dal microfono e quelli di voce.
+- **Microfono e altoparlante nativi sono uno solo per tutta l'app.** Chi li
+  spegne deve prima chiedersi se sono ancora suoi: una sessione superata che
+  rilascia l'altoparlante lo toglie di sotto a quella viva, e da lì i pezzi di
+  voce arrivano e vengono buttati in silenzio — testo a schermo, modello che
+  risponde, e niente da sentire. Vale per qualunque risorsa nativa condivisa.
 
 ### Come si muove l'interfaccia
 
@@ -355,9 +371,20 @@ sviluppo, niente terminale, nessuna possibilità di modificare file a mano.
 Quindi ogni modifica la scrive Claude direttamente su GitHub. Chiedergli di
 "aprire un file e cambiare una riga" non è un'opzione.
 
-Il collaudo invece lo può fare solo lui: l'app gira sul suo telefono, uno
-**Xiaomi 17 con Android 17**, ed è l'unico dispositivo su cui questo progetto
-sia mai stato provato.
+Il collaudo invece lo può fare solo lui, e ora su **tre telefoni**:
+
+| Telefono | Che parte fa |
+|---|---|
+| **Xiaomi 17, Android 17** | Il suo. È dove si sviluppa e dove quasi tutto funziona al primo colpo — ed è proprio per questo che non basta |
+| **OPPO, Android più vecchio** | Non è suo e non ce l'ha sempre. È lì che sono saltati fuori il doppio input e l'audio muto all'avvio |
+| **Un secondo telefono più vecchio** | Quello dove prova l'APK senza chiavi, cioè il primo avvio di chi scarica dalla release |
+
+**I difetti che contano sono usciti tutti sui telefoni che non sono il suo**,
+e quasi sempre perché lì le cose sono più lente e una finestra temporale che
+sul suo è troppo stretta per contare, lì conta. Quando qualcosa "funziona",
+la domanda successiva è: su quale telefono. E quando non si ha in mano quello
+che sbaglia, la sola strada è farsi riportare dei numeri — vedi la riga di
+diagnosi in Impostazioni → Info.
 
 ## Le chiavi API
 
@@ -532,6 +559,11 @@ Lo stato dettagliato sta in `STATO_FUNZIONI.md`; qui la sostanza.
 azioni concatenate, la ricerca, l'interruzione immediata, la bolla, la **vista**
 dalla fotocamera e le **immagini allegate**.
 
+Sulle catene: la prova più dura fatta finora è stata **sette sveglie a ogni ora
+dalle 9 alle 15 più un timer, in una richiesta sola** — su un telefono che non
+è il suo. Le ha messe tutte e sette, più il timer, senza saltarne una. Quella
+parte non è più in discussione.
+
 Sulla vista: il ritmo di un fotogramma al secondo e la misura sopra i 640
 pixel erano due numeri scelti a tavolino e sono risultati giusti al primo
 collaudo — legge le scritte, capisce il contesto e lo racconta con naturalezza.
@@ -554,11 +586,18 @@ Confermato anche il giro successivo: il congedo non si chiude più su "sono
 stanco, vado a letto io", il riquadro della risposta scorre e si seleziona, e
 il registro non taglia più le risposte.
 
-**Da confermare** (le correzioni dell'ultimo giro): che scorrere dentro il
-riquadro della risposta o dentro il registro non si trascini dietro tutta la
-pagina, e che la tastiera lasci vedere il campo di testo — la prima correzione
-non aveva funzionato perché partiva da una premessa sbagliata su
-`adjustResize`, vedi la riga sulla tastiera più sopra.
+**Da confermare** (le correzioni dell'ultimo giro, tutte mai provate):
+
+- che **una conversazione sola** resti una sola anche dopo una catena di
+  sveglie, che fa uscire e rientrare l'app una volta per sveglia — è la prova
+  che fa saltare fuori il difetto. Il numero da guardare è *Conversazioni
+  aperte* in Info;
+- che **l'audio si senta al primo tentativo**, senza uscire e rientrare per
+  «forzarlo»;
+- che scorrere dentro il riquadro della risposta o dentro il registro **non si
+  trascini dietro la pagina**, e che la pagina scorra ancora toccando fuori;
+- che la **tastiera** lasci vedere il campo di testo — la prima correzione era
+  partita da una premessa sbagliata su `adjustResize`.
 
 **Ancora aperto davvero:**
 
@@ -570,6 +609,11 @@ non aveva funzionato perché partiva da una premessa sbagliata su
   a comandi tornasse in primo piano, il piano B è Speechify o Cartesia.
 - **`EXPO_PUBLIC_GITHUB_TOKEN_KEY`** non è mai stata configurata: i tre
   comandi GitHub sono fermi lì.
+- **`groq/compound-mini` è deprecato** — sta in `jarvisService.jsx` come
+  modello della ricerca, che è solo della modalità a comandi. Groq lo ritira,
+  quindi va sostituito; non è urgente perché quel pezzo è spento di default,
+  ma il giorno che smette di rispondere la ricerca a comandi muore in
+  silenzio. Era stato rimandato per non invalidare una build in corso.
 
 Cose decise, da non rimettere in discussione:
 

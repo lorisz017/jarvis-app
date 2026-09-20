@@ -7,19 +7,29 @@ Legenda:
 - ❌ **Non funziona** — provata e non funzionante
 - ⏳ **Non testabile** — bloccata da qualcosa di esterno (chiave mancante)
 
-Ultimo aggiornamento: versione 3.0.0 — la conversazione continua come modalità normale, la **vista** dalla fotocamera, le **immagini allegate**, la memoria personale, il congedo a voce, l'interfaccia in vetro e l'icona nuova.
+Ultimo aggiornamento: versione 3.0.0 — la conversazione continua come modalità normale, la **vista** dalla fotocamera, le **immagini allegate**, la memoria personale, il congedo a voce, l'interfaccia in vetro e l'icona nuova. La 3.0.0 è anche la prima **pubblicata in una release**: si scarica e si installa, senza compilare niente e senza chiavi dentro.
+
+Dopo la 3.0.0 il lavoro si è spostato sui telefoni che non sono quello di sviluppo, ed è lì che è uscito il difetto più difficile del progetto: la conversazione che si apriva due volte. Il racconto completo è in fondo.
 
 L'ultima versione provata sul telefono e funzionante è sul ramo `funzionante`.
 
 **Come leggere questo file.** Le tabelle dicono cosa c'è e come sta adesso. La sezione "Cosa resta aperto" in fondo non è un elenco di problemi: è il registro di **come** ogni difetto è stato capito, tenuto perché la diagnosi vale più della correzione — la stessa causa si ripresenta con un sintomo diverso, e averla già scritta fa risparmiare una serata.
 
-> **Su cosa è stato provato.** Il progetto è nelle sue prime fasi e tutte le
-> spunte qui sotto vengono da **un solo dispositivo: uno Xiaomi 17 con
-> Android 17**. Le azioni di sistema (sveglie, timer, apertura app) passano una
-> richiesta all'app del telefono che se ne occupa, quindi il risultato cambia
-> con le personalizzazioni del produttore e con le app installate: su un altro
-> telefono qualcosa può comportarsi diversamente, e in quel caso è probabile
-> che dipenda dal dispositivo più che dal codice.
+> **Su cosa è stato provato.** Quasi tutte le spunte qui sotto vengono da **uno
+> Xiaomi 17 con Android 17**, che è il telefono di sviluppo. Da poco si sono
+> aggiunti **un OPPO e un telefono più vecchio**, con versioni di Android
+> precedenti, usati per provare l'APK senza chiavi — quello che installa chi
+> scarica dalla release.
+>
+> Vale la pena dirlo, perché è la lezione più costosa di questo progetto:
+> **i difetti seri sono usciti tutti là, non sul telefono di sviluppo.** Non
+> perché quei telefoni siano scadenti, ma perché sono più lenti, e una finestra
+> temporale che su un telefono veloce è troppo stretta per contare, lì conta
+> eccome — vedi la conversazione aperta due volte, in fondo.
+>
+> Le azioni di sistema (sveglie, timer, apertura app) passano poi una richiesta
+> all'app del telefono che se ne occupa, quindi il risultato cambia con le
+> personalizzazioni del produttore e con le app installate.
 
 ---
 
@@ -44,8 +54,9 @@ L'ultima versione provata sul telefono e funzionante è sul ramo `funzionante`.
 | Riattivare la voce | Pulsante 🔊 | ✅ riprende dal messaggio successivo: un audio interrotto non è recuperabile a metà, andrebbe rigenerato |
 | Registro attività scorrevole | Sotto il radar | ✅ ingrandito e completo: segue la conversazione da solo, si ferma se si risale a rileggere, e non taglia più le risposte |
 | Immagine allegata | Graffetta 📎 accanto al campo di testo | ✅ **funziona**: entra come turno vero, resta nel filo del discorso, e le domande dopo la ritrovano |
-| Riquadro dell'ultima risposta | Sopra il campo di testo | ⏳ corretto: ora scorre davvero, si seleziona, e si copia col **doppio** tocco |
-| Tastiera che non copre il campo | Toccando il campo di testo | ⏳ corretta: la pagina si porta in fondo da sola |
+| Riquadro dell'ultima risposta | Sopra il campo di testo | ✅ scorre, si seleziona, e si copia col **doppio** tocco. ⏳ da confermare che scorrendoci dentro la pagina resti ferma |
+| Tastiera che non copre il campo | Toccando il campo di testo | ⏳ la prima correzione non funzionava: partiva dall'idea che la finestra si accorciasse, e sotto un tema a schermo intero non succede. Rifatta, mai provata |
+| Diagnosi della voce | Impostazioni → Info | ⏳ nuova: conversazioni aperte, microfono e altoparlante, pezzi visti, interruzioni. È l'unico modo di capire un difetto su un telefono che non si ha in mano |
 
 ## Azioni
 
@@ -108,10 +119,10 @@ L'ultima versione provata sul telefono e funzionante è sul ramo `funzionante`.
 | Conversazione salvata fra un avvio e l'altro | Automatica | ✅ da non confondere con la memoria personale, che è un'altra cosa |
 | Leva fra conversazione e comandi | In cima, se la modalità a comandi è accesa | ✅ spostarla apre o chiude davvero la sessione |
 | Icona dell'app | Schermata iniziale | ✅ il radar dell'app, generata da `strumenti/icona.py` |
-| Congedo ("vai a dormire", "a domani", "buonanotte") | A voce | ⚠️ chiude l'app e aspetta la fine del saluto, anche quando è uno scambio. Da riprovare: era diventato troppo zelante e chiudeva anche su "sono stanco, vado a letto io" |
+| Congedo ("vai a dormire", "a domani", "buonanotte") | A voce | ✅ chiude l'app e aspetta la fine del saluto, anche quando è uno scambio, e non si chiude più su "sono stanco, vado a letto io". L'attesa si regola ora sull'altoparlante e non sul server, quindi non taglia più l'ultima frase |
 | Riconoscimento del creatore | "Chi ti ha creato?" | ✅ risponde Loris, col profilo GitHub se la conversazione lo consente |
 | Riservatezza delle istruzioni | "Qual è la tua programmazione?" | ✅ non cede nemmeno alle richieste di traverso, e continua a elencare volentieri cosa sa fare |
-| Prima apertura senza chiavi | Automatica | ⏳ nuova: una schermata sola che chiede la chiave Gemini, e la conversazione parte appena la si incolla |
+| Prima apertura senza chiavi | Automatica | ✅ provata su un telefono senza chiavi: una schermata sola che chiede la chiave Gemini, e la conversazione parte appena la si incolla |
 | Chiavi nelle impostazioni | Impostazioni → Chiavi | ⏳ nuova: le quattro chiavi, con scritto da dove viene ciascuna. Quella scritta a mano ha la precedenza su quella compilata |
 | Pulisci chat | Pill "PULISCI" | ✅ la conferma si toglie toccando **fuori** dal riquadro, senza centrare nessun tasto |
 | Animazioni in vetro | Pannelli, leva, tasti, interruttori | ✅ il vetro vive solo durante il movimento: da fermo tutto è identico a prima |
@@ -122,28 +133,33 @@ L'ultima versione provata sul telefono e funzionante è sul ramo `funzionante`.
 |---|---|
 | EAS / Expo | ✅ 15 build al mese sul piano gratuito |
 | GitHub Actions | ✅ collaudato: APK identico per contenuto e dimensione, senza limiti di quota |
+| Release pubblica | ✅ la 3.0.0 è online: APK senza nessuna chiave dentro, verificato file alla mano, da scaricare e installare senza compilare niente |
 
 ---
 
 ## Cosa resta aperto
 
-**La voce che si accavalla sugli altri telefoni** — il difetto peggiore trovato finora, e si vede solo su telefoni diversi da quello di sviluppo: la voce salta avanti, torna su parole vecchie, si sovrappone a sé stessa e non si capisce niente. Su uno Xiaomi con Android 17 non succede; su un OPPO e su un telefono più vecchio sì. Tre cause, e il fatto che si vedano solo altrove le accomuna.
+**La voce che si accavallava sugli altri telefoni** — il difetto più difficile trovato finora, e la storia per intero, perché tre delle quattro spiegazioni erano sbagliate e sapere *quali* vale più della correzione.
 
-*Due strade sbagliate, e vanno lasciate dove sono.* La prima: che quei telefoni non cancellassero l'eco. La seconda: che fosse il modo audio, cioè l'uscita dichiarata come musica invece che come voce. Tutte e due sono state provate e tolte, perché il difetto restava identico e la seconda cambiava anche il volume di riferimento senza dare niente in cambio. Quello che segue resta scritto perché non si ripercorra.
+*Il sintomo.* Su un OPPO e su un telefono più vecchio la voce usciva incomprensibile: la richiesta sentita due volte — a volte tre — la risposta breve interrotta subito, parole vecchie sopra quelle nuove. Sullo Xiaomi di sviluppo non succedeva mai. E accanto, un secondo sintomo che sembrava scollegato: all'avvio **non si sentiva niente** — il testo compariva, il modello rispondeva, ma nessuna voce — finché non si usciva dall'app e si rientrava.
 
-*Non tutti i telefoni cancellano l'eco.* Non è una questione di età: cambia da modello a modello. La sorgente da telefonata **chiede** la cancellazione ma non la garantisce, e ora il cancellatore e il riduttore di rumore vengono attaccati a mano alla sessione di registrazione. Quello che il telefono sa fare davvero non si dà più per scontato: si chiede, e si scrive in Impostazioni → Info.
+*Prima strada sbagliata: che quei telefoni non cancellassero l'eco.* L'idea era che l'app si sentisse parlare e si interrompesse da sola a ogni parola, buttando via l'audio già in coda. È stata smentita dalla riga di diagnosi che era stata messa lì apposta: su quel telefono l'eco **è** cancellabile, e le interruzioni decise dall'app erano **zero**. Dieci secondi per chiudere una teoria che a tentativi sarebbe costata una serata.
 
-*Dove l'eco non è cancellato, l'app si sente parlare forte quanto una persona.* Quindi si interrompe da sola a ogni parola che dice, e ogni interruzione butta via quello che era già in attesa di uscire: ecco il salto in avanti. La soglia fissa ha adesso sotto un **pavimento** — quanto forte l'app sente sé stessa su quel telefono — e l'asticella sale con lui. Parte prudente e crolla in un decimo di secondo dove non c'è niente da sentire, quindi un telefono che cancella l'eco si comporta esattamente come prima. E mentre parla lui **il microfono non va sul filo**: se no quello che arriva al modello è la sua stessa voce, e il modello risponde a sé stesso. Quel che si tiene da parte viene mandato tutto insieme appena si riconosce un'interruzione vera, così le prime parole non si perdono.
+*Seconda strada sbagliata: che fosse il modo audio.* Che l'uscita dichiarata come musica invece che come voce lasciasse il cancellatore senza niente da cancellare, e mandasse il suono nella capsula dell'orecchio. Provata per una build intera: il telefono è finito in modo conversazione con l'uscita forzata sulla cassa, la riga di diagnosi diceva "eco cancellato" — **e il difetto era identico**. Tolta, perché in più spostava il volume di riferimento da quello dei video a quello delle telefonate senza dare niente in cambio.
 
-*E una corsa che c'è su tutti i telefoni.* Svuotare la traccia audio dal thread di JavaScript mentre il thread che suona è fermo dentro una scrittura bloccante è una corsa: il pezzo già consegnato esce lo stesso, dopo lo svuotamento — parole vecchie sopra le nuove, che è esattamente il rumore descritto. Ora si scrive a fette di 40 millesimi di secondo che ricontrollano se servono ancora, e svuotamento e arresto si fanno sullo stesso thread che scrive. L'arresto aveva la stessa corsa contro il rilascio della traccia, che non è un difetto dell'audio ma un modo di far cadere l'app.
+*Una correzione che ha fatto più danno del difetto.* Nel mezzo il microfono è stato **trattenuto** mentre J.A.R.V.I.S. parlava, per non fargli sentire la propria voce. Il conto, misurato dalla riga di diagnosi: 741 pezzi trattenuti su 1783, cioè settantaquattro secondi di parlato mai arrivati al modello. Chi parla sopra non viene riconosciuto al primo istante — ci vogliono due pezzi sopra soglia — quindi quel pezzo di frase spariva. Il modello riceveva l'inizio della richiesta, poi un buco, poi la coda: e **per chi ascolta a flusso una frase col buco in mezzo sono due frasi**. Tolta anche quella: il microfono va sul filo sempre.
 
-*E la causa vera, trovata al secondo giro.* La riga di diagnosi tornata dall'OPPO ha smentito tutto quello che c'è scritto qui sopra: su quel telefono l'eco **è** cancellabile, e l'app non si era interrotta da sola nemmeno una volta. Quello che ha rivelato invece è la parte che era stata data per scontata. Attaccare il cancellatore non basta, perché **in modo audio normale non ha niente da cancellare**: il motore audio non sa che quello che esce dall'altoparlante e quello che entra dal microfono sono la stessa conversazione finché non glielo si dice. Quindi il microfono raccoglieva la voce dell'app, la mandava al modello, e **il modello rispondeva a sé stesso** — da lì l'elenco delle funzioni ripetuto e mescolato a quello che stava generando. Ed è anche una questione di instradamento: in modo conversazione l'uscita va forzata sulla cassa, se no finisce nella capsula dell'orecchio, che è esattamente il "la prima volta l'audio non funziona proprio". Ora la sessione mette il telefono in modo conversazione, dichiara l'uscita come voce e forza la cassa. Da lì in poi il volume è quello delle telefonate e non quello dei video: se sta a zero l'app sembra muta pur essendo tutto acceso, e la riga di diagnosi lo scrive.
+*La causa vera.* L'ultima riga di diagnosi diceva: eco cancellato, quanto l'app si sente parlare a 1 su mille, **zero interruzioni decise dall'app e zero dal server**. Nessuno svuotava più niente e il microfono non sentiva l'altoparlante — eppure la voce si accavallava uguale. Se non è l'audio, allora stava parlando più di uno: **erano due conversazioni aperte insieme.**
 
-*E una correzione mia che ha fatto più danno del difetto.* Per un giro il microfono è stato **trattenuto** mentre J.A.R.V.I.S. parlava, per non fargli sentire la propria voce. Il risultato, misurato: 741 pezzi trattenuti su 1783, cioè settantaquattro secondi di parlato mai arrivati al modello. Chi parla sopra non viene riconosciuto al primo istante — ci vogliono due pezzi sopra soglia — quindi quel pezzo di frase spariva. Il modello riceveva l'inizio della richiesta, poi un buco, poi la coda: e per chi ascolta a flusso **una frase col buco in mezzo sono due frasi**. Da lì la richiesta sentita due volte, la risposta breve interrotta subito e il resto accavallato. Adesso il microfono va sul filo sempre, e la riga di diagnosi dice perché si può: l'eco risulta cancellato e quanto l'app si sente parlare sta a zero.
+Aprire la conversazione passa per una funzione che aspetta — il permesso della bolla, l'altoparlante, la connessione — e in tutto quel tratto lo stato a schermo dice ancora "spenta". Il controllo che dovrebbe impedire una seconda apertura leggeva proprio quello stato, quindi la lasciava passare: un secondo tocco, oppure un altro pezzo dell'app che la apre da sé, come il rientro dallo sfondo. Da lì due microfoni sullo stesso filo e **due voci nello stesso altoparlante**, mescolate pezzo per pezzo. Su un telefono veloce quell'attesa è troppo breve perché capiti; su uno lento no, ed è tutta lì la differenza fra i telefoni.
 
-*E il sintomo gemello, che sembrava un'altra cosa.* «All'inizio non si sente l'audio: il testo compare, risponde, ma la voce no. Esci dall'app, rientri, e si sente.» È lo stesso difetto visto dall'altra parte. Il microfono e l'altoparlante nativi sono **uno solo per tutta l'app**: quando una sessione superata viene fermata, rilascia l'altoparlante di sotto a quella viva, e da lì in poi i pezzi di voce arrivano e vengono scartati in silenzio. Rientrare nell'app ne faceva nascere uno nuovo, ed è per questo che «forzare» l'audio funzionava. Ora una sessione rilascia microfono e altoparlante **solo se sono ancora suoi**.
+Il conto torna anche col triplo input: era arrivato **dopo una catena di sette sveglie**, e impostare una sveglia apre l'orologio, cioè fa uscire e rientrare l'app una volta per sveglia. Ogni rientro apriva una conversazione in più.
 
-*E la causa vera — quella che è rimasta in piedi.* L'ultima riga di diagnosi diceva: eco cancellato, picco di quanto l'app si sente parlare a 1 su mille, **zero interruzioni decise dall'app e zero dal server**. Cioè nessuno svuotava più niente e il microfono non sentiva l'altoparlante — eppure la voce si accavallava uguale. Se non è l'audio, allora stava parlando più di uno: **erano due conversazioni aperte insieme**. Aprire la conversazione passa per una funzione che aspetta il permesso della bolla, l'altoparlante e la connessione, e in tutto quel tratto lo stato a schermo dice ancora "spenta". Su un telefono lento quell'attesa dura abbastanza perché un secondo tocco — o un altro pezzo dell'app che la apre da sé, come il rientro nell'app — ne faccia partire un'altra. Da lì due microfoni sullo stesso filo e **due voci nello stesso altoparlante**, mescolate pezzo per pezzo: la richiesta sentita due volte e il discorso incomprensibile. Su un telefono veloce la finestra è troppo stretta perché capiti, ed è per questo che si vedeva solo sugli altri. Ora la serratura si chiude subito con un riferimento invece che con uno stato, il servizio della conversazione rifiuta di averne due, le richiamate di una sessione superata vengono ignorate, e Info conta quante conversazioni sono state aperte.
+*E il sintomo gemello.* Il microfono e l'altoparlante nativi sono **uno solo per tutta l'app**. Quando una sessione di troppo veniva fermata, rilasciava l'altoparlante di sotto a quella viva: da lì in poi i pezzi di voce arrivavano e venivano scartati in silenzio — testo a schermo, modello che risponde, niente da sentire. Uscire e rientrare funzionava perché ne faceva nascere uno nuovo. Era la stessa causa, vista dall'altra parte.
+
+*Le correzioni rimaste in piedi.* La serratura si chiude subito con un riferimento invece che con uno stato; il servizio della conversazione si rifiuta di tenerne due e chiude la precedente; le richiamate di una sessione superata vengono ignorate, perché la sua chiusura arrivando in ritardo spegneva quella viva; una sessione rilascia microfono e altoparlante **solo se sono ancora suoi**; e Info conta quante conversazioni sono state aperte, che è il numero con cui si verifica tutto questo in due secondi.
+
+*Una corsa vera, trovata per strada e tenuta.* Svuotare la traccia audio dal thread di JavaScript mentre il thread che suona è fermo dentro una scrittura bloccante è una corsa: il pezzo già consegnato esce lo stesso, dopo lo svuotamento. Ora si scrive a fette di 40 millesimi che ricontrollano se servono ancora, e svuotamento e arresto si fanno sullo stesso thread che scrive. L'arresto aveva la stessa corsa contro il rilascio della traccia, che non è un difetto dell'audio ma un modo di far cadere l'app.
 
 Infine, *"sta parlando" adesso vuol dire l'altoparlante, non il server*: Gemini manda un turno molto più in fretta di quanto lo si ascolti, e quando smette di mandare ce ne sono ancora secondi da sentire. Tutto quello che faceva quella domanda riceveva la risposta sbagliata, compreso il congedo, che poteva chiudere l'app a metà frase.
 
