@@ -93,11 +93,35 @@ conversazione il radar apre e chiude la sessione.
 
 Interrompere J.A.R.V.I.S. mentre parla non aspetta che se ne accorga il
 server: l'app misura quanto entra dal microfono e si zittisce da sola. La
-soglia sta a 0,04 perché la voce vera misura molto meno di quanto sembri a
-orecchio, ed è protetta da due pezzi consecutivi sopra soglia più la
-cancellazione dell'eco della sorgente da telefonata. **Se dovesse
-interrompersi da solo, la soglia va alzata; se non si ferma quando gli si
-parla sopra, abbassata.**
+soglia parte da 0,04 perché la voce vera misura molto meno di quanto sembri a
+orecchio, ed è protetta da due pezzi consecutivi sopra soglia.
+
+Sotto la soglia fissa però c'è un **pavimento**, e il motivo è una cosa
+scoperta a caro prezzo: **non tutti i telefoni cancellano l'eco**, e non è una
+questione di età — cambia da modello a modello. Dove non lo cancellano l'app
+si sente parlare forte quanto una persona, si interrompe a ogni parola che
+dice e la voce esce a scatti, saltando avanti. Il pavimento misura quanto
+forte l'app sente sé stessa su *quel* telefono e alza la soglia di
+conseguenza: sale piano (0,12), scende in fretta (0,35), parte prudente a 0,05
+e non supera mai 0,25, perché non poter interrompere è il difetto peggiore dei
+due. Dove l'eco è cancellato il pavimento crolla in un decimo di secondo e
+comanda la soglia fissa, cioè tutto si comporta come prima.
+
+Per lo stesso motivo, **mentre parla lui il microfono non va sul filo**: se
+l'eco non è cancellato, quello che arriverebbe al modello è la sua stessa
+voce, e il modello risponde a sé stesso. Si tiene da parte mezzo secondo
+scarso, e lo si manda tutto insieme appena si riconosce un'interruzione vera,
+così non si perdono le prime parole di chi parla.
+
+E "sta parlando" vuol dire **l'altoparlante**, non il server: Gemini manda un
+turno molto più in fretta di quanto lo si ascolti, e quando smette di mandare
+ce ne sono ancora secondi da sentire. Si stima dai byte consegnati
+all'altoparlante.
+
+Quello che serve per capirci qualcosa sta in **Impostazioni → Info**: se la
+cancellazione dell'eco esiste su quel telefono, quanto si sente parlare, e
+quante interruzioni hanno deciso l'app e il server. **Prima di toccare una
+soglia si guarda lì.**
 
 ### Dove sta cosa
 
@@ -188,6 +212,17 @@ Ognuna di queste è costata almeno una build, alcune parecchie:
   valore predefinito il modello ripianifica ogni volta la stessa frase in modo
   diverso, e quale azione sopravviva a una catena diventa un sorteggio.
 - In Kotlin gli **apici singoli sono un carattere**, non una stringa.
+- **Svuotare una `AudioTrack` da un thread mentre un altro ci sta scrivendo è
+  una corsa**, e il pezzo già consegnato esce lo stesso, *dopo*: si sentono
+  parole vecchie sopra le nuove. Si scrive a fette (40 ms) ricontrollando fra
+  l'una e l'altra, e svuotamento e arresto si fanno **sullo stesso thread che
+  scrive**. Per l'arresto non è nemmeno una questione di suono: rilasciare la
+  traccia mentre qualcuno ci scrive dentro è un modo di far cadere l'app.
+- La sorgente da telefonata **chiede** la cancellazione dell'eco, non la
+  garantisce: va attaccata a mano alla sessione di registrazione
+  (`AcousticEchoCanceler`, `NoiseSuppressor`), e su parecchi telefoni non c'è
+  proprio. Quello che il telefono sa fare davvero va **chiesto e riportato**,
+  non dato per scontato.
 
 ### Come si muove l'interfaccia
 

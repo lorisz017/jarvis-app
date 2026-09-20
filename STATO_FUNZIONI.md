@@ -127,6 +127,16 @@ L'ultima versione provata sul telefono e funzionante è sul ramo `funzionante`.
 
 ## Cosa resta aperto
 
+**La voce che si accavalla sugli altri telefoni** — il difetto peggiore trovato finora, e si vede solo su telefoni diversi da quello di sviluppo: la voce salta avanti, torna su parole vecchie, si sovrappone a sé stessa e non si capisce niente. Su uno Xiaomi con Android 17 non succede; su un OPPO e su un telefono più vecchio sì. Tre cause, e il fatto che si vedano solo altrove le accomuna.
+
+*Non tutti i telefoni cancellano l'eco.* Non è una questione di età: cambia da modello a modello. La sorgente da telefonata **chiede** la cancellazione ma non la garantisce, e ora il cancellatore e il riduttore di rumore vengono attaccati a mano alla sessione di registrazione. Quello che il telefono sa fare davvero non si dà più per scontato: si chiede, e si scrive in Impostazioni → Info.
+
+*Dove l'eco non è cancellato, l'app si sente parlare forte quanto una persona.* Quindi si interrompe da sola a ogni parola che dice, e ogni interruzione butta via quello che era già in attesa di uscire: ecco il salto in avanti. La soglia fissa ha adesso sotto un **pavimento** — quanto forte l'app sente sé stessa su quel telefono — e l'asticella sale con lui. Parte prudente e crolla in un decimo di secondo dove non c'è niente da sentire, quindi un telefono che cancella l'eco si comporta esattamente come prima. E mentre parla lui **il microfono non va sul filo**: se no quello che arriva al modello è la sua stessa voce, e il modello risponde a sé stesso. Quel che si tiene da parte viene mandato tutto insieme appena si riconosce un'interruzione vera, così le prime parole non si perdono.
+
+*E una corsa che c'è su tutti i telefoni.* Svuotare la traccia audio dal thread di JavaScript mentre il thread che suona è fermo dentro una scrittura bloccante è una corsa: il pezzo già consegnato esce lo stesso, dopo lo svuotamento — parole vecchie sopra le nuove, che è esattamente il rumore descritto. Ora si scrive a fette di 40 millesimi di secondo che ricontrollano se servono ancora, e svuotamento e arresto si fanno sullo stesso thread che scrive. L'arresto aveva la stessa corsa contro il rilascio della traccia, che non è un difetto dell'audio ma un modo di far cadere l'app.
+
+Infine, *"sta parlando" adesso vuol dire l'altoparlante, non il server*: Gemini manda un turno molto più in fretta di quanto lo si ascolti, e quando smette di mandare ce ne sono ancora secondi da sentire. Tutto quello che faceva quella domanda riceveva la risposta sbagliata, compreso il congedo, che poteva chiudere l'app a metà frase.
+
 **Scrivere dentro la conversazione** — il campo di testo resta anche in conversazione, per quando parlare non è possibile. Non apre un giro a parte: la frase scritta entra nella sessione aperta, con la stessa memoria, e la risposta torna a voce. Con la voce spenta la conversazione continua ad ascoltare e a capire, ma non parla: l'audio arriva e viene scartato, e resta la trascrizione a schermo.
 
 **Quattro cose della serata degli allegati** — l'allegato e la conferma toccando fuori sono risultati a posto; queste erano il contorno che non lo era.
