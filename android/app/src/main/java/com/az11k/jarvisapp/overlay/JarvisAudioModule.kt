@@ -5,7 +5,10 @@ import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.AudioTrack
 import android.media.MediaRecorder
+import android.media.audiofx.AcousticEchoCanceler
+import android.media.audiofx.NoiseSuppressor
 import android.util.Base64
+import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
@@ -35,12 +38,28 @@ class JarvisAudioModule(private val contesto: ReactApplicationContext) :
 
         /** Circa un decimo di secondo di parlato per pezzo. */
         private const val CAMPIONI_PER_PEZZO = FREQUENZA_INVIO / 10
+
+        /**
+         * Quanto si scrive per volta verso l'altoparlante: 40 millesimi di
+         * secondo. `write` blocca finché c'è posto, e scrivere un pezzo intero
+         * terrebbe il thread fermo dentro la chiamata proprio mentre arriva
+         * un'interruzione. A fette il controllo torna molto più spesso, e
+         * quello che non serve più si butta invece di uscire in ritardo.
+         */
+        private const val BYTE_PER_FETTA = FREQUENZA_RISPOSTA * 2 / 25
     }
 
     override fun getName(): String = "JarvisAudio"
 
     private var registratore: AudioRecord? = null
     private var inAscolto = false
+
+    // La cancellazione dell'eco non è garantita dalla sola sorgente da
+    // telefonata: su parecchi telefoni va chiesta esplicitamente al motore
+    // audio, e su altri non c'è proprio. Dove non c'è, l'app si sente parlare,
+    // si interrompe da sola e manda al modello la propria voce.
+    private var cancellazioneEco: AcousticEchoCanceler? = null
+    private var riduzioneRumore: NoiseSuppressor? = null
 
     private var altoparlante: AudioTrack? = null
     private val codaRiproduzione = Executors.newSingleThreadExecutor()
@@ -99,6 +118,7 @@ class JarvisAudioModule(private val contesto: ReactApplicationContext) :
 
         registratore = record
         inAscolto = true
+        attaccaEffetti(record.audioSessionId)
         record.startRecording()
 
         thread(name = "jarvis-microfono") {
@@ -119,9 +139,71 @@ class JarvisAudioModule(private val contesto: ReactApplicationContext) :
         promise.resolve(true)
     }
 
+    private fun attaccaEffetti(sessione: Int) {
+        try {
+            if (AcousticEchoCanceler.isAvailable()) {
+                cancellazioneEco = AcousticEchoCanceler.create(sessione)?.also {
+                    it.setEnabled(true)
+                }
+            }
+        } catch (e: Exception) {
+            cancellazioneEco = null
+        }
+        try {
+            if (NoiseSuppressor.isAvailable()) {
+                riduzioneRumore = NoiseSuppressor.create(sessione)?.also {
+                    it.setEnabled(true)
+                }
+            }
+        } catch (e: Exception) {
+            riduzioneRumore = null
+        }
+    }
+
+    private fun staccaEffetti() {
+        try {
+            cancellazioneEco?.release()
+        } catch (e: Exception) {
+            // Già rilasciata.
+        }
+        try {
+            riduzioneRumore?.release()
+        } catch (e: Exception) {
+            // Già rilasciata.
+        }
+        cancellazioneEco = null
+        riduzioneRumore = null
+    }
+
+    /**
+     * Che cosa sa fare davvero questo telefono.
+     *
+     * Serve a rispondere dal telefono a una domanda che da qui non si può
+     * verificare: se la voce esce a pezzi perché l'app si sente parlare, la
+     * prima cosa da sapere è se la cancellazione dell'eco esiste.
+     */
+    @ReactMethod
+    fun diagnosticaAudio(promise: Promise) {
+        val mappa = Arguments.createMap()
+        try {
+            mappa.putBoolean("ecoDisponibile", AcousticEchoCanceler.isAvailable())
+        } catch (e: Exception) {
+            mappa.putBoolean("ecoDisponibile", false)
+        }
+        try {
+            mappa.putBoolean("rumoreDisponibile", NoiseSuppressor.isAvailable())
+        } catch (e: Exception) {
+            mappa.putBoolean("rumoreDisponibile", false)
+        }
+        mappa.putBoolean("ecoAttiva", cancellazioneEco?.enabled == true)
+        mappa.putBoolean("rumoreAttiva", riduzioneRumore?.enabled == true)
+        promise.resolve(mappa)
+    }
+
     @ReactMethod
     fun stopCapture() {
         inAscolto = false
+        staccaEffetti()
         val record = registratore ?: return
         registratore = null
         try {
@@ -170,7 +252,10 @@ class JarvisAudioModule(private val contesto: ReactApplicationContext) :
                 // A flusso: si scrive mentre arriva, invece di consegnare un
                 // suono già completo.
                 .setTransferMode(AudioTrack.MODE_STREAM)
-                .setBufferSizeInBytes(minimo * 4)
+                // Mezzo secondo almeno: su un telefono lento un buffer
+                // stretto si svuota prima che arrivi il pezzo dopo, e quello
+                // che si sente è la voce che si spezza.
+                .setBufferSizeInBytes(maxOf(minimo * 4, FREQUENZA_RISPOSTA))
                 .build()
         } catch (e: Exception) {
             promise.reject("E_AUDIO", e.message, e)
@@ -193,7 +278,17 @@ class JarvisAudioModule(private val contesto: ReactApplicationContext) :
             if (mio != generazione) return@execute
             try {
                 val dati = Base64.decode(base64, Base64.NO_WRAP)
-                track.write(dati, 0, dati.size)
+                var scritti = 0
+                while (scritti < dati.size) {
+                    // Fra una fetta e l'altra si ricontrolla: se nel frattempo
+                    // è arrivata un'interruzione, il resto di questo pezzo non
+                    // va più suonato.
+                    if (mio != generazione) return@execute
+                    val quanti = minOf(BYTE_PER_FETTA, dati.size - scritti)
+                    val fatti = track.write(dati, scritti, quanti)
+                    if (fatti <= 0) return@execute
+                    scritti += fatti
+                }
             } catch (e: Exception) {
                 // Traccia chiusa nel frattempo: il pezzo si scarta.
             }
@@ -208,12 +303,20 @@ class JarvisAudioModule(private val contesto: ReactApplicationContext) :
         generazione++
 
         val track = altoparlante ?: return
-        try {
-            track.pause()
-            track.flush()
-            track.play()
-        } catch (e: Exception) {
-            // Traccia non in uno stato valido: non c'è niente da svuotare.
+        // Lo svuotamento va fatto **sullo stesso thread che scrive**. Farlo da
+        // fuori mentre una scrittura è in corso è una corsa: il pezzo già
+        // consegnato esce lo stesso, ma dopo, e quello che si sente sono
+        // parole vecchie sopra le nuove. Qui non serve aspettare: la
+        // generazione è già cambiata, quindi tutto ciò che è in coda si
+        // scarta da sé e questo compito parte quasi subito.
+        codaRiproduzione.execute {
+            try {
+                track.pause()
+                track.flush()
+                track.play()
+            } catch (e: Exception) {
+                // Traccia non in uno stato valido: non c'è niente da svuotare.
+            }
         }
     }
 
@@ -222,14 +325,24 @@ class JarvisAudioModule(private val contesto: ReactApplicationContext) :
         generazione++
         val track = altoparlante ?: return
         altoparlante = null
-        try {
-            track.pause()
-            track.flush()
-            track.stop()
-        } catch (e: Exception) {
-            // Già fermo.
+        // Come per lo svuotamento, e qui è anche una questione di sicurezza:
+        // rilasciare la traccia mentre un'altra parte del programma ci sta
+        // ancora scrivendo dentro non è un difetto dell'audio, è un modo di
+        // far cadere l'app.
+        codaRiproduzione.execute {
+            try {
+                track.pause()
+                track.flush()
+                track.stop()
+            } catch (e: Exception) {
+                // Già fermo.
+            }
+            try {
+                track.release()
+            } catch (e: Exception) {
+                // Già rilasciata.
+            }
         }
-        track.release()
     }
 
     @ReactMethod

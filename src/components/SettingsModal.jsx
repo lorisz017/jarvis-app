@@ -8,6 +8,7 @@ import {FEATURE_SECTIONS} from '../utils/features';
 import {getVoiceInfo, getUltimoErroreEdge} from '../services/ttsService';
 import {statoMemoria} from '../services/memoryService';
 import {statoChiavi, setChiave} from '../services/chiaviService';
+import {statisticheLive, diagnosticaAudio} from '../services/liveService';
 
 const APP_VERSION = '3.0.0';
 const GITHUB_PROFILE = 'https://github.com/lorisz017';
@@ -179,6 +180,8 @@ export default function SettingsModal({
     // fallita si scopre solo riaprendo l'app e trovando il vuoto.
     const [diagnosi, setDiagnosi] = useState(null);
     const [chiavi, setChiavi] = useState(statoChiavi);
+    // Perché la voce esce a pezzi su un telefono che non si ha in mano.
+    const [voce, setVoce] = useState(null);
     // Salvare solo quando si esce dalla casella non bastava: chiudendo il
     // pannello con un tocco, la casella non perde il fuoco e quello che era
     // stato scritto non veniva mai salvato. Ora si salva da solo poco dopo
@@ -208,6 +211,14 @@ export default function SettingsModal({
         onRileggiMemoria?.();
         setDiagnosi(statoMemoria());
         setChiavi(statoChiavi());
+
+        let vivo = true;
+        diagnosticaAudio().then((motore) => {
+            if (vivo) setVoce({...statisticheLive(), motore});
+        });
+        return () => {
+            vivo = false;
+        };
     }, [isVisible, memoria]);
 
     // Il pannello si chiude: quello che è rimasto nella casella va salvato
@@ -458,6 +469,25 @@ export default function SettingsModal({
                                 <Text style={styles.aboutTitle}>J.A.R.V.I.S.</Text>
                                 <Text style={styles.aboutSubtitle}>Just A Rather Very Intelligent System</Text>
                                 <Text style={styles.aboutVersion}>Versione {APP_VERSION}</Text>
+
+                                <Text style={styles.settingsSectionTitle}>VOCE DELLA CONVERSAZIONE</Text>
+                                <Text style={styles.aboutText}>
+                                    {voce
+                                        ? `Cancellazione dell'eco: ${
+                                            voce.motore?.ecoDisponibile
+                                                ? (voce.motore?.ecoAttiva ? 'attiva' : 'disponibile ma spenta')
+                                                : 'non disponibile su questo telefono'
+                                        }. Riduzione del rumore: ${
+                                            voce.motore?.rumoreDisponibile
+                                                ? (voce.motore?.rumoreAttiva ? 'attiva' : 'disponibile ma spenta')
+                                                : 'non disponibile'
+                                        }. Quanto si sente parlare: ${
+                                            Math.round((voce.pavimentoEco || 0) * 1000)
+                                        } su mille. Interruzioni in questa sessione: ${
+                                            voce.interruzioniLocali
+                                        } decise dall'app, ${voce.interruzioniServer} dal server.`
+                                        : 'Nessun dato: la conversazione non è ancora stata aperta.'}
+                                </Text>
 
                                 <Text style={styles.settingsSectionTitle}>QUESTA VERSIONE</Text>
                                 <Text style={styles.aboutText}>

@@ -64,6 +64,66 @@ const VOCE = 'Charon';
 const SOGLIA_VOCE = 0.04;
 const PEZZI_CONSECUTIVI = 2;
 
+// Ma una soglia fissa presuppone che il telefono cancelli l'eco. Parecchi non
+// lo fanno — e non sono i telefoni vecchi, è proprio una cosa che cambia da
+// modello a modello — e lì l'app si sente parlare forte quanto una persona:
+// si interrompe da sola a ogni parola che dice, e quello che se ne sente è
+// una voce a scatti che salta avanti.
+//
+// Il rimedio è misurare **quanto forte l'app sente sé stessa** su questo
+// telefono e alzare la soglia di conseguenza. Dove l'eco è cancellato il
+// pavimento resta quasi a zero e comanda la soglia fissa, come prima; dove
+// non lo è, il pavimento sale e con lui la soglia.
+const MARGINE_ECO = 2.5;
+// Sale piano e scende in fretta: un pavimento che sale di colpo si porterebbe
+// dietro anche la voce vera, e da lì in poi non si interromperebbe più niente.
+const SALITA_ECO = 0.12;
+const DISCESA_ECO = 0.35;
+// Oltre questa soglia non si sale comunque: un telefono che si sente urlare
+// addosso alzerebbe l'asticella fino a rendere impossibile interromperlo, e
+// non poter interrompere è il difetto peggiore dei due.
+const SOGLIA_MASSIMA = 0.25;
+// E si parte prudenti invece che da zero: partendo da zero, su un telefono che
+// non cancella l'eco le prime parole di ogni sessione sono già abbastanza per
+// far scattare l'interruzione, prima che il pavimento abbia avuto il tempo di
+// accorgersi di dov'è. Dove l'eco è cancellato questo valore scende da sé nel
+// giro di un decimo di secondo, perché il pavimento scende molto più in fretta
+// di quanto salga.
+const PAVIMENTO_INIZIALE = 0.05;
+
+// Quanto microfono si tiene da parte mentre J.A.R.V.I.S. parla: mezzo secondo
+// scarso, che è quello che si perderebbe delle prime parole di chi lo
+// interrompe.
+const PEZZI_ARRETRATI = 4;
+
+// Quanti byte al secondo escono dall'altoparlante: 24 kHz a 16 bit.
+const BYTE_AL_SECONDO = 24000 * 2;
+
+// === Che cosa è successo in questa sessione ===
+//
+// Se la voce esce a pezzi su un telefono che non si ha in mano, tentare
+// correzioni alla cieca costa una build per volta. Questi numeri stanno in
+// Impostazioni → Info e dicono quale delle due cose sta succedendo: se l'app
+// si interrompe da sola (pavimento dell'eco alto, interruzioni locali che
+// salgono da sole) oppure se è il server a troncare i turni.
+const conteggi = {
+    interruzioniLocali: 0,
+    interruzioniServer: 0,
+    pavimentoEco: 0,
+};
+
+export function statisticheLive() {
+    return {...conteggi};
+}
+
+export async function diagnosticaAudio() {
+    try {
+        return await audio?.diagnosticaAudio();
+    } catch (error) {
+        return null;
+    }
+}
+
 /** Quanto suona forte un pezzo di audio PCM a 16 bit. */
 function livello(base64) {
     const bytes = base64ToBytes(base64);
@@ -90,9 +150,17 @@ export const isLiveSupported = () => Boolean(audio && chiave('gemini'));
  * faceva niente. Qui la sessione resta in piedi e si può continuare a
  * parlare: si zittisce quello che stava dicendo, non la conversazione.
  */
+// L'unica sessione aperta in questo momento, se ce n'è una.
+let sessioneCorrente = null;
+
 export function flushLiveAudio() {
     try {
-        audio?.flushPlayback();
+        // Passando dalla sessione si azzera anche il conto di quanto le resta
+        // da dire: svuotare solo l'altoparlante la lascerebbe convinta che
+        // stia ancora parlando, e con quella convinzione tiene il microfono
+        // fuori dal filo.
+        if (sessioneCorrente) sessioneCorrente._zittisci();
+        else audio?.flushPlayback();
     } catch (error) {
         console.warn('Interruzione della voce continua:', error);
     }
@@ -141,12 +209,27 @@ export class LiveSession {
         this.iscrizioneMicrofono = null;
         this.pronta = false;
         this.chiusaVolutamente = false;
-        this.staParlando = false;
+        // Fino a quando l'altoparlante avrà finito di parlare. Non è la stessa
+        // cosa di "il server ha finito di generare": Gemini manda il turno
+        // molto più in fretta di quanto si ascolti, e quando smette di mandare
+        // ce ne sono ancora secondi da sentire. Contare la fine della
+        // generazione voleva dire credere finita una frase ancora a metà.
+        this.fineVoce = 0;
         this.pezziSopraSoglia = 0;
+        this.pavimentoEco = PAVIMENTO_INIZIALE;
+        // Il microfono degli ultimi istanti, tenuto da parte mentre parla lui.
+        this.arretrato = [];
         // Con la voce spenta la conversazione continua a funzionare, ma non
         // si sente: l'audio arriva e viene scartato invece che suonato, e
         // resta la trascrizione a schermo.
         this.muta = false;
+    }
+
+    /**
+     * Sta parlando adesso? Lo dice l'altoparlante, non il server.
+     */
+    get staParlando() {
+        return Date.now() < this.fineVoce;
     }
 
     /** Accende o spegne la voce senza chiudere la conversazione. */
@@ -229,6 +312,7 @@ export class LiveSession {
 
         this.onStato('connessione');
         this.chiusaVolutamente = false;
+        sessioneCorrente = this;
 
         try {
             await audio.startPlayback();
@@ -257,6 +341,8 @@ export class LiveSession {
         this.socket.onclose = (evento) => {
             const eraPronta = this.pronta;
             this.pronta = false;
+            this.fineVoce = 0;
+            if (sessioneCorrente === this) sessioneCorrente = null;
             this._fermaMicrofono();
             audio?.stopPlayback();
 
@@ -344,12 +430,12 @@ export class LiveSession {
 
         if (contenuto?.interrupted) {
             // Se l'ha notato il server, si butta comunque quello che resta.
+            conteggi.interruzioniServer += 1;
             this._zittisci();
         }
 
-        if (contenuto?.turnComplete || contenuto?.generationComplete) {
-            this.staParlando = false;
-        }
+        // Il turno finito non spegne la voce: quello che è già stato mandato
+        // all'altoparlante deve ancora uscire, e finché esce lui sta parlando.
 
         if (contenuto?.inputTranscription?.text) {
             this.onTesto({chi: 'utente', testo: contenuto.inputTranscription.text});
@@ -362,8 +448,11 @@ export class LiveSession {
         for (const parte of contenuto?.modelTurn?.parts || []) {
             const suono = parte.inlineData?.data;
             if (suono && !this.muta) {
-                this.staParlando = true;
-                this.pezziSopraSoglia = 0;
+                if (!this.staParlando) this.arretrato = [];
+                // Quanto dura questo pezzo, una volta suonato. Da base64 a
+                // byte si scende di un quarto.
+                const durata = ((suono.length * 3) / 4 / BYTE_AL_SECONDO) * 1000;
+                this.fineVoce = Math.max(this.fineVoce, Date.now()) + durata;
                 audio?.playChunk(suono);
             }
         }
@@ -404,11 +493,44 @@ export class LiveSession {
             // Si misura solo mentre sta parlando: per il resto del tempo
             // sarebbe lavoro sprecato dieci volte al secondo.
             if (this.staParlando) {
-                if (livello(base64) >= SOGLIA_VOCE) {
+                const forza = livello(base64);
+                const soglia = Math.min(
+                    SOGLIA_MASSIMA,
+                    Math.max(SOGLIA_VOCE, this.pavimentoEco * MARGINE_ECO)
+                );
+
+                if (forza >= soglia) {
                     this.pezziSopraSoglia += 1;
-                    if (this.pezziSopraSoglia >= PEZZI_CONSECUTIVI) this._zittisci();
                 } else {
                     this.pezziSopraSoglia = 0;
+                }
+
+                const peso = forza > this.pavimentoEco ? SALITA_ECO : DISCESA_ECO;
+                this.pavimentoEco = this.pavimentoEco * (1 - peso) + forza * peso;
+                conteggi.pavimentoEco = this.pavimentoEco;
+
+                if (this.pezziSopraSoglia < PEZZI_CONSECUTIVI) {
+                    // Mentre parla lui il microfono non va sul filo. Se la
+                    // cancellazione dell'eco non tiene, quello che arriverebbe
+                    // al modello è la sua stessa voce: si interrompe da solo,
+                    // risponde a sé stesso, e quello che si sente è un discorso
+                    // che si accavalla. Si tiene da parte, e se poi si scopre
+                    // che a parlare era davvero qualcuno, glielo si manda
+                    // tutto insieme senza perdere le prime parole.
+                    this.arretrato.push(base64);
+                    if (this.arretrato.length > PEZZI_ARRETRATI) this.arretrato.shift();
+                    return;
+                }
+
+                conteggi.interruzioniLocali += 1;
+                // Si prende prima di zittire, che lo svuota.
+                const daMandare = this.arretrato;
+                this._zittisci();
+
+                for (const vecchio of daMandare) {
+                    this._invia({
+                        realtimeInput: {audio: {mimeType: MIME_INVIO, data: vecchio}},
+                    });
                 }
             }
 
@@ -422,8 +544,9 @@ export class LiveSession {
 
     /** Zittisce subito quello che sta uscendo e dimentica il resto del turno. */
     _zittisci() {
-        this.staParlando = false;
+        this.fineVoce = 0;
         this.pezziSopraSoglia = 0;
+        this.arretrato = [];
         audio?.flushPlayback();
     }
 
