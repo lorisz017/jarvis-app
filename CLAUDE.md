@@ -292,6 +292,11 @@ Ognuna di queste è costata almeno una build, alcune parecchie:
   voce arrivano e vengono buttati in silenzio — testo a schermo, modello che
   risponde, e niente da sentire. Vale per qualunque risorsa nativa condivisa.
 
+  E accanto al permesso ci vuole la **rete**: l'altoparlante si ricostruisce
+  al primo pezzo che lo trova mancante. Un guasto che dura per il resto della
+  conversazione diventa così un istante di silenzio, e questo vale anche per
+  la causa che non si è ancora trovata — che è il punto di una rete.
+
 ### Come si muove l'interfaccia
 
 Una regola sola, e tiene insieme tutto il resto: **il vetro vive solo durante

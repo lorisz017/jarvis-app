@@ -52,6 +52,8 @@ class JarvisAudioModule(private val contesto: ReactApplicationContext) :
     private var registratore: AudioRecord? = null
     private var inAscolto = false
 
+    // Letto e scritto da due thread: quello di JavaScript e quello che suona.
+    @Volatile
     private var altoparlante: AudioTrack? = null
     private val codaRiproduzione = Executors.newSingleThreadExecutor()
 
@@ -162,10 +164,30 @@ class JarvisAudioModule(private val contesto: ReactApplicationContext) :
 
     @ReactMethod
     fun startPlayback(promise: Promise) {
-        if (altoparlante != null) {
-            promise.resolve(true)
+        val track = creaAltoparlante()
+        if (track == null) {
+            promise.reject("E_AUDIO", "Il dispositivo non accetta la riproduzione a 24 kHz")
             return
         }
+        promise.resolve(true)
+    }
+
+    /**
+     * L'altoparlante, creandolo se non c'è.
+     *
+     * Non è solo una comodità: è una **rete di sicurezza**. L'altoparlante è
+     * uno solo per tutta l'app, e se qualcuno lo rilascia mentre serve ancora
+     * a qualcun altro, da lì in poi i pezzi di voce arrivano e vengono buttati
+     * in silenzio — il testo compare, il modello risponde, e non si sente più
+     * niente per il resto della sessione. Ricostruirlo al primo pezzo che
+     * arriva trasforma un guasto definitivo in un istante di silenzio.
+     *
+     * Sincronizzata perché la chiamano due thread: quello di JavaScript quando
+     * apre la conversazione, e quello che scrive i pezzi.
+     */
+    @Synchronized
+    private fun creaAltoparlante(): AudioTrack? {
+        altoparlante?.let { return it }
 
         val minimo = AudioTrack.getMinBufferSize(
             FREQUENZA_RISPOSTA,
@@ -173,10 +195,7 @@ class JarvisAudioModule(private val contesto: ReactApplicationContext) :
             AudioFormat.ENCODING_PCM_16BIT
         )
 
-        if (minimo <= 0) {
-            promise.reject("E_AUDIO", "Il dispositivo non accetta la riproduzione a 24 kHz")
-            return
-        }
+        if (minimo <= 0) return null
 
         val track = try {
             AudioTrack.Builder()
@@ -199,24 +218,25 @@ class JarvisAudioModule(private val contesto: ReactApplicationContext) :
                 .setBufferSizeInBytes(minimo * 4)
                 .build()
         } catch (e: Exception) {
-            promise.reject("E_AUDIO", e.message, e)
-            return
+            return null
         }
 
         altoparlante = track
         track.play()
-        promise.resolve(true)
+        return track
     }
 
     @ReactMethod
     fun playChunk(base64: String) {
-        val track = altoparlante ?: return
         val mio = generazione
 
         // La scrittura blocca finché c'è posto nel buffer: va fatta fuori dal
         // thread di JavaScript, altrimenti l'interfaccia si impunta.
         codaRiproduzione.execute {
             if (mio != generazione) return@execute
+            // Se non c'è più, si rifà: meglio un istante di silenzio che una
+            // voce spenta per il resto della conversazione.
+            val track = creaAltoparlante() ?: return@execute
             try {
                 val dati = Base64.decode(base64, Base64.NO_WRAP)
                 var scritti = 0
