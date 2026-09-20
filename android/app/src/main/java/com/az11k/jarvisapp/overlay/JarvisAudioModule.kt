@@ -1,10 +1,14 @@
 package com.az11k.jarvisapp.overlay
 
+import android.content.Context
 import android.media.AudioAttributes
+import android.media.AudioDeviceInfo
 import android.media.AudioFormat
+import android.media.AudioManager
 import android.media.AudioRecord
 import android.media.AudioTrack
 import android.media.MediaRecorder
+import android.os.Build
 import android.media.audiofx.AcousticEchoCanceler
 import android.media.audiofx.NoiseSuppressor
 import android.util.Base64
@@ -60,6 +64,27 @@ class JarvisAudioModule(private val contesto: ReactApplicationContext) :
     // si interrompe da sola e manda al modello la propria voce.
     private var cancellazioneEco: AcousticEchoCanceler? = null
     private var riduzioneRumore: NoiseSuppressor? = null
+    // Se sono state accese almeno una volta. Il controllo diretto risponde
+    // "spenta" anche quando il microfono è semplicemente fermo, e letta a
+    // conversazione chiusa quella risposta racconta una cosa per un'altra.
+    private var ecoAccesaUnaVolta = false
+    private var rumoreAccesoUnaVolta = false
+
+    // === Il modo dell'audio ===
+    //
+    // Questa è la cosa che rende un'app a voce piena diversa da un lettore.
+    // Finché il telefono sta in modo normale, la cancellazione dell'eco non ha
+    // niente da cui cancellare: il motore audio non sa che quello che esce
+    // dall'altoparlante e quello che entra dal microfono sono la stessa
+    // conversazione. Si mette in **modo conversazione**, si forza l'uscita
+    // sulla cassa (se no su parecchi telefoni finisce nella capsula
+    // dell'orecchio, e l'effetto è che non si sente niente), e si rimette
+    // com'era quando si chiude.
+    private val gestoreAudio: AudioManager? by lazy {
+        contesto.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+    }
+    private var modoPrecedente: Int? = null
+    private var altoparlantePrecedente = false
 
     private var altoparlante: AudioTrack? = null
     private val codaRiproduzione = Executors.newSingleThreadExecutor()
@@ -144,6 +169,7 @@ class JarvisAudioModule(private val contesto: ReactApplicationContext) :
             if (AcousticEchoCanceler.isAvailable()) {
                 cancellazioneEco = AcousticEchoCanceler.create(sessione)?.also {
                     it.setEnabled(true)
+                    ecoAccesaUnaVolta = it.enabled
                 }
             }
         } catch (e: Exception) {
@@ -153,6 +179,7 @@ class JarvisAudioModule(private val contesto: ReactApplicationContext) :
             if (NoiseSuppressor.isAvailable()) {
                 riduzioneRumore = NoiseSuppressor.create(sessione)?.also {
                     it.setEnabled(true)
+                    rumoreAccesoUnaVolta = it.enabled
                 }
             }
         } catch (e: Exception) {
@@ -175,6 +202,50 @@ class JarvisAudioModule(private val contesto: ReactApplicationContext) :
         riduzioneRumore = null
     }
 
+    private fun entraInConversazione() {
+        val gestore = gestoreAudio ?: return
+        try {
+            if (modoPrecedente == null) modoPrecedente = gestore.mode
+            gestore.mode = AudioManager.MODE_IN_COMMUNICATION
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val cassa = gestore.availableCommunicationDevices.firstOrNull {
+                    it.type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER
+                }
+                if (cassa != null) gestore.setCommunicationDevice(cassa)
+            } else {
+                altoparlantePrecedente = gestore.isSpeakerphoneOn
+                @Suppress("DEPRECATION")
+                gestore.isSpeakerphoneOn = true
+            }
+        } catch (e: Exception) {
+            // Il telefono non lascia cambiare il modo: si va avanti com'è.
+        }
+    }
+
+    private fun esciDallaConversazione() {
+        val gestore = gestoreAudio ?: return
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                gestore.clearCommunicationDevice()
+            } else {
+                @Suppress("DEPRECATION")
+                gestore.isSpeakerphoneOn = altoparlantePrecedente
+            }
+            modoPrecedente?.let { gestore.mode = it }
+            modoPrecedente = null
+        } catch (e: Exception) {
+            // Niente da rimettere a posto.
+        }
+    }
+
+    private fun nomeDelModo(modo: Int): String = when (modo) {
+        AudioManager.MODE_NORMAL -> "normale"
+        AudioManager.MODE_IN_COMMUNICATION -> "conversazione"
+        AudioManager.MODE_IN_CALL -> "telefonata"
+        AudioManager.MODE_RINGTONE -> "suoneria"
+        else -> "altro ($modo)"
+    }
+
     /**
      * Che cosa sa fare davvero questo telefono.
      *
@@ -195,8 +266,35 @@ class JarvisAudioModule(private val contesto: ReactApplicationContext) :
         } catch (e: Exception) {
             mappa.putBoolean("rumoreDisponibile", false)
         }
-        mappa.putBoolean("ecoAttiva", cancellazioneEco?.enabled == true)
-        mappa.putBoolean("rumoreAttiva", riduzioneRumore?.enabled == true)
+        mappa.putBoolean("ecoAttiva", ecoAccesaUnaVolta)
+        mappa.putBoolean("rumoreAttiva", rumoreAccesoUnaVolta)
+        mappa.putBoolean("microfonoAcceso", inAscolto)
+        mappa.putBoolean("altoparlanteAcceso", altoparlante != null)
+        val gestore = gestoreAudio
+        mappa.putString("modo", if (gestore == null) "sconosciuto" else nomeDelModo(gestore.mode))
+        var inCassa = false
+        try {
+            inCassa = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                gestore?.communicationDevice?.type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER
+            } else {
+                @Suppress("DEPRECATION")
+                gestore?.isSpeakerphoneOn == true
+            }
+        } catch (e: Exception) {
+            inCassa = false
+        }
+        mappa.putBoolean("inCassa", inCassa)
+        // In modo conversazione il volume non è più quello dei video: è quello
+        // delle telefonate, e se sta a zero non si sente niente pur essendo
+        // tutto acceso. È un guasto che si corregge col tasto del volume, ma
+        // solo se si sa che è quello.
+        try {
+            mappa.putInt("volume", gestore?.getStreamVolume(AudioManager.STREAM_VOICE_CALL) ?: -1)
+            mappa.putInt("volumeMassimo", gestore?.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL) ?: -1)
+        } catch (e: Exception) {
+            mappa.putInt("volume", -1)
+            mappa.putInt("volumeMassimo", -1)
+        }
         promise.resolve(mappa)
     }
 
@@ -223,6 +321,11 @@ class JarvisAudioModule(private val contesto: ReactApplicationContext) :
             return
         }
 
+        // Prima si mette il telefono in modo conversazione: la traccia va
+        // costruita quando il modo è già quello, se no nasce instradata dove
+        // non deve.
+        entraInConversazione()
+
         val minimo = AudioTrack.getMinBufferSize(
             FREQUENZA_RISPOSTA,
             AudioFormat.CHANNEL_OUT_MONO,
@@ -238,7 +341,10 @@ class JarvisAudioModule(private val contesto: ReactApplicationContext) :
             AudioTrack.Builder()
                 .setAudioAttributes(
                     AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                        // Voce di conversazione, non musica: è così che il
+                        // motore audio capisce che questa uscita è la
+                        // sorgente dell'eco da cancellare in entrata.
+                        .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
                         .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                         .build()
                 )
@@ -343,6 +449,7 @@ class JarvisAudioModule(private val contesto: ReactApplicationContext) :
                 // Già rilasciata.
             }
         }
+        esciDallaConversazione()
     }
 
     @ReactMethod

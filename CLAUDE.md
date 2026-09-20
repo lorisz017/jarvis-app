@@ -220,9 +220,21 @@ Ognuna di queste è costata almeno una build, alcune parecchie:
   traccia mentre qualcuno ci scrive dentro è un modo di far cadere l'app.
 - La sorgente da telefonata **chiede** la cancellazione dell'eco, non la
   garantisce: va attaccata a mano alla sessione di registrazione
-  (`AcousticEchoCanceler`, `NoiseSuppressor`), e su parecchi telefoni non c'è
-  proprio. Quello che il telefono sa fare davvero va **chiesto e riportato**,
-  non dato per scontato.
+  (`AcousticEchoCanceler`, `NoiseSuppressor`). Quello che il telefono sa fare
+  davvero va **chiesto e riportato**, non dato per scontato.
+- Ma attaccarla non basta: **in modo audio normale non ha niente da
+  cancellare.** Il motore audio non sa che quello che esce dall'altoparlante e
+  quello che entra dal microfono sono la stessa conversazione finché non glielo
+  si dice — `MODE_IN_COMMUNICATION` e uscita `USAGE_VOICE_COMMUNICATION`. Ed è
+  anche una questione di instradamento: in modo conversazione l'uscita va
+  forzata **sulla cassa**, se no finisce nella capsula dell'orecchio e
+  l'effetto è che non si sente niente. Da lì in poi il volume non è più quello
+  dei video ma quello delle telefonate, e se sta a zero l'app sembra muta pur
+  essendo tutto acceso: va riportato anche quello.
+- **Un conteggio a zero non è una diagnosi**, è un'ambiguità: può voler dire
+  "il fenomeno non è successo" oppure "quel pezzo di codice non è mai girato".
+  Ogni numero mostrato vuole accanto il numero che distingue i due casi — i
+  pezzi visti dal microfono, quelli di voce, quelli trattenuti.
 
 ### Come si muove l'interfaccia
 

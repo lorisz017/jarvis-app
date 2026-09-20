@@ -106,7 +106,15 @@ const BYTE_AL_SECONDO = 24000 * 2;
 // Impostazioni → Info e dicono quale delle due cose sta succedendo: se l'app
 // si interrompe da sola (pavimento dell'eco alto, interruzioni locali che
 // salgono da sole) oppure se è il server a troncare i turni.
+// I tre conteggi dei pezzi servono a distinguere fra loro tre cose che da
+// fuori si somigliano: un microfono che non parte, una voce che non arriva, e
+// un'app che tiene il microfono fuori dal filo. Senza, un pavimento a zero può
+// voler dire sia "l'eco non c'è" sia "quel pezzo di codice non è mai girato",
+// e sono diagnosi opposte.
 const conteggi = {
+    pezziMicrofono: 0,
+    pezziVoce: 0,
+    pezziTrattenuti: 0,
     interruzioniLocali: 0,
     interruzioniServer: 0,
     pavimentoEco: 0,
@@ -448,6 +456,7 @@ export class LiveSession {
         for (const parte of contenuto?.modelTurn?.parts || []) {
             const suono = parte.inlineData?.data;
             if (suono && !this.muta) {
+                conteggi.pezziVoce += 1;
                 if (!this.staParlando) this.arretrato = [];
                 // Quanto dura questo pezzo, una volta suonato. Da base64 a
                 // byte si scende di un quarto.
@@ -488,6 +497,7 @@ export class LiveSession {
         if (this.iscrizioneMicrofono) return;
 
         this.iscrizioneMicrofono = emettitore.addListener('jarvisAudioChunk', (base64) => {
+            conteggi.pezziMicrofono += 1;
             if (!this.pronta) return;
 
             // Si misura solo mentre sta parlando: per il resto del tempo
@@ -517,6 +527,7 @@ export class LiveSession {
                     // che si accavalla. Si tiene da parte, e se poi si scopre
                     // che a parlare era davvero qualcuno, glielo si manda
                     // tutto insieme senza perdere le prime parole.
+                    conteggi.pezziTrattenuti += 1;
                     this.arretrato.push(base64);
                     if (this.arretrato.length > PEZZI_ARRETRATI) this.arretrato.shift();
                     return;

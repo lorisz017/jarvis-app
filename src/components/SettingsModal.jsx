@@ -473,19 +473,36 @@ export default function SettingsModal({
                                 <Text style={styles.settingsSectionTitle}>VOCE DELLA CONVERSAZIONE</Text>
                                 <Text style={styles.aboutText}>
                                     {voce
-                                        ? `Cancellazione dell'eco: ${
-                                            voce.motore?.ecoDisponibile
-                                                ? (voce.motore?.ecoAttiva ? 'attiva' : 'disponibile ma spenta')
-                                                : 'non disponibile su questo telefono'
-                                        }. Riduzione del rumore: ${
-                                            voce.motore?.rumoreDisponibile
-                                                ? (voce.motore?.rumoreAttiva ? 'attiva' : 'disponibile ma spenta')
-                                                : 'non disponibile'
-                                        }. Quanto si sente parlare: ${
-                                            Math.round((voce.pavimentoEco || 0) * 1000)
-                                        } su mille. Interruzioni in questa sessione: ${
-                                            voce.interruzioniLocali
-                                        } decise dall'app, ${voce.interruzioniServer} dal server.`
+                                        ? [
+                                            `Eco: ${
+                                                voce.motore?.ecoDisponibile
+                                                    ? (voce.motore?.ecoAttiva ? 'cancellato' : 'disponibile, mai acceso')
+                                                    : 'non cancellabile su questo telefono'
+                                            }.`,
+                                            `Rumore: ${
+                                                voce.motore?.rumoreDisponibile
+                                                    ? (voce.motore?.rumoreAttiva ? 'ridotto' : 'disponibile, mai acceso')
+                                                    : 'non riducibile'
+                                            }.`,
+                                            `Modo audio: ${voce.motore?.modo || 'sconosciuto'}, uscita ${
+                                                voce.motore?.inCassa ? 'sulla cassa' : 'non sulla cassa'
+                                            }.`,
+                                            `Microfono ${voce.motore?.microfonoAcceso ? 'acceso' : 'fermo'}, altoparlante ${
+                                                voce.motore?.altoparlanteAcceso ? 'acceso' : 'fermo'
+                                            }.`,
+                                            `Volume della conversazione: ${voce.motore?.volume ?? '?'} su ${
+                                                voce.motore?.volumeMassimo ?? '?'
+                                            }.`,
+                                            `Pezzi da quando l'app è aperta: ${voce.pezziMicrofono} dal microfono, ${
+                                                voce.pezziVoce
+                                            } di voce, ${voce.pezziTrattenuti} trattenuti mentre parlava.`,
+                                            `Quanto si sente parlare: ${
+                                                Math.round((voce.pavimentoEco || 0) * 1000)
+                                            } su mille.`,
+                                            `Interruzioni: ${voce.interruzioniLocali} decise dall'app, ${
+                                                voce.interruzioniServer
+                                            } dal server.`,
+                                        ].join(' ')
                                         : 'Nessun dato: la conversazione non è ancora stata aperta.'}
                                 </Text>
 
