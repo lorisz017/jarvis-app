@@ -56,7 +56,7 @@ A continuous spoken conversation · **seeing through the camera**, a frame a sec
 
 Twenty-one actions in all. The interface is a heads-up display that moves like something physical: panels frost the background and rise into place, the mode lever stretches in the direction it travels, buttons press like surfaces — and every bit of that glass exists only while something moves, because at rest is when a screen has to be read.
 
-Web search goes through **DuckDuckGo**, which needs no key and has no quota: it returns page excerpts, and the reply is written by the chat model already in use. Gemini's Google search sits behind it — better prose, but grounding is not in the free tier and answers "quota exceeded" — and Groq Compound behind that.
+Web search goes through **DuckDuckGo**, which needs no key and has no quota: it returns page excerpts, and the reply is written by the model already in the conversation. Gemini's own Google search sits behind it — better prose, but grounding is not in the free tier and answers "quota exceeded".
 
 A live status list of what works, and what does not, is kept in [`STATO_FUNZIONI.md`](./STATO_FUNZIONI.md).
 
@@ -77,62 +77,42 @@ fault in the code. Reports from other devices are welcome.
 
 ## Setting it up
 
-You don't need a development environment on your computer — everything can be done from a browser. It takes about twenty minutes.
+You do not need a development environment, or a computer at all: everything below is done from a browser, and only one key is required.
 
-### 1. Get the code
+### 1. Get a Gemini key
 
-Fork this repository to your own GitHub account.
+One key, free, a minute of your time: [aistudio.google.com/apikey](https://aistudio.google.com/apikey). It is the only one the app cannot do without — it is the conversation itself, the reasoning, and the sight.
 
-### 2. Get the API keys
+The other three are **optional**, and nothing asks for them until you want what they do:
 
-| Key | Where | Cost | Needed for |
-|---|---|---|---|
-| Gemini | [aistudio.google.com](https://aistudio.google.com) | Free | **Required** — the conversation itself, the reasoning, and seeing through the camera. Without it the app has no main road |
-| Groq | [console.groq.com](https://console.groq.com) | Free | **Required** — transcription, and the reasoning fallback for command mode. 8000 tokens a minute, which one request here half spends |
-| Deepgram | [console.deepgram.com](https://console.deepgram.com) | Free, no card | Optional — the fallback voice for command mode only; the conversation speaks for itself. Signing up grants credit worth millions of characters that does not expire |
-| GitHub token | GitHub → Settings → Developer settings → Personal access tokens, `repo` scope | Free | Optional — only for the repository commands |
+| Key | Where | What it buys you |
+|---|---|---|
+| **Gemini** | [aistudio.google.com](https://aistudio.google.com/apikey) | **The app.** The conversation, the reasoning, seeing through the camera, the attached pictures |
+| Groq | [console.groq.com](https://console.groq.com) | Only the command mode, which is off unless you turn it on: transcription and its fallback reasoning |
+| Deepgram | [console.deepgram.com](https://console.deepgram.com) | Only the fallback voice of that same command mode. The conversation speaks in its own voice and never reaches this |
+| GitHub token | GitHub → Settings → Developer settings → Personal access tokens, `repo` scope | Only the three repository commands |
 
 The camera and the picture attachment need no key of their own: they travel down the Gemini connection that is already open.
 
-### 3. Create the Expo project
+### 2. Get the APK
 
-Sign up at [expo.dev](https://expo.dev) and create a project. Then, in **Project settings → Environment variables**, add your keys as **Plain text**, for all environments:
+Open the **Actions** tab of this repository, pick **Build APK Android**, press **Run workflow**, and wait about ten minutes. The APK appears as an artifact at the bottom of the run's page. (On a fork, Actions must be enabled once under Settings → Actions.)
 
-```
-EXPO_PUBLIC_GEMINI_API_KEY      (the conversation, the reasoning, the camera)
-EXPO_PUBLIC_GROQ_API_KEY        (transcription, fallback reasoning)
-EXPO_PUBLIC_DEEPGRAM_API_KEY    (fallback voice, optional)
-EXPO_PUBLIC_GITHUB_TOKEN_KEY    (optional)
-```
+That APK contains **no keys at all**, which is exactly what makes it safe to pass around.
 
-The `EXPO_PUBLIC_` prefix is required — without it, Expo won't expose the variable to the app.
+### 3. Install and paste the key
 
-### 4. Point the app at your project
+Android will warn you about installing from an unknown source; that is expected for an app nobody has published to a store. On the first launch the app asks for one thing — the Gemini key — and then opens the conversation by itself.
 
-In `app.config.js`, replace:
+The other three, if you ever want them, live in **Settings → Chiavi**. What you type there is kept on the phone and nowhere else.
 
-- `extra.eas.projectId` with the project ID shown on your Expo dashboard
-- `slug` with your project's slug
-- `android.package` with your own identifier, e.g. `com.yourname.jarvis`
+### Building with the keys inside instead
 
-### 5. Build it
+If you would rather have the keys compiled in — so the app never asks, on any phone you install it on — use `strumenti/build-apk-privato.yml`. Put it in a **private** repository of your own as `.github/workflows/build-apk.yml`, add your keys under Settings → Secrets and variables → Actions with the names above, and run it. It does not copy the code: it fetches this repository on every build, so re-running it is how you update.
 
-On expo.dev: **Builds → Build from GitHub**, then:
+It must be private. The keys end up inside that APK, and a public repository's artifacts can be downloaded by anyone.
 
-- Platform: **Android**
-- Git ref: **main**
-- Build profile: **preview**
-- Base directory: **leave empty** — putting anything here breaks the build
-
-The `preview` profile is already set up to produce an installable `.apk` rather than a Play Store bundle. When it's done, download it to your phone and install it. Android will warn you about installing from an unknown source; that's expected for an app you built yourself.
-
-#### Building without Expo
-
-Expo's free tier allows 15 Android builds a month, which goes quickly. This repository also ships `.github/workflows/build-apk.yml`, which builds the same APK on GitHub Actions — free and unmetered on public repositories. Run it from the **Actions** tab; the APK appears as an artifact on the run's page. It needs the same keys, added under **Settings → Secrets and variables → Actions**.
-
-Two caveats. It signs with the project's `debug.keystore`, a different key from the one Expo uses, so the first time you switch you have to uninstall the existing app. And artifacts of a public repository are downloadable by anyone, while the keys are compiled into the APK — so if you use a GitHub token, run the workflow from a private repository instead, where 2000 free monthly minutes still allow roughly a hundred builds.
-
-### 6. First run
+### First run
 
 The app will ask for microphone, camera, notification, calendar and contacts permissions. Grant the ones you want to use — anything you deny simply disables the matching feature. The camera is only asked for the first time you open the eye.
 
@@ -140,7 +120,7 @@ Then say *"my city is Bologna"*, or set it in the settings panel, so the opening
 
 ## Notes for developers
 
-**This repository contains committed `android/` and `ios/` folders.** That makes it a bare workflow project, so **EAS skips the prebuild step**. The practical consequence, which costs a day if you discover it the hard way:
+**This repository contains committed `android/` and `ios/` folders.** That makes it a bare workflow project, so **nothing ever runs the prebuild step** — not EAS, and not the Gradle build the Actions workflow uses. The practical consequence, which costs a day if you discover it the hard way:
 
 - Native settings in `app.config.js` (permissions, themes) are **ignored**. Any new Android permission must be added directly to `android/app/src/main/AndroidManifest.xml`.
 - The version that ends up in the APK is `versionName` in `android/app/build.gradle`, not `version` in `app.config.js`.
@@ -157,6 +137,7 @@ Two more things worth knowing:
 - Tool calling gets its own temperature. At the default the model re-plans the same sentence differently each time, and which action survives a chain becomes a draw.
 - A system prompt built at module scope is frozen before anything asynchronous has loaded. Here it embedded the user's saved memory, which is read from disk after the first render, so the constant carried an empty memory for the life of the process while the settings screen showed it correctly. Build the prompt where it is used, not where the module is imported.
 - A write that fails silently is worse than one that throws. A memory kept in RAM after its save failed works perfectly until the app is closed, and then the loss looks like a model that forgets rather than a disk that refused.
+- Keys are read at the moment of use, never at import: `chiaviService` looks first at what the user typed in the app and then at what was compiled in. A constant captured when a module loads would be fixed before anyone could type anything, and the key entered on the first run would never take effect.
 - Live video rides the same socket as live audio: `realtimeInput.video` beside `realtimeInput.audio`, `image/jpeg`, one frame a second, which is the rate Google recommends. A phone's photo is enormous next to what a model needs — ask the device which picture sizes it can produce and take the smallest above 640 pixels, below which it stops reading signs — and take one shot at a time, or a slow phone queues frames describing a past nobody asked about.
 - An attached picture is not a frame: sent as a `clientContent` turn with `inlineData`, it stays in the conversation's thread, so follow-up questions still find it.
 - A scrollable box inside another scrollable box does not scroll at all on Android without `nestedScrollEnabled` — the outer one takes the gesture.
@@ -230,7 +211,7 @@ Conversazione continua a voce · **vede dalla fotocamera**, un fotogramma al sec
 
 Ventuno azioni in tutto. L'interfaccia è un quadro strumenti che si muove come una cosa fisica: i pannelli velano il fondo e salgono al loro posto, la leva delle modalità si stira nel verso in cui va, i tasti si premono come superfici — e tutto quel vetro vive **solo durante il movimento**, perché è da ferma che una schermata si legge.
 
-La ricerca sul web passa da **DuckDuckGo**, che non chiede chiavi e non ha quote: restituisce brani di pagine, e la risposta la scrive il modello di chat già in uso. Dietro c'è la ricerca Google di Gemini — scriverebbe meglio, ma non rientra nel piano gratuito e risponde che la quota è esaurita — e più indietro ancora Groq Compound.
+La ricerca sul web passa da **DuckDuckGo**, che non chiede chiavi e non ha quote: restituisce brani di pagine, e la risposta la scrive il modello già presente nella conversazione. Dietro c'è la ricerca Google di Gemini — scriverebbe meglio, ma non rientra nel piano gratuito e risponde che la quota è esaurita.
 
 L'elenco aggiornato di cosa funziona, e cosa no, è in [`STATO_FUNZIONI.md`](./STATO_FUNZIONI.md).
 
@@ -252,70 +233,50 @@ codice. Segnalazioni da altri telefoni sono benvenute.
 
 ## Come metterlo in funzione
 
-Non serve un ambiente di sviluppo sul computer: si può fare tutto da browser. Ci vogliono una ventina di minuti.
+Non serve un ambiente di sviluppo, e nemmeno un computer: tutto quello che segue si fa dal browser, e la chiave necessaria è **una sola**.
 
-### 1. Prendere il codice
+### 1. Procurarsi la chiave Gemini
 
-Per iniziare bisogna fare un fork di questo repository sul proprio account GitHub.
+Una chiave, gratuita, un minuto: [aistudio.google.com/apikey](https://aistudio.google.com/apikey). È l'unica di cui l'app non può fare a meno — è la conversazione stessa, il ragionamento e la vista.
 
-### 2. Procurarsi le chiavi API
+Le altre tre sono **facoltative**, e nessuno le chiede finché non si vuole quello che fanno:
 
-| Chiave | Dove | Costo | Serve per |
-|---|---|---|---|
-| Gemini | [aistudio.google.com](https://aistudio.google.com) | Gratis | **Obbligatoria** — la conversazione stessa, il ragionamento e la vista dalla fotocamera. Senza, l'app resta senza la sua strada principale |
-| Groq | [console.groq.com](https://console.groq.com) | Gratis | **Obbligatoria** — trascrizione, e ragionamento di riserva per la modalità a comandi. 8000 token al minuto, di cui una sola richiesta ne spende quasi metà |
-| Deepgram | [console.deepgram.com](https://console.deepgram.com) | Gratis, senza carta | Facoltativa — la voce di riserva della sola modalità a comandi; la conversazione parla da sé. All'iscrizione si riceve un credito che vale milioni di caratteri e non scade |
-| Token GitHub | GitHub → Settings → Developer settings → Personal access tokens, ambito `repo` | Gratis | Facoltativo — solo per i comandi sui repository |
+| Chiave | Dove | Cosa dà in più |
+|---|---|---|
+| **Gemini** | [aistudio.google.com](https://aistudio.google.com/apikey) | **L'app.** La conversazione, il ragionamento, la vista dalla fotocamera, le immagini allegate |
+| Groq | [console.groq.com](https://console.groq.com) | Solo la modalità a comandi, che è spenta finché non la si accende: trascrizione e ragionamento di riserva |
+| Deepgram | [console.deepgram.com](https://console.deepgram.com) | Solo la voce di riserva di quella stessa modalità. In conversazione la voce è del modello e qui non ci arriva mai |
+| Token GitHub | GitHub → Settings → Developer settings → Personal access tokens, ambito `repo` | Solo i tre comandi sui repository |
 
 La fotocamera e l'allegato non chiedono nessuna chiave in più: passano dalla connessione con Gemini che è già aperta.
 
-### 3. Creare il progetto su Expo
+### 2. Ottenere l'APK
 
-Bisogna registrarsi su [expo.dev](https://expo.dev) e creare un progetto. Poi, in **Project settings → Environment variables**, vanno aggiunte le chiavi come **Plain text**, per tutti gli ambienti:
+Scheda **Actions** di questo repository, workflow **Build APK Android**, tasto **Run workflow**, e una decina di minuti di attesa. L'APK compare come artifact in fondo alla pagina della build. (Su un fork le Actions vanno abilitate una volta, in Settings → Actions.)
 
-```
-EXPO_PUBLIC_GEMINI_API_KEY      (la conversazione, il ragionamento, la fotocamera)
-EXPO_PUBLIC_GROQ_API_KEY        (trascrizione, ragionamento di riserva)
-EXPO_PUBLIC_DEEPGRAM_API_KEY    (voce di riserva, facoltativa)
-EXPO_PUBLIC_GITHUB_TOKEN_KEY    (facoltativo)
-```
+Quell'APK **non contiene nessuna chiave**, ed è esattamente ciò che lo rende passabile a chiunque.
 
-Il prefisso `EXPO_PUBLIC_` è obbligatorio: senza, Expo non passa la variabile all'app.
+### 3. Installare e incollare la chiave
 
-### 4. Puntare l'app al proprio progetto
+Android avvisa che si sta installando da una sorgente sconosciuta: è normale per un'app che nessuno ha pubblicato su uno store. Al primo avvio l'app chiede una cosa sola — la chiave Gemini — e poi apre la conversazione da sé.
 
-In `app.config.js` vanno sostituiti:
+Le altre tre, se un giorno servissero, stanno in **Impostazioni → Chiavi**. Quello che si scrive lì resta sul telefono e da nessun'altra parte.
 
-- `extra.eas.projectId` con l'ID progetto mostrato sulla dashboard di Expo
-- `slug` con lo slug del proprio progetto
-- `android.package` con un identificatore proprio, ad esempio `com.nomeutente.jarvis`
+### Compilarlo invece con le chiavi dentro
 
-### 5. Compilare
+Chi preferisce avere le chiavi già compilate — così l'app non chiede niente, su qualunque telefono la si installi — usa `strumenti/build-apk-privato.yml`. Va messo in un repository **privato** proprio, come `.github/workflows/build-apk.yml`, con le chiavi in Settings → Secrets and variables → Actions sotto i nomi qui sopra. Il codice non lo copia: scarica questo repository a ogni build, quindi rilanciarlo è il modo di aggiornarsi.
 
-Su expo.dev: **Builds → Build from GitHub**, quindi:
+Privato è obbligatorio: le chiavi finiscono dentro quell'APK, e gli artifact di un repository pubblico se li scarica chiunque.
 
-- Platform: **Android**
-- Git ref: **main**
-- Build profile: **preview**
-- Base directory: **lasciare vuoto** — scriverci qualcosa fa fallire la build
-
-Il profilo `preview` è già configurato per produrre un `.apk` installabile invece di un pacchetto per il Play Store. A build finita si scarica sul telefono e si installa. Android avviserà che l'origine è sconosciuta: è normale per un'app compilata da sé.
-
-#### Compilare senza Expo
-
-Il piano gratuito di Expo consente 15 build Android al mese, che finiscono in fretta. Nel repository c'è anche `.github/workflows/build-apk.yml`, che produce lo stesso APK tramite GitHub Actions — gratis e senza limiti sui repository pubblici. Si avvia dalla scheda **Actions** e l'APK compare come artifact nella pagina della build. Servono le stesse chiavi, da inserire in **Settings → Secrets and variables → Actions**.
-
-Due avvertenze. La firma usa la `debug.keystore` del progetto, che è una chiave diversa da quella di Expo: la prima volta che si passa da una all'altra bisogna disinstallare l'app esistente. E gli artifact di un repository pubblico sono scaricabili da chiunque, mentre le chiavi vengono compilate dentro l'APK — quindi chi usa un token GitHub conviene che esegua il workflow da un repository privato, dove i 2.000 minuti gratuiti mensili bastano comunque per un centinaio di build.
-
-### 6. Primo avvio
+### Primo avvio
 
 L'app chiederà i permessi per microfono, fotocamera, notifiche, calendario e rubrica. Vanno concessi quelli che interessano: quelli negati disattivano semplicemente la funzione corrispondente. Quello della fotocamera viene chiesto solo la prima volta che si apre la vista.
 
-Poi basta dire *"la mia città è Bologna"*, oppure impostarla dal pannello impostazioni, così il riepilogo di apertura dà il meteo giusto.
+Poi basta dire *"la mia città è Bologna"*, o impostarla dal pannello, perché il riepilogo d'apertura dia il meteo giusto.
 
 ## Note per chi mette mano al codice
 
-**Questo repository contiene le cartelle `android/` e `ios/` già committate.** Questo lo rende un progetto "bare", quindi **EAS salta la fase di prebuild**. La conseguenza pratica, che costa una giornata se la si scopre sbattendoci la testa:
+**Questo repository contiene le cartelle `android/` e `ios/` già committate.** Questo lo rende un progetto "bare", quindi **la fase di prebuild non la esegue nessuno** — né EAS, né la compilazione Gradle usata dal workflow. La conseguenza pratica, che costa una giornata se la si scopre sbattendoci la testa:
 
 - Le impostazioni native in `app.config.js` (permessi, temi) vengono **ignorate**. Ogni nuovo permesso Android va aggiunto direttamente in `android/app/src/main/AndroidManifest.xml`.
 - La versione che finisce nell'APK è `versionName` in `android/app/build.gradle`, non `version` in `app.config.js`.
@@ -332,6 +293,7 @@ Altre due cose che vale la pena sapere:
 - Le richieste che comportano azioni vogliono una temperatura propria. Con il valore predefinito il modello ripianifica ogni volta la stessa frase in modo diverso, e quale azione sopravviva a una catena diventa un sorteggio.
 - Un prompt di sistema costruito a livello di modulo è già fissato prima che qualunque cosa asincrona sia stata caricata. Qui incorporava la memoria dell'utente, che si legge da disco dopo il primo disegno della schermata: la costante si portava dietro una memoria vuota per tutta la vita del processo, mentre le impostazioni la mostravano correttamente. Il prompt va costruito dove si usa, non dove si importa il modulo.
 - Una scrittura che fallisce in silenzio è peggio di una che dà errore. Un ricordo tenuto in memoria dopo un salvataggio fallito funziona benissimo fino alla chiusura dell'app, e poi la perdita sembra un modello che dimentica invece di un disco che si è rifiutato.
+- Le chiavi si leggono al momento dell'uso, mai all'importazione: `chiaviService` guarda prima quella scritta nell'app e poi quella compilata dentro. Una costante presa al caricamento del modulo sarebbe fissata prima che chiunque possa scrivere qualcosa, e la chiave inserita al primo avvio non entrerebbe mai in vigore.
 - Il video della conversazione passa dalla stessa connessione dell'audio: `realtimeInput.video` accanto a `realtimeInput.audio`, `image/jpeg`, un fotogramma al secondo, che è il ritmo consigliato da Google. Una foto del telefono è enorme rispetto a quello che serve a un modello — si chiede al dispositivo quali misure sa fare e si prende la più piccola sopra i 640 pixel, sotto cui smette di leggere le scritte — e si scatta una volta per volta, altrimenti un telefono lento accoda fotogrammi che descrivono un passato che nessuno ha chiesto.
 - Un'immagine allegata non è un fotogramma: mandata come turno `clientContent` con `inlineData`, resta nel filo della conversazione, quindi le domande successive la ritrovano.
 - Un riquadro scorrevole dentro un altro riquadro scorrevole non scorre affatto, su Android, senza `nestedScrollEnabled`: il gesto se lo prende quello esterno.
