@@ -89,6 +89,10 @@ const conteggi = {
     pezziVoce: 0,
     interruzioniLocali: 0,
     interruzioniServer: 0,
+    // L'ultima morte della conversazione, per esteso. Un avviso si chiude con
+    // un tocco e il motivo sparisce con lui; qui resta, e si rilegge con calma
+    // in Impostazioni → Info.
+    ultimaChiusura: '',
 };
 
 export function statisticheLive() {
@@ -210,6 +214,11 @@ export class LiveSession {
         // generazione voleva dire credere finita una frase ancora a metà.
         this.fineVoce = 0;
         this.pezziSopraSoglia = 0;
+        // Quanto era lunga la chiave e quando si è aperta la connessione:
+        // servono al messaggio di chiusura, che senza di loro dice solo metà
+        // della cosa.
+        this.lunghezzaChiave = 0;
+        this.apertaAlle = 0;
         // Con la voce spenta la conversazione continua a funzionare, ma non
         // si sente: l'audio arriva e viene scartato invece che suonato, e
         // resta la trascrizione a schermo.
@@ -326,7 +335,18 @@ export class LiveSession {
             return false;
         }
 
-        this.socket = new WebSocket(`${LIVE_URL}?key=${chiave('gemini')}`);
+        // La chiave si legge **adesso**, e ci si segna quanto era lunga. Non
+        // il valore: la lunghezza. Serve a distinguere due cose che da fuori
+        // si somigliano — "Google ha rifiutato una chiave vera" e "gli è
+        // arrivata una chiave vuota" — perché la seconda dà lo stesso identico
+        // messaggio di chiave non valida. Sul telefono di sviluppo la chiave
+        // sta anche dentro l'APK e fa da riserva; su un APK pubblico c'è solo
+        // quella scritta a mano, quindi è proprio lì che la differenza conta.
+        const chiaveGemini = chiave('gemini');
+        this.lunghezzaChiave = chiaveGemini.length;
+        this.apertaAlle = Date.now();
+
+        this.socket = new WebSocket(`${LIVE_URL}?key=${chiaveGemini}`);
         // Meglio i byte grezzi che un Blob: da un ArrayBuffer si decodifica
         // l'UTF-8 per conto proprio, che è l'unico modo per non perdere le
         // accentate per strada.
@@ -363,12 +383,21 @@ export class LiveSession {
             if (!this.chiusaVolutamente) {
                 const codice = evento?.code ?? 'ignoto';
                 const motivo = (evento?.reason || '').trim();
-                this.onErrore(new Error(
+                // Da quanto era aperta: una che muore subito e una che muore
+                // dopo dieci minuti hanno cause diverse, e il messaggio da
+                // solo non le distingue.
+                const durata = this.apertaAlle
+                    ? Math.round((Date.now() - this.apertaAlle) / 1000)
+                    : 0;
+                const testo =
                     `Sessione chiusa dal server (codice ${codice})` +
                     (motivo ? `: ${motivo}` : eraPronta
                         ? ', senza motivo indicato, dopo che era già attiva'
-                        : ', senza motivo indicato, prima di diventare attiva')
-                ));
+                        : ', senza motivo indicato, prima di diventare attiva') +
+                    `. Era aperta da ${durata} secondi, con una chiave Gemini di ` +
+                    `${this.lunghezzaChiave} caratteri.`;
+                conteggi.ultimaChiusura = testo;
+                this.onErrore(new Error(testo));
             }
 
             this.onStato('chiusa', {volontaria: this.chiusaVolutamente});

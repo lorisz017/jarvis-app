@@ -487,6 +487,9 @@ export default function SettingsModal({
                                             `Interruzioni: ${voce.interruzioniLocali} decise dall'app, ${
                                                 voce.interruzioniServer
                                             } dal server.`,
+                                            voce.ultimaChiusura
+                                                ? `Ultima chiusura non voluta: ${voce.ultimaChiusura}`
+                                                : 'Nessuna chiusura non voluta.',
                                         ].join(' ')
                                         : 'Nessun dato: la conversazione non è ancora stata aperta.'}
                                 </Text>
