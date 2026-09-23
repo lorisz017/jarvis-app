@@ -493,7 +493,7 @@ export default function SettingsModal({
                                                 } secondi di attesa.`
                                                 : 'Nessuna frase scritta ancora misurata.',
                                             voce.ultimaChiusura
-                                                ? `Ultima chiusura non voluta: ${voce.ultimaChiusura}`
+                                                ? `Chiusure non volute: ${voce.chiusureNonVolute}. L'ultima: ${voce.ultimaChiusura}`
                                                 : 'Nessuna chiusura non voluta.',
                                         ].join(' ')
                                         : 'Nessun dato: la conversazione non è ancora stata aperta.'}

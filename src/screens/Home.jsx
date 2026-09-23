@@ -25,7 +25,6 @@ import Occhio from '../components/Occhio';
 import Avviso from '../components/Avviso';
 import Benvenuto from '../components/Benvenuto';
 import ResponseBox from '../components/ResponseBox';
-import VoicePickerModal from '../components/VoicePickerModal';
 import SettingsModal from '../components/SettingsModal';
 import ModeSwitch from '../components/ModeSwitch';
 
@@ -84,7 +83,6 @@ export default function Home() {
     const [selectedVoiceId, setSelectedVoiceId] = useState(undefined);
     const [englishVoiceId, setEnglishVoiceId] = useState();
     const [russianVoiceId, setRussianVoiceId] = useState();
-    const [isVoicePickerVisible, setIsVoicePickerVisible] = useState(false);
     const [chatHistory, setChatHistory] = useState([buildSystemMessage()]);
 
     // Testo digitato dall'utente nel campo di input
@@ -1241,9 +1239,17 @@ export default function Home() {
                     </View>
 
                     <View style={[styles.actionRow, {maxWidth: misure.colonna}]}>
-                        <TastoLiquido style={styles.pillButton} onPress={() => setIsVoicePickerVisible(true)}>
-                            <Text style={styles.pillButtonIcon}>🎙</Text>
-                            <Text style={styles.pillButtonText}>VOCE</Text>
+                        {/* Al posto di VOCE, che sceglieva la voce del telefono:
+                            in conversazione non parla mai, quindi la pastiglia
+                            apriva un elenco che non cambiava niente. La bolla
+                            invece si accende proprio prima di uscire dall'app,
+                            ed era tre tocchi dentro le impostazioni. */}
+                        <TastoLiquido
+                            style={[styles.pillButton, isOverlayEnabled && styles.pillButtonAttiva]}
+                            onPress={toggleOverlay}
+                        >
+                            <Text style={styles.pillButtonIcon}>🫧</Text>
+                            <Text style={styles.pillButtonText}>BOLLA</Text>
                         </TastoLiquido>
 
                         <TastoLiquido
@@ -1286,14 +1292,6 @@ export default function Home() {
                 titolo={avviso?.titolo}
                 testo={avviso?.testo}
                 onChiudi={() => setAvviso(null)}
-            />
-
-            <VoicePickerModal
-                isVisible={isVoicePickerVisible}
-                availableVoices={availableVoices}
-                selectedVoiceId={selectedVoiceId}
-                setSelectedVoiceId={setSelectedVoiceId}
-                onClose={() => setIsVoicePickerVisible(false)}
             />
 
             <SettingsModal

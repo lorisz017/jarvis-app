@@ -909,6 +909,12 @@ export const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'rgba(0, 217, 255, 0.30)',
     },
+    // Una pastiglia che è un interruttore acceso: stessa forma, solo più
+    // piena, così si capisce a colpo d'occhio senza leggere niente.
+    pillButtonAttiva: {
+        backgroundColor: 'rgba(0, 217, 255, 0.24)',
+        borderColor: CYAN,
+    },
     // La casella della memoria: alta abbastanza da scriverci qualche riga
     // senza sentirsi in un campo di ricerca.
     memoriaInput: {

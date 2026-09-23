@@ -650,6 +650,23 @@ preoccuperebbe è vederlo salire di molti colpi dopo **una** catena.
 
 **Ancora aperto davvero:**
 
+- **"Chiave non valida" con una chiave valida, e risposte lente**, su due
+  dispositivi con l'APK pubblico (il suo tablet e il telefono di un amico) e
+  mai sul telefono di sviluppo. Non è il processore: sono tutti telefoni e
+  tablet di fascia altissima. L'unica differenza certa è che sull'APK pubblico
+  la chiave arriva solo da quella scritta a mano. Le cause possibili danno le
+  stesse parole — chiave vuota arrivata a Google, chiave appena creata che si
+  sta ancora propagando, limite del piano gratuito — e **non si è tentata
+  nessuna correzione**: l'app riporta in Info i numeri che le separano (secondi
+  di vita, lunghezza e forma della chiave, chiusure non volute, attesa della
+  risposta). **Prima si leggono quelli.**
+
+  **E dopo, in quest'ordine, perché l'ha chiesto lui:** trovata e corretta la
+  causa, si sposta `funzionante` sul commit della build che lui conferma, e si
+  pubblica una **release nuova** — versione alzata nei quattro posti, poi
+  *Pubblica una release*. È scritto qui perché la conversazione si sta
+  riempiendo e non deve perdersi.
+
 - **La voce di Edge non è più un problema aperto, e non va rimessa in lista.**
   Non parla e si sente la riserva, ma la sintesi vocale riguarda solo la
   modalità a comandi, che ora è un ripiego dietro un interruttore: in
@@ -673,7 +690,11 @@ Cose decise, da non rimettere in discussione:
   dall'interfaccia, resta nel codice e si riaccende da un interruttore. Il
   motivo è che è l'unica strada che non passa da Gemini: il giorno che il
   modello Live non risponde — è in anteprima — quella è la differenza fra
-  un'app più lenta e un'app morta.
+  un'app più lenta e un'app morta. Lo ha ripetuto anche dopo ("piano piano
+  andrà a morire"), come previsione e non come richiesta: la **voce di
+  sistema** invece è sparita dall'interfaccia su sua richiesta — la pastiglia
+  VOCE è diventata BOLLA — ma resta nel codice come ultima riserva della
+  modalità a comandi, che senza non parlerebbe.
 - Per lo stesso motivo **Groq e Deepgram restano**. Non servono a niente
   finché tutto funziona: sono lì proprio per quando qualcosa non funzionerà.
 

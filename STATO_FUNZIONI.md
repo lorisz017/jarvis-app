@@ -50,7 +50,7 @@ L'ultima versione provata sul telefono e funzionante è sul ramo `funzionante`.
 | Volume pari fra le voci | Automatico | ✅ confermato: le voci più basse arrivano al livello delle altre |
 | Bolla flottante sopra le altre app | Impostazioni → Bolla flottante | ✅ un tocco apre la conversazione continua invece del vecchio giro a registrazione |
 | Ripiego sulla voce di sistema | Automatico | ✅ entra solo se Deepgram non è disponibile |
-| Scelta della voce di sistema | Pill "VOCE" | ✅ riguarda solo la voce di riserva del telefono |
+| Bolla dalla schermata principale | Pastiglia "BOLLA" in fondo | ⏳ nuova: ha preso il posto di VOCE. Si accende e si spegne con un tocco, ed è piena quando è accesa |
 | Spegnere la voce | Pulsante 🔊 in alto a destra | ✅ |
 | Interrompere la voce mentre parla | 🔊, FERMA, o il microfono | ✅ |
 | Riattivare la voce | Pulsante 🔊 | ✅ riprende dal messaggio successivo: un audio interrotto non è recuperabile a metà, andrebbe rigenerato |
@@ -128,7 +128,7 @@ L'ultima versione provata sul telefono e funzionante è sul ramo `funzionante`.
 | Prima apertura senza chiavi | Automatica | ✅ provata su un telefono senza chiavi: una schermata sola che chiede la chiave Gemini, e la conversazione parte appena la si incolla |
 | Chiavi nelle impostazioni | Impostazioni → Chiavi | ⏳ nuova: le quattro chiavi, con scritto da dove viene ciascuna. Quella scritta a mano ha la precedenza su quella compilata |
 | Pulisci chat | Pill "PULISCI" | ✅ la conferma si toglie toccando **fuori** dal riquadro, senza centrare nessun tasto |
-| Tablet e rotazione | Automatico | ⏳ nuovo: l'app non è più bloccata in verticale, e su uno schermo grande colonna, radar e riquadri crescono con lui. Sul telefono in verticale le misure sono **identiche a prima**. In orizzontale sul tablet si scorre ancora: le due colonne sono il passo dopo |
+| Tablet e rotazione | Automatico | ✅ confermato su uno Xiaomi Pad 8: colonna, radar e riquadri crescono con lo schermo, e la rotazione funziona. Sul telefono in verticale le misure sono **identiche a prima**, e confermato anche quello. In orizzontale sul tablet si scorre ancora: le due colonne sono il passo dopo |
 | Animazioni in vetro | Pannelli, leva, tasti, interruttori | ✅ il vetro vive solo durante il movimento: da fermo tutto è identico a prima |
 
 ## Compilazione
@@ -142,6 +142,16 @@ L'ultima versione provata sul telefono e funzionante è sul ramo `funzionante`.
 ---
 
 ## Cosa resta aperto
+
+**"Chiave non valida" con una chiave valida, e risposte lente** — aperto, e riprodotto su **due dispositivi con l'APK pubblico**: il tablet e il telefono di un amico. Su tutti e due la conversazione va lenta e ogni tanto si chiude dicendo che la chiave API non è valida, subito dopo aver risposto con quella stessa chiave. Sul telefono di sviluppo non succede.
+
+*Cosa si sa.* Il processore non c'entra: il tablet ha uno Snapdragon 8s Gen 4 e il telefono di sviluppo un 8 Elite Gen 5, due fra i più veloci in commercio. L'unica differenza certa fra i due casi è **da dove arriva la chiave**: sull'APK pubblico solo da quella scritta a mano, su quello di sviluppo anche da quella compilata dentro, che fa da riserva.
+
+*Due cause possibili, che da fuori danno le stesse parole.* O a Google arriva una chiave vuota — e risponde esattamente "chiave non valida" — oppure Google rifiuta una chiave vera. La seconda ha a sua volta due forme note: una chiave **appena creata**, che per qualche minuto viene rifiutata a intermittenza mentre si propaga, e un **limite del piano gratuito**, che prima rallenta e poi chiude. *Lento, poi rifiutato* ha proprio la forma di un limite.
+
+*Cosa è stato fatto: niente di correttivo, apposta.* Tentare una correzione alla cieca costerebbe una build per ipotesi. L'app riporta invece in Impostazioni → Info, per l'ultima chiusura non voluta: da quanti secondi era aperta, quanti caratteri aveva la chiave, se ha la forma di una chiave di Google, e quante chiusure non volute ci sono state; e a parte quanto aspetta una frase scritta prima della prima parola di risposta. Con quei numeri la prossima volta la causa si legge invece di indovinarla.
+
+*Poi.* Trovata e corretta la causa, si sposta `funzionante` e si pubblica una release nuova — è la sequenza chiesta da lui.
 
 **La voce che si accavallava sugli altri telefoni** — il difetto più difficile trovato finora, e la storia per intero, perché tre delle quattro spiegazioni erano sbagliate e sapere *quali* vale più della correzione.
 

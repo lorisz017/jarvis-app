@@ -93,6 +93,9 @@ const conteggi = {
     // un tocco e il motivo sparisce con lui; qui resta, e si rilegge con calma
     // in Impostazioni → Info.
     ultimaChiusura: '',
+    // Quante volte è morta senza che lo si volesse. Una volta è un incidente;
+    // dieci in una serata sono un comportamento, e cambiano la diagnosi.
+    chiusureNonVolute: 0,
     // Quanto ha aspettato l'ultima frase scritta prima della prima parola di
     // risposta. "Va lento" è un'impressione; questo è un numero, e dice se
     // sta lento l'app o sta lento chi risponde.
@@ -222,6 +225,7 @@ export class LiveSession {
         // servono al messaggio di chiusura, che senza di loro dice solo metà
         // della cosa.
         this.lunghezzaChiave = 0;
+        this.formaChiave = false;
         this.apertaAlle = 0;
         this.chiestoAlle = 0;
         // Con la voce spenta la conversazione continua a funzionare, ma non
@@ -351,6 +355,11 @@ export class LiveSession {
         // quella scritta a mano, quindi è proprio lì che la differenza conta.
         const chiaveGemini = chiave('gemini');
         this.lunghezzaChiave = chiaveGemini.length;
+        // Tutte le chiavi di Google cominciano allo stesso modo, quindi dire
+        // se questa lo fa non rivela niente di lei — ma separa una chiave
+        // incollata male (un apice di troppo, un pezzo di un'altra cosa) da
+        // una giusta che Google rifiuta.
+        this.formaChiave = /^AIza[0-9A-Za-z_-]+$/.test(chiaveGemini);
         this.apertaAlle = Date.now();
 
         this.socket = new WebSocket(`${LIVE_URL}?key=${chiaveGemini}`);
@@ -402,8 +411,14 @@ export class LiveSession {
                         ? ', senza motivo indicato, dopo che era già attiva'
                         : ', senza motivo indicato, prima di diventare attiva') +
                     `. Era aperta da ${durata} secondi, con una chiave Gemini di ` +
-                    `${this.lunghezzaChiave} caratteri.`;
+                    `${this.lunghezzaChiave} caratteri` +
+                    (this.lunghezzaChiave
+                        ? (this.formaChiave
+                            ? ' dalla forma giusta.'
+                            : ', ma dalla forma insolita: forse incollata male.')
+                        : ': vuota, quindi il rifiuto è colpa dell\'app e non di Google.');
                 conteggi.ultimaChiusura = testo;
+                conteggi.chiusureNonVolute += 1;
                 this.onErrore(new Error(testo));
             }
 
