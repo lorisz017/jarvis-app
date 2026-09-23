@@ -487,6 +487,11 @@ export default function SettingsModal({
                                             `Interruzioni: ${voce.interruzioniLocali} decise dall'app, ${
                                                 voce.interruzioniServer
                                             } dal server.`,
+                                            voce.ultimaAttesa
+                                                ? `Ultima risposta a una frase scritta: ${
+                                                    (voce.ultimaAttesa / 1000).toFixed(1)
+                                                } secondi di attesa.`
+                                                : 'Nessuna frase scritta ancora misurata.',
                                             voce.ultimaChiusura
                                                 ? `Ultima chiusura non voluta: ${voce.ultimaChiusura}`
                                                 : 'Nessuna chiusura non voluta.',

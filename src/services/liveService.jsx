@@ -93,6 +93,10 @@ const conteggi = {
     // un tocco e il motivo sparisce con lui; qui resta, e si rilegge con calma
     // in Impostazioni → Info.
     ultimaChiusura: '',
+    // Quanto ha aspettato l'ultima frase scritta prima della prima parola di
+    // risposta. "Va lento" è un'impressione; questo è un numero, e dice se
+    // sta lento l'app o sta lento chi risponde.
+    ultimaAttesa: 0,
 };
 
 export function statisticheLive() {
@@ -219,6 +223,7 @@ export class LiveSession {
         // della cosa.
         this.lunghezzaChiave = 0;
         this.apertaAlle = 0;
+        this.chiestoAlle = 0;
         // Con la voce spenta la conversazione continua a funzionare, ma non
         // si sente: l'audio arriva e viene scartato invece che suonato, e
         // resta la trascrizione a schermo.
@@ -252,6 +257,8 @@ export class LiveSession {
         // Quello che stava dicendo va zittito: chi scrive mentre l'altro
         // parla si aspetta di essere ascoltato, esattamente come chi parla.
         this._zittisci();
+
+        this.chiestoAlle = Date.now();
 
         this._invia({
             clientContent: {
@@ -480,12 +487,14 @@ export class LiveSession {
         }
 
         if (contenuto?.outputTranscription?.text) {
+            this._segnaAttesa();
             this.onTesto({chi: 'jarvis', testo: contenuto.outputTranscription.text});
         }
 
         for (const parte of contenuto?.modelTurn?.parts || []) {
             const suono = parte.inlineData?.data;
             if (suono && !this.muta) {
+                this._segnaAttesa();
                 conteggi.pezziVoce += 1;
                 // Quanto dura questo pezzo, una volta suonato. Da base64 a
                 // byte si scende di un quarto.
@@ -573,6 +582,17 @@ export class LiveSession {
         });
 
         audio.startCapture().catch((error) => this.onErrore(error));
+    }
+
+    /**
+     * Ferma il cronometro alla **prima** cosa che torna dopo una frase
+     * scritta, testo o voce che sia: è quello il momento in cui chi guarda
+     * smette di aspettare.
+     */
+    _segnaAttesa() {
+        if (!this.chiestoAlle) return;
+        conteggi.ultimaAttesa = Date.now() - this.chiestoAlle;
+        this.chiestoAlle = 0;
     }
 
     /** Zittisce subito quello che sta uscendo e dimentica il resto del turno. */
