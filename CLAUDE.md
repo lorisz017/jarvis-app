@@ -611,28 +611,18 @@ Lo stato dettagliato sta in `STATO_FUNZIONI.md`; qui la sostanza.
 Da leggere per primo dopo una compattazione, perché è la parte che la
 conversazione perde.
 
-- **`funzionante` = `fc18543`**: la **3.2.0**, confermata su tre telefoni, ed è
-  anche l'APK pubblicato nella release `v3.2.0` (verificato senza chiavi).
-- **Su `main` dopo `funzionante`**, in ordine:
-  - `f649daf` — misure dallo schermo e rotazione sbloccata (manifest
-    `fullUser`). **Confermato**: telefono in verticale identico a prima,
-    tondi e pastiglie a posto, rotazione; tablet in verticale e rotazione.
-  - `a575cb9`, `e7e6a9a` — diagnosi nella scheda Info: secondi di vita della
-    sessione, caratteri della chiave, attesa della risposta scritta. Solo
-    JavaScript, niente di rischioso.
-  - `93b5a4b` — la pastiglia **VOCE diventa BOLLA** (accende la bolla, piena
-    quando è accesa), tolto il selettore della voce di sistema
-    (`VoicePickerModal.jsx` cancellato), e in diagnosi la forma della chiave
-    e il conto delle chiusure non volute. **Non ancora provata**: è la build
-    23 sul pubblico.
-  - `a786966` — solo documenti.
-- **Da provare**: la pastiglia BOLLA; girare il tablet **mentre parla** (la
-  conversazione deve continuare, *Conversazioni aperte* non deve salire).
-- **Poi**: quando conferma, `funzionante` va sul commit della build che ha
-  provato, e si pubblica una **release nuova**. La versione su `main` è ancora
-  **3.2.0 con `versionCode 5`**: per la release va alzata nei quattro posti
-  (`build.gradle` con `versionCode 6`, `package.json`, `app.config.js`,
-  `APP_VERSION`), altrimenti il workflow si rifiuta e Android non aggiorna.
+- **`funzionante` = `93b5a4b`**: la build confermata sul tablet ("funziona
+  tutto"), con la pastiglia **BOLLA**, le misure dallo schermo, la rotazione
+  e la diagnosi della chiave in Info. Prima era `fc18543` (la 3.2.0).
+- **Su `main` dopo `funzionante`**: solo documenti, più il commit che alza la
+  versione a **3.2.5 con `versionCode 6`** nei quattro posti. È la versione
+  della release `v3.2.5`, lanciata dal workflow *Pubblica una release*.
+  La prossima release vuole di nuovo tutti e quattro i posti alzati, e
+  `versionCode` a 7.
+- **Da provare ancora**: girare il tablet **mentre parla** (la conversazione
+  deve continuare, *Conversazioni aperte* non deve salire), e l'APK della
+  release installato sopra la 3.2.0 deve aggiornarla senza chiedere di
+  disinstallare.
 - **Il passo dopo sul tablet**, quando lo chiede: le **due colonne in
   orizzontale** — radar e comandi da una parte, registro e risposta
   dall'altra. Il primo passo è confermato, quindi si può fare; è l'unica

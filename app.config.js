@@ -2,7 +2,7 @@ export default {
   expo: {
     name: "JARVIS",
     slug: "project_jarvis",
-    version: '3.2.0',
+    version: '3.2.5',
     orientation: "default",
     icon: "./assets/icon.png",
     userInterfaceStyle: "light",

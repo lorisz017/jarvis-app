@@ -10,7 +10,7 @@ import {statoMemoria} from '../services/memoryService';
 import {statoChiavi, setChiave} from '../services/chiaviService';
 import {statisticheLive, diagnosticaAudio} from '../services/liveService';
 
-const APP_VERSION = '3.2.0';
+const APP_VERSION = '3.2.5';
 const GITHUB_PROFILE = 'https://github.com/lorisz017';
 const GITHUB_REPO = 'https://github.com/lorisz017/jarvis-app';
 const UPSTREAM_REPO = 'https://github.com/az11k-dev/jarvis-app';

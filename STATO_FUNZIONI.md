@@ -1,4 +1,4 @@
-# Stato delle funzioni — J.A.R.V.I.S. 3.2.0
+# Stato delle funzioni — J.A.R.V.I.S. 3.2.5
 
 Legenda:
 
@@ -7,11 +7,11 @@ Legenda:
 - ❌ **Non funziona** — provata e non funzionante
 - ⏳ **Non testabile** — bloccata da qualcosa di esterno (chiave mancante)
 
-Ultimo aggiornamento: **versione 3.2.0**, ed è una versione di riparazioni. Tutto il lavoro è stato sui telefoni che non sono quello di sviluppo, dove è uscito il difetto più difficile del progetto — la conversazione che si apriva due volte — insieme all'audio muto all'avvio e alla voce che si accavallava. Il racconto completo è in fondo, vicoli ciechi compresi.
+Ultimo aggiornamento: **versione 3.2.5**, che aggiunge alla 3.2.0 il tablet e la rotazione, la pastiglia BOLLA e la diagnosi della chiave rifiutata. La 3.2.0 era una versione di riparazioni. Tutto il lavoro è stato sui telefoni che non sono quello di sviluppo, dove è uscito il difetto più difficile del progetto — la conversazione che si apriva due volte — insieme all'audio muto all'avvio e alla voce che si accavallava. Il racconto completo è in fondo, vicoli ciechi compresi.
 
 **Confermato su tre telefoni**: diciassette sveglie a mezz'ora fra le 9 e le 17, poi ogni quarto d'ora, poi ogni dieci minuti, sempre tutte; una sola conversazione; l'audio che si sente al primo tentativo; l'interruzione parlandogli sopra; lo scorrimento dei riquadri e la tastiera che lascia vedere il campo.
 
-La 3.0.0 era la prima **pubblicata in una release**: si scarica e si installa, senza compilare niente e senza chiavi dentro. La 3.2.0 prende il suo posto.
+La 3.0.0 era la prima **pubblicata in una release**: si scarica e si installa, senza compilare niente e senza chiavi dentro. La 3.2.5 è quella pubblicata adesso.
 
 L'ultima versione provata sul telefono e funzionante è sul ramo `funzionante`.
 
@@ -51,7 +51,7 @@ L'ultima versione provata sul telefono e funzionante è sul ramo `funzionante`.
 | Volume pari fra le voci | Automatico | ✅ confermato: le voci più basse arrivano al livello delle altre |
 | Bolla flottante sopra le altre app | Impostazioni → Bolla flottante | ✅ un tocco apre la conversazione continua invece del vecchio giro a registrazione |
 | Ripiego sulla voce di sistema | Automatico | ✅ entra solo se Deepgram non è disponibile |
-| Bolla dalla schermata principale | Pastiglia "BOLLA" in fondo | ⏳ nuova: ha preso il posto di VOCE. Si accende e si spegne con un tocco, ed è piena quando è accesa |
+| Bolla dalla schermata principale | Pastiglia "BOLLA" in fondo | ✅ ha preso il posto di VOCE. Si accende e si spegne con un tocco, ed è piena quando è accesa |
 | Spegnere la voce | Pulsante 🔊 in alto a destra | ✅ |
 | Interrompere la voce mentre parla | 🔊, FERMA, o il microfono | ✅ |
 | Riattivare la voce | Pulsante 🔊 | ✅ riprende dal messaggio successivo: un audio interrotto non è recuperabile a metà, andrebbe rigenerato |
