@@ -76,6 +76,11 @@ great deal on a slow one. The worst bug in the project's history — the
 conversation opening twice over — was invisible on the fast phone and
 reproducible on the other two.
 
+A **Xiaomi Pad 8** has since joined as well. The layout now takes its sizes
+from the screen — on a phone in portrait they are exactly what they always
+were, on a tablet the column, the radar and the panels grow with it — and
+the app is no longer locked to portrait.
+
 There is a second reason a different phone behaves differently. The device
 actions — alarms, timers, opening other apps — work by handing an intent to
 whatever app on the phone handles it, and both the manufacturer's
@@ -249,6 +254,11 @@ quei telefoni siano scadenti, ma perché sono più lenti, e una finestra
 temporale troppo stretta per contare su un telefono veloce conta eccome su uno
 lento. Il difetto peggiore mai trovato qui — la conversazione che si apriva due
 volte — era invisibile sul telefono veloce e si riproduceva sugli altri due.
+
+Da poco si è aggiunto anche uno **Xiaomi Pad 8**. La disposizione prende ora
+le misure dallo schermo — sul telefono in verticale sono esattamente quelle
+di sempre, sul tablet colonna, radar e riquadri crescono con lui — e l'app non
+è più bloccata in verticale.
 
 C'è poi un secondo motivo per cui un altro telefono si comporta diversamente.
 Le azioni sul dispositivo — sveglie, timer, apertura di altre app — funzionano

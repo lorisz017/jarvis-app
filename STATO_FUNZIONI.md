@@ -21,7 +21,8 @@ L'ultima versione provata sul telefono e funzionante è sul ramo `funzionante`.
 > Xiaomi 17 con Android 17**, che è il telefono di sviluppo. Da poco si sono
 > aggiunti **un OPPO e un telefono più vecchio**, con versioni di Android
 > precedenti, usati per provare l'APK senza chiavi — quello che installa chi
-> scarica dalla release.
+> scarica dalla release — e uno **Xiaomi Pad 8**, per le misure grandi e la
+> rotazione.
 >
 > Vale la pena dirlo, perché è la lezione più costosa di questo progetto:
 > **i difetti seri sono usciti tutti là, non sul telefono di sviluppo.** Non

@@ -178,6 +178,7 @@ Quella riga adesso dice quattro cose, e ognuna si è guadagnata il posto:
 | `src/services/chiaviService.jsx` | Le chiavi API: quelle scritte a mano e quelle compilate dentro |
 | `src/components/Benvenuto.jsx` | Il primo avvio di chi non ha le chiavi nell'APK |
 | `src/utils/constants.jsx` | Il prompt di sistema, costruito con la memoria dentro |
+| `src/utils/misure.jsx` | Le misure che dipendono dallo schermo: telefono, telefono girato, tablet |
 | `src/utils/sha256.jsx`, `base64.jsx` | Funzioni pure, verificate contro Node |
 | `android/.../overlay/` | Il codice nativo: bolla, servizio, audio a flusso |
 
@@ -422,6 +423,12 @@ Il collaudo invece lo può fare solo lui, e ora su **tre telefoni**:
 | **Xiaomi 17, Android 17** | Il suo. È dove si sviluppa e dove quasi tutto funziona al primo colpo — ed è proprio per questo che non basta |
 | **OPPO, Android più vecchio** | Non è suo e non ce l'ha sempre. È lì che sono saltati fuori il doppio input e l'audio muto all'avvio |
 | **Un secondo telefono più vecchio** | Quello dove prova l'APK senza chiavi, cioè il primo avvio di chi scarica dalla release |
+| **Xiaomi Pad 8** (Snapdragon 8s Gen 4) | Il tablet, schermo 3:2. È dove si provano le misure grandi e la rotazione |
+| **Il telefono di un amico** | Con l'APK pubblico e una chiave sua: il caso di chi scarica e basta |
+
+Tutti di fascia altissima — il suo Xiaomi ha un 8 Elite Gen 5 — quindi **il
+processore non è mai il sospetto**. Quando qualcosa va lento su uno e non
+sull'altro, la prima domanda è **su che rete** era.
 
 **I difetti che contano sono usciti tutti sui telefoni che non sono il suo**,
 e quasi sempre perché lì le cose sono più lente e una finestra temporale che
@@ -599,6 +606,39 @@ Le regole che lo rendono utile invece che decorativo:
 
 Lo stato dettagliato sta in `STATO_FUNZIONI.md`; qui la sostanza.
 
+### A che punto siamo (aggiornato al 23 settembre)
+
+Da leggere per primo dopo una compattazione, perché è la parte che la
+conversazione perde.
+
+- **`funzionante` = `fc18543`**: la **3.2.0**, confermata su tre telefoni, ed è
+  anche l'APK pubblicato nella release `v3.2.0` (verificato senza chiavi).
+- **Su `main` dopo `funzionante`**, in ordine:
+  - `f649daf` — misure dallo schermo e rotazione sbloccata (manifest
+    `fullUser`). **Confermato**: telefono in verticale identico a prima,
+    tondi e pastiglie a posto, rotazione; tablet in verticale e rotazione.
+  - `a575cb9`, `e7e6a9a` — diagnosi nella scheda Info: secondi di vita della
+    sessione, caratteri della chiave, attesa della risposta scritta. Solo
+    JavaScript, niente di rischioso.
+  - `93b5a4b` — la pastiglia **VOCE diventa BOLLA** (accende la bolla, piena
+    quando è accesa), tolto il selettore della voce di sistema
+    (`VoicePickerModal.jsx` cancellato), e in diagnosi la forma della chiave
+    e il conto delle chiusure non volute. **Non ancora provata**: è la build
+    23 sul pubblico.
+  - `a786966` — solo documenti.
+- **Da provare**: la pastiglia BOLLA; girare il tablet **mentre parla** (la
+  conversazione deve continuare, *Conversazioni aperte* non deve salire).
+- **Poi**: quando conferma, `funzionante` va sul commit della build che ha
+  provato, e si pubblica una **release nuova**. La versione su `main` è ancora
+  **3.2.0 con `versionCode 5`**: per la release va alzata nei quattro posti
+  (`build.gradle` con `versionCode 6`, `package.json`, `app.config.js`,
+  `APP_VERSION`), altrimenti il workflow si rifiuta e Android non aggiorna.
+- **Il passo dopo sul tablet**, quando lo chiede: le **due colonne in
+  orizzontale** — radar e comandi da una parte, registro e risposta
+  dall'altra. Il primo passo è confermato, quindi si può fare; è l'unica
+  modifica che sposta nodi della disposizione, quindi va fatta da sola e con
+  gli occhi aperti sulla trappola del contenitore.
+
 **Funziona e va lasciato stare:** la conversazione continua, la sua voce, le
 azioni concatenate, la ricerca, l'interruzione immediata, la bolla, la **vista**
 dalla fotocamera e le **immagini allegate**.
@@ -641,12 +681,9 @@ ferma, e la tastiera che lascia vedere il campo di testo. Il numero
 quelle vive adesso: 4 dopo una serata di prove è normale, quello che
 preoccuperebbe è vederlo salire di molti colpi dopo **una** catena.
 
-**Da confermare** (la 3.2.0):
-
-- che in conversazione **non si senta più la voce di sistema** sopra la sua,
-  quando un'azione conferma quello che ha fatto;
-- che le impostazioni riordinate stiano in piedi, con le chiavi in fondo sotto
-  *Configurazione*.
+Confermato anche il resto della 3.2.0: in conversazione parla una voce sola,
+e le impostazioni riordinate — prima quello che l'app fa, in fondo le chiavi
+sotto *Configurazione* — stanno in piedi.
 
 **Ancora aperto davvero:**
 
