@@ -2,10 +2,12 @@ import React, {useEffect, useRef, useState} from 'react';
 import {View, ScrollView, Text, ActivityIndicator, Alert} from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import {styles} from '../styles/mainStyles';
+import {useMisure} from '../utils/misure';
 
 const VICINO_AL_FONDO = 30;
 
 export default function ResponseBox({isLoading, displayedText, scrollRef, onGesto}) {
+    const misure = useMisure();
     const mio = useRef();
     const riquadro = scrollRef || mio;
     // Come per il registro: mentre la risposta arriva a flusso il riquadro la
@@ -45,7 +47,7 @@ export default function ResponseBox({isLoading, displayedText, scrollRef, onGest
     // dito si stacca o quando il riquadro ha finito di scorrere.
     return (
         <View
-            style={styles.thirdCon}
+            style={[styles.thirdCon, {maxWidth: misure.colonna, height: misure.risposta}]}
             onTouchStart={() => onGesto?.(true)}
             onTouchEnd={() => onGesto?.(false)}
             onTouchCancel={() => onGesto?.(false)}

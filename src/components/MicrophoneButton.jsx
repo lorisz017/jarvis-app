@@ -1,8 +1,14 @@
 import React, {useEffect, useRef} from 'react';
 import {TouchableOpacity, View, Text, Animated, Easing} from 'react-native';
 import {styles, COLORS} from '../styles/mainStyles';
+import {useMisure} from '../utils/misure';
+
+// Il lato del radar negli stili: serve a calcolare quanto spazio in più
+// prendersi quando lo si ingrandisce.
+const RADAR = 240;
 
 export default function MicrophoneButton({onPress, isRecording, isLoading, animatedScale}) {
+    const misure = useMisure();
     const rotation = useRef(new Animated.Value(0)).current;
 
     // Il radar ruota sempre, più veloce mentre ascolta: dà l'idea di un
@@ -35,7 +41,20 @@ export default function MicrophoneButton({onPress, isRecording, isLoading, anima
 
     return (
         <TouchableOpacity activeOpacity={0.8} onPress={onPress} style={styles.radarTouchable}>
-            <View style={styles.radarWrapper}>
+            {/* Si ingrandisce con una trasformazione invece che rifacendo le
+                misure di ogni anello: una trasformazione non cambia lo spazio
+                occupato, quindi il margine glielo restituisce. Così non si
+                sposta nessuno stile di disposizione, che in questo progetto è
+                già costato una build. */}
+            <View
+                style={[
+                    styles.radarWrapper,
+                    misure.scalaRadar !== 1 && {
+                        transform: [{scale: misure.scalaRadar}],
+                        marginVertical: Math.round((RADAR * (misure.scalaRadar - 1)) / 2),
+                    },
+                ]}
+            >
                 <View style={styles.radarRingOuter}/>
                 <View style={styles.radarRingMiddle}/>
                 <View style={styles.radarRingInner}/>

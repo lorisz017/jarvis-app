@@ -128,6 +128,7 @@ L'ultima versione provata sul telefono e funzionante è sul ramo `funzionante`.
 | Prima apertura senza chiavi | Automatica | ✅ provata su un telefono senza chiavi: una schermata sola che chiede la chiave Gemini, e la conversazione parte appena la si incolla |
 | Chiavi nelle impostazioni | Impostazioni → Chiavi | ⏳ nuova: le quattro chiavi, con scritto da dove viene ciascuna. Quella scritta a mano ha la precedenza su quella compilata |
 | Pulisci chat | Pill "PULISCI" | ✅ la conferma si toglie toccando **fuori** dal riquadro, senza centrare nessun tasto |
+| Tablet e rotazione | Automatico | ⏳ nuovo: l'app non è più bloccata in verticale, e su uno schermo grande colonna, radar e riquadri crescono con lui. Sul telefono in verticale le misure sono **identiche a prima**. In orizzontale sul tablet si scorre ancora: le due colonne sono il passo dopo |
 | Animazioni in vetro | Pannelli, leva, tasti, interruttori | ✅ il vetro vive solo durante il movimento: da fermo tutto è identico a prima |
 
 ## Compilazione

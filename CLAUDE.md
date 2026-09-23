@@ -342,6 +342,24 @@ pannello perennemente traslucido è un pannello che si fatica a leggere.
   rilascio non può dipendere dal tocco finale: quando il riquadro interno
   prende il gesto, l'app riceve un annullamento e poi **non riceve più niente**,
   quindi serve anche una sicura a tempo, se no la pagina resta bloccata.
+- **Le misure dello schermo stanno in `src/utils/misure.jsx`**, e la regola
+  che le tiene insieme è una sola: **sul telefono in verticale i numeri
+  restano quelli di sempre** — colonna 380, radar 240, registro 190, risposta
+  200. Quella disposizione è confermata e non si tocca. Cambiano solo dove
+  prima non c'era niente di pensato: il tablet (lato corto ≥ 600, che è la
+  misura con cui Android stessa distingue i due) e il telefono in orizzontale,
+  dove i riquadri prendono una quota dell'altezza invece di mangiarsela tutta.
+  Chi aggiunge una misura fissa nuova la aggiunge lì, non negli stili.
+- **Il radar si ingrandisce con una trasformazione, non rifacendo gli anelli.**
+  Sono dieci stili con lo stesso numero dentro, più gli angoli e il braccio:
+  rifarli tutti a runtime è il tipo di cosa che rompe una schermata. Una
+  trasformazione non cambia lo spazio occupato, quindi glielo si restituisce
+  con un margine verticale — negativo quando rimpicciolisce.
+- **La rotazione non ricrea la schermata**, perché il manifest elenca già
+  `orientation|screenSize|screenLayout` fra i cambi che l'attività gestisce da
+  sé. È il motivo per cui la conversazione sopravvive a un giro del tablet:
+  senza quella riga Android rifarebbe l'attività da capo e la sessione
+  morirebbe a metà frase.
 - **Copiare al tocco singolo impedisce di selezionare**: ogni tentativo di
   prendere una parola fa partire la copia di tutto. Copia il doppio tocco.
 - La tastiera: il manifest ha `adjustResize`, **e non serve a niente**. Il tema

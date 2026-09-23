@@ -3,7 +3,7 @@ export default {
     name: "JARVIS",
     slug: "project_jarvis",
     version: '3.2.0',
-    orientation: "portrait",
+    orientation: "default",
     icon: "./assets/icon.png",
     userInterfaceStyle: "light",
     newArchEnabled: true,

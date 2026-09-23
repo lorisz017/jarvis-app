@@ -1,12 +1,14 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {View, ScrollView, Text} from 'react-native';
 import {styles} from '../styles/mainStyles';
+import {useMisure} from '../utils/misure';
 
 // Quanto si può stare sopra il fondo continuando a considerarsi "in fondo":
 // scorrendo con un dito non ci si ferma mai al pixel esatto.
 const VICINO_AL_FONDO = 40;
 
 export default function ActivityLog({chatHistory, onGesto}) {
+    const misure = useMisure();
     const scrollRef = useRef();
     // Finché si sta guardando il fondo, il registro segue la conversazione da
     // solo. Appena si risale a rileggere qualcosa deve restare fermo: essere
@@ -40,7 +42,7 @@ export default function ActivityLog({chatHistory, onGesto}) {
     // dito si stacca o quando il riquadro ha finito di scorrere.
     return (
         <View
-            style={styles.activityLogContainer}
+            style={[styles.activityLogContainer, {maxWidth: misure.colonna, height: misure.registro}]}
             onTouchStart={() => onGesto?.(true)}
             onTouchEnd={() => onGesto?.(false)}
             onTouchCancel={() => onGesto?.(false)}

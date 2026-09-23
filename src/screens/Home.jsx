@@ -38,6 +38,7 @@ import {callContact, sendWhatsAppToContact} from '../services/contactsService';
 import {loadState, saveState, DEFAULT_STATE} from '../services/storageService';
 import {LiveSession, isLiveSupported, flushLiveAudio, azioniInCorso} from '../services/liveService';
 import {caricaChiavi, mancaIlNecessario} from '../services/chiaviService';
+import {useMisure} from '../utils/misure';
 import {
     caricaMemoria,
     dimenticaRicordo,
@@ -102,6 +103,7 @@ export default function Home() {
     const [statoLive, setStatoLive] = useState('spenta');
     // 'comandi' | 'conversazione'. La conversazione è la modalità normale:
     // l'altra c'è ancora, ma va chiesta dalle impostazioni.
+    const misure = useMisure();
     const [modalita, setModalita] = useState('conversazione');
     // Letta da dentro le azioni, che si portano dietro la funzione con cui
     // parlano: presa dallo stato, resterebbe quella del momento in cui la
@@ -1183,7 +1185,7 @@ export default function Home() {
                     onGesto={bloccaPagina}
                 />
 
-                <View style={styles.controlsContainer}>
+                <View style={[styles.controlsContainer, {maxWidth: misure.colonna}]}>
                     {modalita === 'conversazione' ? (
                         <Text style={styles.conversazioneNota}>
                             {statoLive === 'attiva'
@@ -1195,7 +1197,7 @@ export default function Home() {
                     ) : null}
 
                     {allegato ? (
-                        <View style={styles.allegatoRiga}>
+                        <View style={[styles.allegatoRiga, {maxWidth: misure.colonna}]}>
                             <Image source={{uri: allegato.uri}} style={styles.allegatoMiniatura}/>
                             <Text style={styles.allegatoTesto} numberOfLines={2}>
                                 Immagine pronta. Scriva la domanda e la mandi insieme.
@@ -1209,7 +1211,7 @@ export default function Home() {
                         </View>
                     ) : null}
 
-                    <View style={styles.textInputRow}>
+                    <View style={[styles.textInputRow, {maxWidth: misure.colonna}]}>
                         <TastoLiquido style={styles.attachButton} onPress={scegliAllegato}>
                             <Text style={styles.sendButtonText}>📎</Text>
                         </TastoLiquido>
@@ -1238,7 +1240,7 @@ export default function Home() {
                         </TastoLiquido>
                     </View>
 
-                    <View style={styles.actionRow}>
+                    <View style={[styles.actionRow, {maxWidth: misure.colonna}]}>
                         <TastoLiquido style={styles.pillButton} onPress={() => setIsVoicePickerVisible(true)}>
                             <Text style={styles.pillButtonIcon}>🎙</Text>
                             <Text style={styles.pillButtonText}>VOCE</Text>

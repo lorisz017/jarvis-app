@@ -2,8 +2,10 @@ import React, {useEffect, useState} from 'react';
 import {View, Text} from 'react-native';
 import * as Battery from 'expo-battery';
 import {styles, COLORS} from '../styles/mainStyles';
+import {useMisure} from '../utils/misure';
 
 export default function SystemStatus() {
+    const misure = useMisure();
     const [level, setLevel] = useState(null);
     const [isCharging, setIsCharging] = useState(false);
 
@@ -38,7 +40,7 @@ export default function SystemStatus() {
     const color = isCharging ? COLORS.GREEN : level <= 20 ? COLORS.RED : level <= 50 ? COLORS.AMBER : COLORS.CYAN;
 
     return (
-        <View style={styles.systemStatusRow}>
+        <View style={[styles.systemStatusRow, {maxWidth: misure.colonna}]}>
             <Text style={styles.systemStatusLabel}>ALIMENTAZIONE</Text>
 
             <View style={styles.systemStatusBarTrack}>

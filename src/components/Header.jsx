@@ -1,8 +1,10 @@
 import React, {useEffect, useState} from 'react';
 import {View, Text} from 'react-native';
 import {styles} from '../styles/mainStyles';
+import {useMisure} from '../utils/misure';
 
 export default function Header() {
+    const misure = useMisure();
     const [now, setNow] = useState(new Date());
 
     useEffect(() => {
@@ -14,7 +16,7 @@ export default function Header() {
     const dateText = now.toLocaleDateString('it-IT', {weekday: 'short', day: '2-digit', month: 'short'});
 
     return (
-        <View style={styles.header}>
+        <View style={[styles.header, {maxWidth: misure.colonna}]}>
             <View style={styles.headerTitleBlock}>
                 <Text style={styles.headerTitle}>J.A.R.V.I.S.</Text>
                 <Text style={styles.headerSubtitle}>Just A Rather Very Intelligent System</Text>
