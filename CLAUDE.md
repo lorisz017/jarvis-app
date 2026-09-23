@@ -17,12 +17,28 @@ Due debiti d'origine, entrambi nei crediti e da tenere così:
   scheletro iniziale. Nei crediti va nominato **solo per quello**: tutto il
   resto (interfaccia, azioni, voce) è di lorisz017.
 
-  **Da fare, deciso da lui il 23 settembre:** togliere il riquadro di
-  Azizbek dalla scheda **Info** dell'app (`SettingsModal.jsx`, il blocco con
-  `UPSTREAM_REPO`). Il ringraziamento a Mark-LIII resta. Il suo copyright
-  però **resta in `LICENSE`**: è la sola condizione che la licenza MIT pone,
-  e toglierlo da lì vorrebbe dire usare il suo codice senza rispettarla.
-  Il README non l'ha nominato: prima di toccarlo lì, chiedere.
+  **Deciso da lui il 23 settembre:** nella scheda **Info** dell'app non c'è
+  più il riquadro "Scheletro iniziale" con il suo nome e il link. Al suo
+  posto, in fondo, una riga **LICENZA** con i due copyright e basta: non è
+  un riconoscimento, è la sola condizione che la MIT pone a chi distribuisce
+  il suo codice, anche dentro un APK. Il copyright resta anche in `LICENSE`.
+  Il README lo nomina ancora nei crediti: non l'ha chiesto, prima chiedere.
+
+  **Più avanti, solo quando lo dice lui: l'indipendenza.** Il repository è
+  ancora un *fork* di `az11k-dev/jarvis-app` per GitHub. L'idea è riscrivere
+  quello che resta del suo codice e poi aprire un repository nuovo, non fork.
+  **Copiare e incollare in un repository nuovo da solo non basta**: la
+  licenza segue il codice, non il repository — finché ci sono righe sue, il
+  suo copyright ci va. Serve prima che le righe spariscano davvero.
+  Il 23 settembre `git blame` gli dava ~1.250 righe su ~11.600 fuori dalle
+  cartelle native: `jarvisService.jsx` (237), `Home.jsx` (169),
+  `mainStyles.jsx` (127), `notificationsService.jsx`, i comandi GitHub in
+  `src/core/github/`, `AccessDenied.jsx`, `auth.jsx`, `useVoiceSetup.jsx`,
+  `assets/hello.mp3`, più file di contorno (`package.json`, `eas.json`,
+  `.gitignore`, `.idea/`). `android/` e `ios/` risultano suoi ma sono quasi
+  tutti generati da Expo, non scritti da lui: si rigenerano. L'ordine: prima
+  riscrivere e ricontrollare col `blame` che sia zero, poi provare la build,
+  poi il repository nuovo — e da lì le build private puntano al nuovo.
 - **[FatihMakes/Mark-LIII](https://github.com/FatihMakes/Mark-LIII)** — un
   assistente desktop in Python. Non è codice di partenza, è l'idea. Va nei
   crediti come ringraziamento, e la nota sulla sua licenza CC BY-NC (che non
@@ -630,8 +646,9 @@ conversazione perde.
   deve continuare, *Conversazioni aperte* non deve salire), e l'APK della
   release installato sopra la 3.2.0 deve aggiornarla senza chiedere di
   disinstallare.
-- **Da fare**: togliere il credito ad Azizbek dalla scheda Info (vedi in
-  cima, sotto "Che cos'è"). Solo JavaScript, va nel prossimo giro.
+- **Su `main`, non ancora in una build**: il credito ad Azizbek tolto dalla
+  scheda Info, al suo posto la sola riga LICENZA (vedi in cima). Solo
+  JavaScript. La versione è ancora 3.2.5: per una release va alzata.
 - **Il passo dopo sul tablet**, quando lo chiede: le **due colonne in
   orizzontale** — radar e comandi da una parte, registro e risposta
   dall'altra. Il primo passo è confermato, quindi si può fare; è l'unica

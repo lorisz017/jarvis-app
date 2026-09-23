@@ -13,7 +13,6 @@ import {statisticheLive, diagnosticaAudio} from '../services/liveService';
 const APP_VERSION = '3.2.5';
 const GITHUB_PROFILE = 'https://github.com/lorisz017';
 const GITHUB_REPO = 'https://github.com/lorisz017/jarvis-app';
-const UPSTREAM_REPO = 'https://github.com/az11k-dev/jarvis-app';
 const INSPIRATION_REPO = 'https://github.com/FatihMakes/Mark-LIII';
 
 const TABS = [
@@ -511,15 +510,6 @@ export default function SettingsModal({
                                     <Text style={styles.aboutLink}>github.com/lorisz017/jarvis-app</Text>
                                 </TouchableOpacity>
 
-                                <Text style={styles.settingsSectionTitle}>SCHELETRO INIZIALE</Text>
-                                <Text style={styles.aboutText}>
-                                    Di Azizbek Anvarjonov: è il progetto da cui questo è nato. Licenza MIT,
-                                    copyright (c) 2025 Azizbek Anvarjonov, copyright (c) 2026 lorisz017.
-                                </Text>
-                                <TouchableOpacity onPress={() => Linking.openURL(UPSTREAM_REPO)}>
-                                    <Text style={styles.aboutLink}>github.com/az11k-dev/jarvis-app</Text>
-                                </TouchableOpacity>
-
                                 <Text style={styles.settingsSectionTitle}>UN GRAZIE PARTICOLARE</Text>
                                 <Text style={styles.aboutText}>
                                     A FatihMakes, autore dell&apos;assistente desktop Mark-LIII. È da lì che è
@@ -535,6 +525,11 @@ export default function SettingsModal({
                                     Conversazione, voce e ragionamento tramite Gemini. Ricerca sul web
                                     tramite DuckDuckGo, meteo tramite Open-Meteo. Applicazione
                                     realizzata con React Native ed Expo.
+                                </Text>
+
+                                <Text style={styles.settingsSectionTitle}>LICENZA</Text>
+                                <Text style={styles.aboutText}>
+                                    MIT. Copyright (c) 2025 Azizbek Anvarjonov, copyright (c) 2026 lorisz017.
                                 </Text>
                             </View>
                         )}
