@@ -39,6 +39,28 @@ Due debiti d'origine, entrambi nei crediti e da tenere così:
   tutti generati da Expo, non scritti da lui: si rigenerano. L'ordine: prima
   riscrivere e ricontrollare col `blame` che sia zero, poi provare la build,
   poi il repository nuovo — e da lì le build private puntano al nuovo.
+
+  **Come, l'ha deciso lui:** il lavoro si fa **in un repository nuovo e
+  vergine**, senza toccare `main`, e **solo quando lo dice** ("non ora").
+  Quello che era emerso guardando, prima che fermasse tutto:
+  - Gran parte delle sue righe è **codice morto**: in `jarvisService.jsx`
+    il vecchio riconoscimento dei comandi dal testo (`open_camera`,
+    `set_alarm`… scritti nella risposta), sostituito da tempo dalle azioni
+    di `tools.jsx`; la scorciatoia "ricordami tra N minuti" prima del
+    modello; `auth.jsx` (non importato da nessuno), `AccessDenied.jsx`
+    (mai mostrato), `assets/hello.mp3` (mai usato), `.idea/`, il vecchio
+    `CHANGELOG.md`. Il resto — i tre file GitHub, `notificationsService`,
+    `useVoiceSetup`, il `Speech.speak` di riserva in `ttsService`, le
+    aperture di Telegram/YouTube/fotocamera e la registrazione in
+    `Home.jsx`, pezzi di `mainStyles` — è poco e si riscrive.
+  - `.gitignore`, `eslint.config.js`, `eas.json`, `index.js` e le cartelle
+    `android/` e `ios/` vengono dal modello di Expo, non da lui.
+  - **La cosa grossa è il nome del pacchetto: `com.az11k.jarvisapp`**, in
+    `build.gradle` (`applicationId` e `namespace`), in `app.config.js` e
+    nel percorso del codice Kotlin. Cambiarlo vuol dire che per Android è
+    **un'altra app**: chi ha la 3.2.5 non la aggiorna, deve disinstallare,
+    e perde chiave, memoria e preferenze. È una decisione sua, da chiedere
+    prima — e se si fa, va fatta una volta sola, insieme al repository nuovo.
 - **[FatihMakes/Mark-LIII](https://github.com/FatihMakes/Mark-LIII)** — un
   assistente desktop in Python. Non è codice di partenza, è l'idea. Va nei
   crediti come ringraziamento, e la nota sulla sua licenza CC BY-NC (che non
