@@ -661,11 +661,28 @@ preoccuperebbe è vederlo salire di molti colpi dopo **una** catena.
   di vita, lunghezza e forma della chiave, chiusure non volute, attesa della
   risposta). **Prima si leggono quelli.**
 
-  **E dopo, in quest'ordine, perché l'ha chiesto lui:** trovata e corretta la
-  causa, si sposta `funzionante` sul commit della build che lui conferma, e si
-  pubblica una **release nuova** — versione alzata nei quattro posti, poi
-  *Pubblica una release*. È scritto qui perché la conversazione si sta
-  riempiendo e non deve perdersi.
+  **Quasi certamente è la rete.** Tutte e due le volte si era sul Wi-Fi di un
+  posto di lavoro, condiviso da molti dipendenti; **a casa, sullo stesso
+  tablet con la stessa build vecchia, non succede niente**. Il test di
+  velocità era buono, ma misura quanto si scarica, non se regge una
+  connessione tenuta aperta per minuti — che è esattamente la conversazione
+  dal vivo. Una rete aziendale può chiudere le connessioni lunghe, toccarne
+  l'indirizzo (e **la chiave viaggia proprio lì**, nell'indirizzo: arrivata
+  storta, Google risponde "chiave non valida"), o far sembrare a Google un
+  utente solo tutti i dipendenti. Da confermare sentendo l'amico da casa sua.
+  **Non si corregge niente nell'app per questo**, a meno che non si riveli
+  comune: allora il rimedio è riaprire la conversazione da sola quando cade.
+
+  **E dopo, in quest'ordine, perché l'ha chiesto lui:** se è la rete non c'è
+  niente da correggere — si conferma la build nuova, si sposta `funzionante`
+  sul commit della build che lui conferma, e si pubblica una **release
+  nuova**: versione alzata nei quattro posti, poi *Pubblica una release*. È
+  scritto qui perché la conversazione si sta riempiendo e non deve perdersi.
+- **Un test di velocità non misura quello che serve a questa app.** Dice
+  quanto scarica una pagina, non se una connessione tenuta aperta per minuti
+  regge. Su una rete di lavoro o pubblica il primo può essere ottimo e la
+  seconda morire: è la prima cosa da chiedere quando un difetto compare solo
+  "fuori casa".
 
 - **La voce di Edge non è più un problema aperto, e non va rimessa in lista.**
   Non parla e si sente la riserva, ma la sintesi vocale riguarda solo la

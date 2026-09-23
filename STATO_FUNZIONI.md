@@ -151,7 +151,13 @@ L'ultima versione provata sul telefono e funzionante è sul ramo `funzionante`.
 
 *Cosa è stato fatto: niente di correttivo, apposta.* Tentare una correzione alla cieca costerebbe una build per ipotesi. L'app riporta invece in Impostazioni → Info, per l'ultima chiusura non voluta: da quanti secondi era aperta, quanti caratteri aveva la chiave, se ha la forma di una chiave di Google, e quante chiusure non volute ci sono state; e a parte quanto aspetta una frase scritta prima della prima parola di risposta. Con quei numeri la prossima volta la causa si legge invece di indovinarla.
 
-*Poi.* Trovata e corretta la causa, si sposta `funzionante` e si pubblica una release nuova — è la sequenza chiesta da lui.
+*La svolta: la rete.* Tutte e due le volte — il tablet e il telefono dell'amico — si era **sulla rete Wi-Fi di un posto di lavoro**, condivisa da molti dipendenti. **A casa, sullo stesso tablet e con la stessa build vecchia di giorni, non succede niente**: risponde veloce, parla a lungo, nessun errore. Il test di velocità su quella rete era buono, ed è per questo che la rete era stata scartata — ma un test di velocità misura quanto scarica una pagina, non se una **connessione tenuta aperta per minuti** regge. La conversazione dal vivo è proprio quella: un WebSocket che resta aperto per tutta la sessione.
+
+Una rete aziendale ha buoni motivi per dargli fastidio: filtri e proxy che ispezionano il traffico, chiudono le connessioni lunghe o toccano le richieste; e tanti dipendenti dietro un solo indirizzo, che per Google sono un utente solo e consumano insieme lo stesso tetto. E c'è un dettaglio che spiega proprio le parole dell'errore: **la chiave viaggia nell'indirizzo della connessione**, e un proxy che tocca quell'indirizzo la fa arrivare a Google storta o mancante — che risponde esattamente "chiave non valida".
+
+*Lo stato.* Molto probabilmente non è un difetto dell'app. Resta da sentire l'amico a casa sua, e i numeri in Info lo confermerebbero la prossima volta su quella rete: chiave presente e di forma giusta, ma sessioni che muoiono presto. Se si rivelasse comune, un rimedio sensato sarebbe riaprire da sola la conversazione quando cade — non fatto, perché non richiesto e perché prima va confermato.
+
+*Poi.* Se la causa è la rete non c'è niente da correggere: si conferma la build nuova, si sposta `funzionante` e si pubblica la release — la sequenza chiesta da lui.
 
 **La voce che si accavallava sugli altri telefoni** — il difetto più difficile trovato finora, e la storia per intero, perché tre delle quattro spiegazioni erano sbagliate e sapere *quali* vale più della correzione.
 
