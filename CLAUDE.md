@@ -16,6 +16,13 @@ Due debiti d'origine, entrambi nei crediti e da tenere così:
 - **[az11k-dev/jarvis-app](https://github.com/az11k-dev/jarvis-app)** — lo
   scheletro iniziale. Nei crediti va nominato **solo per quello**: tutto il
   resto (interfaccia, azioni, voce) è di lorisz017.
+
+  **Da fare, deciso da lui il 23 settembre:** togliere il riquadro di
+  Azizbek dalla scheda **Info** dell'app (`SettingsModal.jsx`, il blocco con
+  `UPSTREAM_REPO`). Il ringraziamento a Mark-LIII resta. Il suo copyright
+  però **resta in `LICENSE`**: è la sola condizione che la licenza MIT pone,
+  e toglierlo da lì vorrebbe dire usare il suo codice senza rispettarla.
+  Il README non l'ha nominato: prima di toccarlo lì, chiedere.
 - **[FatihMakes/Mark-LIII](https://github.com/FatihMakes/Mark-LIII)** — un
   assistente desktop in Python. Non è codice di partenza, è l'idea. Va nei
   crediti come ringraziamento, e la nota sulla sua licenza CC BY-NC (che non
@@ -623,6 +630,8 @@ conversazione perde.
   deve continuare, *Conversazioni aperte* non deve salire), e l'APK della
   release installato sopra la 3.2.0 deve aggiornarla senza chiedere di
   disinstallare.
+- **Da fare**: togliere il credito ad Azizbek dalla scheda Info (vedi in
+  cima, sotto "Che cos'è"). Solo JavaScript, va nel prossimo giro.
 - **Il passo dopo sul tablet**, quando lo chiede: le **due colonne in
   orizzontale** — radar e comandi da una parte, registro e risposta
   dall'altra. Il primo passo è confermato, quindi si può fare; è l'unica
